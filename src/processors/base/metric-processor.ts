@@ -1,4 +1,4 @@
-import type { MetricType, SessionMetricsData } from '@guideai/types'
+import type { MetricType, SessionMetricsData } from '@guideai-dev/types'
 import type { ParsedSession, ProcessorResult } from './types.js'
 
 export abstract class BaseMetricProcessor {

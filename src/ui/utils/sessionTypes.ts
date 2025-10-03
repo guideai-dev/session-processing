@@ -9,4 +9,4 @@ export type {
   ToolUseContent,
   ToolResultContent,
   TextContent,
-} from '@guideai/types'
+} from '@guideai-dev/types'

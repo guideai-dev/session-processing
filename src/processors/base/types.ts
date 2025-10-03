@@ -7,4 +7,4 @@ export type {
   ProcessingStatus,
   MetricType,
   SessionMetricsData,
-} from '@guideai/types'
+} from '@guideai-dev/types'

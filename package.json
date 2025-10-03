@@ -1,5 +1,5 @@
 {
-  "name": "@guideai/session-processing",
+  "name": "@guideai-dev/session-processing",
   "version": "0.1.1",
   "description": "Shared session processing, metrics calculation, AI processing, and UI components for GuideAI",
   "type": "module",
@@ -52,7 +52,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "@google/generative-ai": "^0.21.0",
-    "@guideai/types": "workspace:*"
+    "@guideai-dev/types": "workspace:*"
   },
   "peerDependencies": {
     "@heroicons/react": "^2.0.0",

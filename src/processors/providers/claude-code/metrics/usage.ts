@@ -1,6 +1,6 @@
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { UsageMetrics } from '@guideai/types'
+import type { UsageMetrics } from '@guideai-dev/types'
 import { ClaudeCodeParser } from '../parser.js'
 
 export class ClaudeUsageProcessor extends BaseMetricProcessor {

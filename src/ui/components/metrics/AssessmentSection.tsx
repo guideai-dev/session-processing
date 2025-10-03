@@ -6,7 +6,7 @@
  */
 
 import { MetricSection } from './MetricSection.js'
-import type { AssessmentAnswer } from '@guideai/types'
+import type { AssessmentAnswer } from '@guideai-dev/types'
 
 // Type definitions for assessment data
 interface AssessmentQuestion {
