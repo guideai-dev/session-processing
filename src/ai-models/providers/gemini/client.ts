@@ -221,7 +221,25 @@ export class GeminiAPIClient {
 
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`Gemini API error (${response.status}): ${errorText}`)
+
+        // Try to parse JSON error response
+        let errorMessage = errorText
+        try {
+          const errorJson = JSON.parse(errorText)
+          // Extract meaningful error message from Gemini API error format
+          if (errorJson.error?.message) {
+            errorMessage = errorJson.error.message
+          } else if (errorJson.error?.status) {
+            errorMessage = errorJson.error.status
+          }
+        } catch {
+          // If not JSON, use raw text (truncate if too long)
+          if (errorText.length > 200) {
+            errorMessage = errorText.substring(0, 200) + '...'
+          }
+        }
+
+        throw new Error(`Gemini API error (${response.status}): ${errorMessage}`)
       }
 
       return await response.json()

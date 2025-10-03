@@ -8,8 +8,7 @@
   "types": "./dist/esm/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/guideai-dev/guideai.git",
-    "directory": "packages/session-processing"
+    "url": "https://github.com/guideai-dev/session-processing.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
