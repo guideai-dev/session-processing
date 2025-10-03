@@ -1,0 +1,492 @@
+/**
+ * Base Message Processor - Abstract class for processing messages into timeline format
+ *
+ * This class provides default normalization logic that can be overridden by
+ * provider-specific processors for custom behavior.
+ */
+
+import {
+  TimelineMessage,
+  TimelineGroup,
+  TimelineItem,
+  ProcessedTimeline,
+  ContentBlock,
+  createDisplayMetadata,
+  createContentBlock,
+} from '../timelineTypes.js'
+import { BaseSessionMessage } from '../sessionTypes.js'
+import {
+  UserIcon,
+  CpuChipIcon,
+  WrenchScrewdriverIcon,
+  CheckCircleIcon,
+  CommandLineIcon,
+  StopCircleIcon,
+  InformationCircleIcon,
+  PhotoIcon,
+} from '@heroicons/react/24/outline'
+
+/**
+ * Abstract base class for message processors
+ */
+export abstract class BaseMessageProcessor {
+  abstract name: string
+
+  /**
+   * Process an array of messages into timeline items
+   */
+  process(messages: BaseSessionMessage[]): ProcessedTimeline {
+    // Convert messages to timeline messages
+    const timelineMessages = messages.map(msg => this.normalizeMessage(msg))
+
+    // Group related messages (e.g., tool use + result)
+    const items = this.groupMessages(timelineMessages)
+
+    return {
+      items,
+      metadata: {
+        totalMessages: messages.length,
+        groupedPairs: items.filter(item => item.displayType === 'group').length,
+        provider: this.name,
+      },
+    }
+  }
+
+  /**
+   * Convert a BaseSessionMessage to a TimelineMessage
+   * Can be overridden by subclasses for provider-specific logic
+   */
+  protected normalizeMessage(message: BaseSessionMessage): TimelineMessage {
+    const role = this.getMessageRole(message)
+    const displayMetadata = this.getDisplayMetadata(message)
+    const contentBlocks = this.getContentBlocks(message)
+
+    return {
+      id: message.id,
+      timestamp: message.timestamp,
+      displayType: 'single',
+      role,
+      displayMetadata,
+      contentBlocks,
+      originalMessage: message,
+    }
+  }
+
+  /**
+   * Group related messages (e.g., tool use + result)
+   * Can be overridden by subclasses for custom grouping logic
+   */
+  protected groupMessages(messages: TimelineMessage[]): TimelineItem[] {
+    const items: TimelineItem[] = []
+    const usedIds = new Set<string>()
+
+    for (let i = 0; i < messages.length; i++) {
+      const current = messages[i]
+
+      // Skip if already used in a group
+      if (usedIds.has(current.id)) continue
+
+      // Check if this is a tool_use that can be paired with a tool_result
+      if (current.originalMessage.type === 'tool_use') {
+        const toolUseId = this.extractToolUseId(current.originalMessage)
+        const resultIndex = messages.findIndex(
+          (m, idx) =>
+            idx > i &&
+            !usedIds.has(m.id) &&
+            m.originalMessage.type === 'tool_result' &&
+            (m.originalMessage.linkedTo === toolUseId ||
+              this.extractToolResultId(m.originalMessage) === toolUseId),
+        )
+
+        if (resultIndex !== -1) {
+          const result = messages[resultIndex]
+          items.push(this.createToolGroup(current, result))
+          usedIds.add(current.id)
+          usedIds.add(result.id)
+          continue
+        }
+      }
+
+      // Add as standalone message
+      items.push(current)
+    }
+
+    return items
+  }
+
+  /**
+   * Create a tool group from tool use and result messages
+   */
+  protected createToolGroup(
+    toolUse: TimelineMessage,
+    toolResult: TimelineMessage,
+  ): TimelineGroup {
+    return {
+      id: `group-${toolUse.id}`,
+      displayType: 'group',
+      timestamp: toolUse.timestamp,
+      messages: [toolUse, toolResult],
+      groupType: 'tool_pair',
+    }
+  }
+
+  /**
+   * Get message role from message type
+   */
+  protected getMessageRole(message: BaseSessionMessage): TimelineMessage['role'] {
+    switch (message.type) {
+      case 'user_input':
+      case 'command':
+      case 'interruption':
+        return 'user'
+      case 'assistant_response':
+        return 'assistant'
+      case 'tool_use':
+      case 'tool_result':
+        return 'tool'
+      case 'meta':
+      case 'command_output':
+      default:
+        return 'system'
+    }
+  }
+
+  /**
+   * Get display metadata (icon, title, colors) for a message
+   * Can be overridden by subclasses for provider-specific icons/titles
+   */
+  protected getDisplayMetadata(message: BaseSessionMessage) {
+    switch (message.type) {
+      case 'user_input':
+        return createDisplayMetadata({
+          icon: this.hasImageContent(message) ? 'IMG' : 'USR',
+          IconComponent: this.hasImageContent(message) ? PhotoIcon : UserIcon,
+          iconColor: 'text-info',
+          title: this.hasImageContent(message) ? 'User (with image)' : 'User',
+          borderColor: 'border-l-info',
+        })
+
+      case 'assistant_response':
+        return createDisplayMetadata({
+          icon: 'AST',
+          IconComponent: CpuChipIcon,
+          iconColor: 'text-primary',
+          title: 'Assistant',
+          borderColor: 'border-l-primary',
+        })
+
+      case 'tool_use':
+        return createDisplayMetadata({
+          icon: 'TOOL',
+          IconComponent: WrenchScrewdriverIcon,
+          iconColor: 'text-secondary',
+          title: this.getToolName(message) || 'Tool',
+          borderColor: 'border-l-secondary',
+        })
+
+      case 'tool_result':
+        return createDisplayMetadata({
+          icon: 'RESULT',
+          IconComponent: CheckCircleIcon,
+          iconColor: 'text-secondary',
+          title: 'Tool Result',
+          borderColor: 'border-l-secondary',
+        })
+
+      case 'command':
+        return createDisplayMetadata({
+          icon: 'CMD',
+          IconComponent: CommandLineIcon,
+          iconColor: 'text-warning',
+          title: 'Command',
+          borderColor: 'border-l-warning',
+        })
+
+      case 'command_output':
+        return createDisplayMetadata({
+          icon: 'OUT',
+          IconComponent: InformationCircleIcon,
+          iconColor: 'text-base-content/60',
+          title: 'Output',
+          borderColor: 'border-l-neutral',
+        })
+
+      case 'interruption':
+        return createDisplayMetadata({
+          icon: 'INT',
+          IconComponent: StopCircleIcon,
+          iconColor: 'text-error',
+          title: 'Interrupted',
+          borderColor: 'border-l-error',
+        })
+
+      case 'meta':
+        return createDisplayMetadata({
+          icon: 'META',
+          IconComponent: InformationCircleIcon,
+          iconColor: 'text-accent',
+          title: 'Meta',
+          borderColor: 'border-l-accent',
+        })
+
+      default:
+        return createDisplayMetadata({
+          icon: 'MSG',
+          IconComponent: InformationCircleIcon,
+          iconColor: 'text-base-content/60',
+          title: 'Message',
+          borderColor: 'border-l-neutral',
+        })
+    }
+  }
+
+  /**
+   * Extract content blocks from a message
+   * This is the main method to override for custom content handling
+   */
+  protected getContentBlocks(message: BaseSessionMessage): ContentBlock[] {
+    switch (message.type) {
+      case 'tool_use':
+        return this.getToolUseBlocks(message)
+      case 'tool_result':
+        return this.getToolResultBlocks(message)
+      case 'command':
+        return this.getCommandBlocks(message)
+      case 'command_output':
+        return this.getCommandOutputBlocks(message)
+      case 'interruption':
+        return this.getInterruptionBlocks(message)
+      case 'user_input':
+      case 'assistant_response':
+        return this.getConversationBlocks(message)
+      default:
+        return this.getGenericBlocks(message)
+    }
+  }
+
+  /**
+   * Extract content blocks for tool use messages
+   */
+  protected getToolUseBlocks(message: BaseSessionMessage): ContentBlock[] {
+    const content = message.content
+    const toolName = this.getToolName(message)
+    const input = content?.input || content
+
+    return [
+      createContentBlock('tool_use', { name: toolName, input }, {
+        toolName: toolName || undefined,
+        collapsed: true,
+      }),
+    ]
+  }
+
+  /**
+   * Extract content blocks for tool result messages
+   */
+  protected getToolResultBlocks(message: BaseSessionMessage): ContentBlock[] {
+    const content = message.content?.content || message.content
+    const toolUseId = message.linkedTo || message.content?.tool_use_id
+
+    return [
+      createContentBlock('tool_result', content, {
+        toolUseId,
+        collapsed: true,
+      }),
+    ]
+  }
+
+  /**
+   * Extract content blocks for command messages
+   */
+  protected getCommandBlocks(message: BaseSessionMessage): ContentBlock[] {
+    const text = this.extractTextFromParts(message.content) ||
+                 (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
+
+    return [
+      createContentBlock('code', text, {
+        language: 'bash',
+      }),
+    ]
+  }
+
+  /**
+   * Extract content blocks for command output messages
+   */
+  protected getCommandOutputBlocks(message: BaseSessionMessage): ContentBlock[] {
+    const text = typeof message.content === 'string'
+      ? message.content
+      : message.content?.text || JSON.stringify(message.content)
+
+    return [
+      createContentBlock('code', text, {
+        language: 'text',
+      }),
+    ]
+  }
+
+  /**
+   * Extract content blocks for interruption messages
+   */
+  protected getInterruptionBlocks(message: BaseSessionMessage): ContentBlock[] {
+    const text = this.extractTextFromParts(message.content) ||
+                 (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
+
+    return [
+      createContentBlock('text', text),
+    ]
+  }
+
+  /**
+   * Extract content blocks for conversation messages (user input, assistant response)
+   */
+  protected getConversationBlocks(message: BaseSessionMessage): ContentBlock[] {
+    const blocks: ContentBlock[] = []
+
+    // Check for parts structure
+    const parts = this.extractParts(message.content)
+    if (parts) {
+      for (const part of parts) {
+        if (part.type === 'text' && part.text) {
+          blocks.push(createContentBlock('text', part.text))
+        } else if (part.type === 'image') {
+          const imageData = this.extractImageFromPart(part)
+          if (imageData) {
+            blocks.push(
+              createContentBlock('image', imageData.data, {
+                format: imageData.type,
+              }),
+            )
+          }
+        }
+      }
+      return blocks
+    }
+
+    // Fallback: Try to extract text or JSON
+    if (typeof message.content === 'string') {
+      blocks.push(createContentBlock('text', message.content))
+    } else if (message.content?.text) {
+      blocks.push(createContentBlock('text', message.content.text))
+    } else {
+      blocks.push(createContentBlock('json', message.content, { collapsed: true }))
+    }
+
+    return blocks
+  }
+
+  /**
+   * Extract content blocks for generic/unknown message types
+   */
+  protected getGenericBlocks(message: BaseSessionMessage): ContentBlock[] {
+    return [
+      createContentBlock('json', message.content, { collapsed: true }),
+    ]
+  }
+
+  /**
+   * Helper: Extract tool name from message
+   */
+  protected getToolName(message: BaseSessionMessage): string | null {
+    return message.content?.name || null
+  }
+
+  /**
+   * Helper: Extract tool use ID from message
+   */
+  protected extractToolUseId(message: BaseSessionMessage): string | null {
+    // Try multiple locations where tool use ID might be
+    return (
+      message.content?.id ||
+      message.metadata?.toolUseId ||
+      message.id.split('-tool-')[1] ||
+      null
+    )
+  }
+
+  /**
+   * Helper: Extract tool result ID (the tool use ID it refers to)
+   */
+  protected extractToolResultId(message: BaseSessionMessage): string | null {
+    return message.linkedTo || message.content?.tool_use_id || null
+  }
+
+  /**
+   * Helper: Check if message has image content
+   */
+  protected hasImageContent(message: BaseSessionMessage): boolean {
+    const parts = this.extractParts(message.content)
+    if (parts) {
+      return parts.some(part => part.type === 'image')
+    }
+    return false
+  }
+
+  /**
+   * Helper: Extract parts array from content
+   */
+  protected extractParts(content: any): any[] | null {
+    if (content?.parts && Array.isArray(content.parts)) {
+      return content.parts
+    }
+
+    if (typeof content === 'string') {
+      try {
+        const parsed = JSON.parse(content)
+        if (parsed?.parts && Array.isArray(parsed.parts)) {
+          return parsed.parts
+        }
+      } catch {
+        // Not JSON
+      }
+    }
+
+    if (Array.isArray(content)) {
+      return content
+    }
+
+    return null
+  }
+
+  /**
+   * Helper: Extract text from parts structure
+   */
+  protected extractTextFromParts(content: any): string | null {
+    const parts = this.extractParts(content)
+    if (!parts) return null
+
+    const textParts = parts
+      .filter(part => part.type === 'text')
+      .map(part => part.text)
+      .join(' ')
+
+    return textParts || null
+  }
+
+  /**
+   * Helper: Extract image data from an image part
+   */
+  protected extractImageFromPart(part: any): { type: string; data: string } | null {
+    if (part.source?.data) {
+      const mediaType = part.source.media_type || 'image/png'
+      const data = part.source.data.startsWith('data:')
+        ? part.source.data
+        : `data:${mediaType};base64,${part.source.data}`
+      return {
+        type: mediaType.split('/')[1] || 'png',
+        data,
+      }
+    }
+
+    if (part.data) {
+      const match = part.data.match(/data:image\/([^;]+);base64,/)
+      if (match) {
+        return {
+          type: match[1],
+          data: part.data,
+        }
+      }
+    }
+
+    return null
+  }
+}

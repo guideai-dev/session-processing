@@ -1,0 +1,82 @@
+{
+  "name": "@guideai/session-processing",
+  "version": "0.1.0",
+  "description": "Shared session processing, metrics calculation, AI processing, and UI components for GuideAI",
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./processors": {
+      "types": "./dist/esm/processors/index.d.ts",
+      "import": "./dist/esm/processors/index.js",
+      "require": "./dist/cjs/processors/index.js"
+    },
+    "./ai-models": {
+      "types": "./dist/esm/ai-models/index.d.ts",
+      "import": "./dist/esm/ai-models/index.js",
+      "require": "./dist/cjs/ai-models/index.js"
+    },
+    "./ui": {
+      "types": "./dist/esm/ui/index.d.ts",
+      "import": "./dist/esm/ui/index.js",
+      "require": "./dist/cjs/ui/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm run clean && pnpm run build:esm && pnpm run build:cjs && pnpm run build:cjs-package",
+    "build:esm": "tsc -p tsconfig.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:cjs-package": "echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@google/generative-ai": "^0.21.0",
+    "@guideai/types": "workspace:*"
+  },
+  "peerDependencies": {
+    "@heroicons/react": "^2.0.0",
+    "daisyui": ">=4.0.0",
+    "react": "^18.3.1",
+    "tailwindcss": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    },
+    "@heroicons/react": {
+      "optional": false
+    },
+    "tailwindcss": {
+      "optional": true
+    },
+    "daisyui": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@types/react": "^18.3.24",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "session-processing",
+    "metrics",
+    "ai",
+    "typescript",
+    "guideai"
+  ]
+}

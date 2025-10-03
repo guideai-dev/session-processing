@@ -1,0 +1,81 @@
+import type { ParsedSession } from '../../processors/base/types.js'
+
+/**
+ * Configuration for an AI model task
+ */
+export interface ModelTaskConfig {
+  taskType: string
+  prompt: string
+  inputSchema?: Record<string, any>
+  responseFormat: {
+    type: 'json' | 'text'
+    schema?: Record<string, any>
+  }
+  recordingStrategy: {
+    updateAgentSession?: string[] // Field names to update in agent_sessions
+    createMetrics?: boolean // Store as session_metrics entry
+    metricType?: string // Which metric type to use if createMetrics is true
+  }
+}
+
+/**
+ * Result from executing an AI model task
+ */
+export interface ModelTaskResult {
+  taskType: string
+  success: boolean
+  output: any
+  metadata: {
+    modelUsed: string
+    tokensUsed?: number
+    processingTime: number
+    cost?: number
+    error?: string
+  }
+}
+
+/**
+ * Definition of an available AI model task
+ */
+export interface ModelTaskDefinition {
+  taskType: string
+  name: string
+  description: string
+  config: ModelTaskConfig
+}
+
+/**
+ * Context for AI model task execution
+ */
+export interface ModelTaskContext {
+  sessionId: string
+  tenantId: string
+  userId: string
+  provider: string
+  session?: ParsedSession
+  user?: {
+    name?: string | null
+    username?: string | null
+    email?: string | null
+  }
+}
+
+/**
+ * Configuration for an AI model adapter
+ */
+export interface ModelAdapterConfig {
+  apiKey: string
+  model?: string
+  maxTokens?: number
+  temperature?: number
+  timeout?: number
+}
+
+/**
+ * Health check result
+ */
+export interface ModelHealthCheck {
+  healthy: boolean
+  latency?: number
+  error?: string
+}
