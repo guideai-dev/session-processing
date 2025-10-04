@@ -48,14 +48,16 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
         try {
           const parsedLine = JSON.parse(line)
 
-          // GitHub Copilot messages should have these fields (as converted by Rust parser)
+          // GitHub Copilot messages have: type, timestamp, and id fields
+          // Types include: user, copilot, tool_call_requested, tool_call_completed, info
           const hasCopilotFields =
             parsedLine.timestamp &&
             parsedLine.type &&
-            parsedLine.message &&
-            parsedLine.message.role &&
-            parsedLine.message.content &&
-            Array.isArray(parsedLine.message.content)
+            (parsedLine.type === 'user' ||
+             parsedLine.type === 'copilot' ||
+             parsedLine.type === 'tool_call_requested' ||
+             parsedLine.type === 'tool_call_completed' ||
+             parsedLine.type === 'info')
 
           if (hasCopilotFields) {
             return true
@@ -107,8 +109,10 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
         const message = JSON.parse(line)
 
         // Check if this looks like a GitHub Copilot message
-        if (message.timestamp && message.type && message.message) {
-          if (message.message.role && message.message.content && Array.isArray(message.message.content)) {
+        // Valid types: user, copilot, tool_call_requested, tool_call_completed, info
+        if (message.timestamp && message.type) {
+          const validTypes = ['user', 'copilot', 'tool_call_requested', 'tool_call_completed', 'info']
+          if (validTypes.includes(message.type)) {
             // Validate timestamp format
             const timestamp = new Date(message.timestamp)
             if (!isNaN(timestamp.getTime())) {

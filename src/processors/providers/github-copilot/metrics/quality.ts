@@ -14,6 +14,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     const toolUses = this.parser.extractToolUses(session)
     const toolResults = this.parser.extractToolResults(session)
     const userMessages = session.messages.filter(m => m.type === 'user')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
 
     // Calculate task success rate (key metric for quality)
     const successfulOperations = toolResults.filter(result =>
@@ -27,34 +28,73 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     // Calculate iteration count (number of refinement cycles)
     const iterationCount = this.calculateIterations(userMessages, session)
 
-    // Detect plan mode and todo tracking usage
-    const planModeUsage = this.detectPlanModeUsage(toolUses)
-    const todoTrackingUsage = this.detectTodoTrackingUsage(toolUses)
-
     // Detect over the top affirmations
     const overTopAffirmations = this.detectOverTopAffirmations(session)
 
+    // Detect cancellations (from info messages)
+    const cancellations = this.detectCancellations(session)
+
     // Calculate process quality score (good AI usage practices)
-    const processQualityScore = this.calculateProcessQuality(toolUses, session, planModeUsage.used, todoTrackingUsage.used)
+    const processQualityScore = this.calculateProcessQuality(toolUses, session, cancellations)
+
+    // Calculate average assistant response length (quality indicator)
+    const avgResponseLength = this.calculateAverageResponseLength(assistantMessages)
 
     return {
       task_success_rate: taskSuccessRate,
       iteration_count: iterationCount,
       process_quality_score: processQualityScore,
-      used_plan_mode: planModeUsage.used,
-      used_todo_tracking: todoTrackingUsage.used,
+      used_plan_mode: false, // Copilot doesn't have plan mode
+      used_todo_tracking: false, // Copilot doesn't have todo tracking
       over_top_affirmations: overTopAffirmations.count,
 
       // Additional context for improvement guidance
       metadata: {
         successful_operations: successfulOperations,
         total_operations: totalOperations,
-        exit_plan_mode_count: planModeUsage.count,
-        todo_write_count: todoTrackingUsage.count,
         over_top_affirmations_phrases: overTopAffirmations.phrases,
-        improvement_tips: this.generateImprovementTips(taskSuccessRate, iterationCount, processQualityScore, planModeUsage.used, todoTrackingUsage.used)
+        improvement_tips: this.generateImprovementTips(taskSuccessRate, iterationCount, processQualityScore, cancellations),
+        // Extra fields for analysis
+        cancellations: cancellations,
+        average_response_length: avgResponseLength
+      } as any
+    }
+  }
+
+  /**
+   * Detect user cancellations from info messages
+   */
+  private detectCancellations(session: ParsedSession): number {
+    let count = 0
+    for (const message of session.messages) {
+      if (message.metadata?.isInfo && message.content?.text) {
+        const text = message.content.text.toLowerCase()
+        if (text.includes('cancelled') || text.includes('canceled')) {
+          count++
+        }
       }
     }
+    return count
+  }
+
+  /**
+   * Calculate average assistant response length (quality indicator)
+   */
+  private calculateAverageResponseLength(assistantMessages: any[]): number {
+    if (assistantMessages.length === 0) return 0
+
+    let totalLength = 0
+    let textMessages = 0
+
+    for (const message of assistantMessages) {
+      const text = this.extractContent(message)
+      if (text && text.length > 0) {
+        totalLength += text.length
+        textMessages++
+      }
+    }
+
+    return textMessages > 0 ? Math.round(totalLength / textMessages) : 0
   }
 
   private hasErrorIndicators(result: any): boolean {
@@ -108,83 +148,58 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     return iterations
   }
 
-  private detectPlanModeUsage(toolUses: any[]): { used: boolean; count: number } {
-    const exitPlanModeTools = toolUses.filter(tool => tool.name === 'ExitPlanMode')
-    return {
-      used: exitPlanModeTools.length > 0,
-      count: exitPlanModeTools.length
-    }
-  }
+  private calculateProcessQuality(toolUses: any[], session: ParsedSession, cancellations: number): number {
+    let score = 50 // Start at 50 as baseline
 
-  private detectTodoTrackingUsage(toolUses: any[]): { used: boolean; count: number } {
-    const todoWriteTools = toolUses.filter(tool => tool.name === 'TodoWrite')
-    return {
-      used: todoWriteTools.length > 0,
-      count: todoWriteTools.length
-    }
-  }
+    // Check for "View before Edit" pattern (good practice with str_replace_editor)
+    const viewCommands = toolUses.filter(tool =>
+      tool.name === 'str_replace_editor' && tool.input?.command === 'view'
+    )
+    const editCommands = toolUses.filter(tool =>
+      tool.name === 'str_replace_editor' &&
+      ['str_replace', 'create', 'insert'].includes(tool.input?.command || '')
+    )
 
-  private calculateProcessQuality(toolUses: any[], session: ParsedSession, usedPlanMode: boolean, usedTodoTracking: boolean): number {
-    let score = 0
-    const maxScore = 100
-
-    // HIGHEST PRIORITY: Plan mode usage (shows excellent AI process discipline)
-    if (usedPlanMode) {
-      score += 30 // Excellent: used proper planning mode
+    if (viewCommands.length > 0 && editCommands.length > 0) {
+      score += 20 // Good: viewing before editing
     }
 
-    // HIGH PRIORITY: Todo tracking (shows task organization)
-    if (usedTodoTracking) {
-      score += 20 // Great: used todo tracking for organization
-    }
+    // Check for proper testing/checking patterns (bash commands)
+    const bashTools = toolUses.filter(tool => tool.name === 'bash')
 
-    // Check for "Read before Write" pattern (good practice)
-    const readTools = ['Read', 'Grep', 'Glob']
-    const writeTools = ['Write', 'Edit']
-
-    const reads = toolUses.filter(tool => readTools.includes(tool.name))
-    const writes = toolUses.filter(tool => writeTools.includes(tool.name))
-
-    if (reads.length > 0 && writes.length > 0) {
-      score += 25 // Good: reading before writing
-    }
-
-    // Check for proper testing/checking patterns
-    const testingTools = ['Bash', 'BashOutput']
-    const testing = toolUses.filter(tool => testingTools.includes(tool.name))
-
-    if (testing.length > 0 && writes.length > 0) {
-      score += 15 // Good: running commands/tests after changes
+    if (bashTools.length > 0 && editCommands.length > 0) {
+      score += 15 // Good: running commands/tests
     }
 
     // Check for incremental approach (multiple small edits vs one big change)
-    if (writes.length > 1 && writes.length <= 5) {
+    if (editCommands.length > 1 && editCommands.length <= 5) {
       score += 10 // Good: incremental changes
     }
 
-    // Check for excessive searching (indicates lost/inefficient behavior)
-    const searchRatio = reads.length / (writes.length || 1)
-    if (searchRatio <= 2) {
-      score += 0 // Baseline: efficient search-to-edit ratio (no penalty/bonus)
-    } else {
-      score -= 10 // Penalty for excessive searching
+    // Penalty for cancellations (indicates impatience or unclear direction)
+    if (cancellations > 0) {
+      score -= cancellations * 5 // -5 per cancellation
     }
 
-    return Math.max(0, Math.min(score, maxScore))
+    // Check for excessive searching (indicates lost/inefficient behavior)
+    const searchRatio = viewCommands.length / (editCommands.length || 1)
+    if (searchRatio <= 3) {
+      score += 5 // Bonus: efficient view-to-edit ratio
+    } else if (searchRatio > 10) {
+      score -= 15 // Penalty for excessive searching
+    }
+
+    // Check for tool diversity (using multiple tools shows thorough approach)
+    const uniqueTools = new Set(toolUses.map(t => t.name))
+    if (uniqueTools.size > 2) {
+      score += 10 // Good: using multiple tools appropriately
+    }
+
+    return Math.max(0, Math.min(score, 100))
   }
 
-  private generateImprovementTips(taskSuccessRate: number, iterationCount: number, processQuality: number, usedPlanMode: boolean, usedTodoTracking: boolean): string[] {
+  private generateImprovementTips(taskSuccessRate: number, iterationCount: number, processQuality: number, cancellations: number): string[] {
     const tips: string[] = []
-
-    // Plan mode and todo tracking tips (highest priority)
-    if (!usedPlanMode && !usedTodoTracking) {
-      tips.push("🎯 For complex tasks, use plan mode first to organize your approach")
-      tips.push("📋 Consider using TodoWrite to track progress on multi-step tasks")
-    } else if (!usedPlanMode) {
-      tips.push("🎯 For complex tasks, try using plan mode to outline your approach before starting")
-    } else if (!usedTodoTracking) {
-      tips.push("📋 Consider using TodoWrite to track progress and ensure all steps are completed")
-    }
 
     if (taskSuccessRate < 70) {
       tips.push("Low success rate - try providing more specific file paths and context")
@@ -198,16 +213,21 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
 
     if (processQuality < 50) {
       tips.push("Improve process by providing file paths upfront to reduce searching")
-      tips.push("Let AI read files before making changes for better context")
+      tips.push("Let AI view files before making changes for better context")
+    }
+
+    if (cancellations > 3) {
+      tips.push("High cancellation rate suggests unclear direction or impatience")
+      tips.push("Try to let AI complete its thought process before interrupting")
     }
 
     // Excellent practices recognition
-    if (usedPlanMode && usedTodoTracking && taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 80) {
-      tips.push("🌟 Outstanding AI collaboration! You're using excellent process discipline with plan mode and todo tracking")
-    } else if ((usedPlanMode || usedTodoTracking) && taskSuccessRate > 75 && processQuality > 70) {
-      tips.push("✨ Great collaboration! Your use of planning tools shows excellent AI process discipline")
-    } else if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 70) {
-      tips.push("Excellent collaboration! You're using AI efficiently and effectively")
+    if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 75 && cancellations === 0) {
+      tips.push("🌟 Outstanding AI collaboration! Efficient, successful, and patient")
+    } else if (taskSuccessRate > 75 && processQuality > 70 && cancellations <= 1) {
+      tips.push("✨ Great collaboration! You're using AI effectively")
+    } else if (taskSuccessRate > 80 && iterationCount <= 5) {
+      tips.push("Excellent collaboration! High success rate with minimal iterations")
     }
 
     return tips

@@ -15,13 +15,20 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     const userMessages = session.messages.filter(m => m.type === 'user')
 
     // Calculate Read/Write ratio (key metric for efficiency)
-    const readTools = ['Read', 'Grep', 'Glob', 'BashOutput'] // Tools that consume information
-    const writeTools = ['Write', 'Edit'] // Tools that produce changes
-
-    const readCount = toolUses.filter(tool => readTools.includes(tool.name)).length
-    const writeCount = toolUses.filter(tool => writeTools.includes(tool.name)).length
+    // Copilot uses str_replace_editor for both reading and writing
+    // bash can be either read or write depending on the command
+    const readCount = this.countReadOperations(toolUses)
+    const writeCount = this.countWriteOperations(toolUses)
 
     const readWriteRatio = writeCount > 0 ? Number((readCount / writeCount).toFixed(2)) : readCount
+
+    // Calculate tool diversity (variety of tools used)
+    const uniqueTools = new Set(toolUses.map(t => t.name))
+    const toolDiversity = uniqueTools.size
+
+    // Calculate bash command count
+    const bashCommands = toolUses.filter(t => t.name === 'bash')
+    const bashCommandCount = bashCommands.length
 
     // Calculate input clarity score (how technical and specific user inputs are)
     const inputClarityScore = this.calculateInputClarityScore(userMessages)
@@ -35,9 +42,65 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
         read_operations: readCount,
         write_operations: writeCount,
         total_user_messages: userMessages.length,
-        improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore)
+        improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore, toolDiversity),
+        // Extra fields for analysis
+        tool_diversity: toolDiversity,
+        bash_command_count: bashCommandCount,
+        unique_tools: Array.from(uniqueTools)
+      } as any
+    }
+  }
+
+  /**
+   * Count read operations from Copilot tools
+   * - str_replace_editor with "view" command
+   * - bash with read-like commands (cat, grep, find, ls, etc.)
+   */
+  private countReadOperations(toolUses: any[]): number {
+    let count = 0
+
+    for (const tool of toolUses) {
+      if (tool.name === 'str_replace_editor' && tool.input?.command === 'view') {
+        count++
+      } else if (tool.name === 'bash') {
+        // Check if bash command is a read operation
+        const command = tool.input?.command || ''
+        const readCommands = ['cat', 'grep', 'find', 'ls', 'head', 'tail', 'less', 'more', 'git diff', 'git log', 'git status']
+        if (readCommands.some(cmd => command.trim().startsWith(cmd))) {
+          count++
+        }
       }
     }
+
+    return count
+  }
+
+  /**
+   * Count write operations from Copilot tools
+   * - str_replace_editor with "str_replace", "create", "insert" commands
+   * - bash with write-like commands (echo, sed, awk, etc.)
+   */
+  private countWriteOperations(toolUses: any[]): number {
+    let count = 0
+
+    for (const tool of toolUses) {
+      if (tool.name === 'str_replace_editor') {
+        const command = tool.input?.command || ''
+        const writeCommands = ['str_replace', 'create', 'insert', 'write']
+        if (writeCommands.includes(command)) {
+          count++
+        }
+      } else if (tool.name === 'bash') {
+        // Check if bash command is a write operation
+        const command = tool.input?.command || ''
+        const writeCommands = ['echo', 'sed', 'awk', 'tee', 'git add', 'git commit', 'git push', 'npm install', 'pnpm install', 'yarn add']
+        if (writeCommands.some(cmd => command.trim().startsWith(cmd)) || command.includes('>')) {
+          count++
+        }
+      }
+    }
+
+    return count
   }
 
   private calculateInputClarityScore(userMessages: any[]): number {
@@ -101,7 +164,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     return extensions + paths
   }
 
-  private generateImprovementTips(readWriteRatio: number, inputClarityScore: number): string[] {
+  private generateImprovementTips(readWriteRatio: number, inputClarityScore: number, toolDiversity: number): string[] {
     const tips: string[] = []
 
     if (readWriteRatio > 5) {
@@ -120,6 +183,14 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
 
     if (inputClarityScore > 50) {
       tips.push("Great technical communication! Clear, specific inputs lead to better results")
+    }
+
+    if (toolDiversity > 5) {
+      tips.push("High tool diversity shows AI is exploring multiple approaches")
+    }
+
+    if (toolDiversity === 1) {
+      tips.push("Low tool diversity - task may have been very straightforward or too narrow")
     }
 
     return tips

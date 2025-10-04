@@ -43,7 +43,9 @@ export class CopilotErrorProcessor extends BaseMetricProcessor {
     const errors: Array<{ message: string; tool: string; severity: 'warning' | 'error' | 'fatal' }> = []
 
     for (const result of toolResults) {
-      const resultStr = JSON.stringify(result).toLowerCase()
+      // Check if the result content indicates an error
+      const content = typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
+      const resultStr = content.toLowerCase()
       const errorIndicators = this.getErrorIndicators(resultStr, result)
 
       if (errorIndicators.hasError) {
@@ -185,11 +187,11 @@ export class CopilotErrorProcessor extends BaseMetricProcessor {
       }
 
       // Tool-specific errors
-      else if (tool === 'Bash' && message.includes('command')) {
+      else if (tool === 'bash' && message.includes('command')) {
         categories.add('command_error')
-      } else if (tool === 'Grep' || tool === 'Glob') {
-        categories.add('search_error')
-      } else if (tool === 'Read' || tool === 'Write' || tool === 'Edit') {
+      } else if (tool === 'str_replace_editor' && message.includes('str_replace')) {
+        categories.add('edit_operation_error')
+      } else if (tool === 'str_replace_editor') {
         categories.add('file_operation_error')
       }
 
