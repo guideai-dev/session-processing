@@ -477,11 +477,179 @@ class OpenCodeAdapter implements ProviderAdapter {
   }
 }
 
+class CopilotAdapter implements ProviderAdapter {
+  name = 'github-copilot'
+
+  detect(content: any): boolean {
+    // GitHub Copilot timeline format: has timestamp and type (user/copilot/tool_call_*)
+    return !!(
+      content &&
+      typeof content === 'object' &&
+      content.timestamp &&
+      content.type &&
+      (content.type === 'user' || 
+       content.type === 'copilot' || 
+       content.type === 'tool_call_requested' || 
+       content.type === 'tool_call_completed' ||
+       content.type === 'info')
+    )
+  }
+
+  transform(rawMessage: any): BaseSessionMessage[] {
+    const messageType = this.getMessageType(rawMessage)
+    const processedContent = this.processContent(rawMessage)
+
+    // Handle tool call requested (tool use only, no result yet)
+    if (rawMessage.type === 'tool_call_requested') {
+      return [{
+        id: rawMessage.callId || `tool-${rawMessage.timestamp}`,
+        timestamp: rawMessage.timestamp,
+        type: 'tool_use',
+        content: {
+          type: 'tool_use',
+          id: rawMessage.callId,
+          name: rawMessage.name,
+          input: rawMessage.arguments || {},
+          parts: [{
+            type: 'tool_use',
+            id: rawMessage.callId,
+            name: rawMessage.name,
+            input: rawMessage.arguments || {},
+          }]
+        },
+        metadata: {
+          toolTitle: rawMessage.toolTitle,
+          intentionSummary: rawMessage.intentionSummary,
+        },
+      }]
+    }
+
+    // Handle tool call completed - create BOTH tool_use and tool_result messages
+    // from the single timeline entry so they can be grouped for side-by-side display
+    if (rawMessage.type === 'tool_call_completed') {
+      const toolUseId = rawMessage.callId || `tool-${rawMessage.timestamp}`
+      
+      return [
+        // Tool use message (left side of group)
+        {
+          id: toolUseId,
+          timestamp: rawMessage.timestamp,
+          type: 'tool_use',
+          content: {
+            type: 'tool_use',
+            id: rawMessage.callId,
+            name: rawMessage.name,
+            input: rawMessage.arguments || {},
+            parts: [{
+              type: 'tool_use',
+              id: rawMessage.callId,
+              name: rawMessage.name,
+              input: rawMessage.arguments || {},
+            }]
+          },
+          metadata: {
+            toolTitle: rawMessage.toolTitle,
+            intentionSummary: rawMessage.intentionSummary,
+          },
+        },
+        // Tool result message (right side of group)
+        {
+          id: `result-${toolUseId}`,
+          timestamp: rawMessage.timestamp,
+          type: 'tool_result',
+          content: {
+            type: 'tool_result',
+            tool_use_id: rawMessage.callId,
+            content: rawMessage.result?.log || rawMessage.result,
+            parts: [{
+              type: 'tool_result',
+              tool_use_id: rawMessage.callId,
+              content: rawMessage.result?.log || rawMessage.result,
+            }]
+          },
+          metadata: {
+            toolName: rawMessage.name,
+            resultType: rawMessage.result?.type,
+          },
+          linkedTo: toolUseId,
+        }
+      ]
+    }
+
+    // Handle regular messages (user, copilot, info)
+    return [{
+      id: rawMessage.id || `msg-${rawMessage.timestamp}`,
+      timestamp: rawMessage.timestamp,
+      type: messageType,
+      content: processedContent,
+      metadata: {
+        entryType: rawMessage.type,
+      },
+    }]
+  }
+
+  private getMessageType(message: any): BaseSessionMessage['type'] {
+    // Map timeline types to message types
+    switch (message.type) {
+      case 'user':
+        return 'user_input'
+      case 'copilot':
+      case 'info':
+        return 'assistant_response'
+      case 'tool_call_requested':
+        return 'tool_use'
+      case 'tool_call_completed':
+        return 'tool_result'
+      default:
+        return 'meta'
+    }
+  }
+
+  private processContent(message: any) {
+    // For timeline entries, text is directly on the object
+    if (message.text) {
+      return {
+        text: message.text,
+        parts: [{
+          type: 'text',
+          text: message.text
+        }]
+      }
+    }
+
+    // For tool calls, create appropriate structure
+    if (message.type === 'tool_call_requested') {
+      return {
+        parts: [{
+          type: 'tool_use',
+          id: message.callId,
+          name: message.name,
+          input: message.arguments || {},
+        }]
+      }
+    }
+
+    if (message.type === 'tool_call_completed') {
+      return {
+        parts: [{
+          type: 'tool_result',
+          tool_use_id: message.callId,
+          content: message.result?.log || message.result,
+        }]
+      }
+    }
+
+    return { text: '' }
+  }
+}
+
 class GenericJSONLParser implements SessionParser {
   name = 'generic-jsonl'
   private adapters = new Map<string, ProviderAdapter>([
     ['claude', new ClaudeAdapter()],
     ['claude-code', new ClaudeAdapter()],
+    ['github-copilot', new CopilotAdapter()],
+    ['copilot', new CopilotAdapter()],
     ['codex', new CodexAdapter()],
     ['opencode', new OpenCodeAdapter()],
   ])
@@ -770,4 +938,4 @@ export class ConversationParser {
   }
 }
 
-export { ClaudeAdapter, CodexAdapter, OpenCodeAdapter, GenericJSONLParser }
+export { ClaudeAdapter, CopilotAdapter, CodexAdapter, OpenCodeAdapter, GenericJSONLParser }

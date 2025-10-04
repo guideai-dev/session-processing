@@ -12,41 +12,41 @@ import { AssessmentSection } from "./AssessmentSection.js";
 
 // Type definition for session metrics UI data
 export interface SessionMetricsUI {
-  createdAt?: string
+  createdAt?: string | null
   usage?: {
-    readWriteRatio?: string
-    inputClarityScore?: string
-    improvementTips?: string[]
+    readWriteRatio?: string | null
+    inputClarityScore?: string | null
+    improvementTips?: string[] | null
   }
   error?: {
-    errorCount?: number
-    fatalErrors?: number
-    recoveryAttempts?: number
-    errorTypes?: string[]
-    lastErrorMessage?: string
-    improvementTips?: string[]
+    errorCount?: number | null
+    fatalErrors?: number | null
+    recoveryAttempts?: number | null
+    errorTypes?: string[] | null
+    lastErrorMessage?: string | null
+    improvementTips?: string[] | null
   }
   engagement?: {
-    interruptionRate?: string
-    sessionLengthMinutes?: string
-    improvementTips?: string[]
+    interruptionRate?: string | null
+    sessionLengthMinutes?: string | null
+    improvementTips?: string[] | null
   }
   quality?: {
-    taskSuccessRate?: string
-    iterationCount?: number
-    processQualityScore?: string
-    usedPlanMode?: boolean
-    exitPlanModeCount?: number
-    usedTodoTracking?: boolean
-    todoWriteCount?: number
-    overTopAffirmations?: number
-    overTopAffirmationsPhrases?: string[]
-    improvementTips?: string[]
+    taskSuccessRate?: string | null
+    iterationCount?: number | null
+    processQualityScore?: string | null
+    usedPlanMode?: boolean | null
+    exitPlanModeCount?: number | null
+    usedTodoTracking?: boolean | null
+    todoWriteCount?: number | null
+    overTopAffirmations?: number | null
+    overTopAffirmationsPhrases?: string[] | null
+    improvementTips?: string[] | null
   }
   performance?: {
-    responseLatencyMs?: string
-    taskCompletionTimeMs?: string
-    improvementTips?: string[]
+    responseLatencyMs?: string | null
+    taskCompletionTimeMs?: string | null
+    improvementTips?: string[] | null
   }
 }
 

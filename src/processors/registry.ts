@@ -1,5 +1,6 @@
 import type { BaseProviderProcessor } from './base/index.js'
 import { ClaudeCodeProcessor } from './providers/claude-code/index.js'
+import { GitHubCopilotProcessor } from './providers/github-copilot/index.js'
 
 export class ProcessorRegistry {
   private processors = new Map<string, BaseProviderProcessor>()
@@ -24,6 +25,7 @@ export class ProcessorRegistry {
    */
   private registerDefaultProcessors(): void {
     this.register(new ClaudeCodeProcessor())
+    this.register(new GitHubCopilotProcessor())
 
     // Future processors can be added here:
     // this.register(new OpenCodeProcessor())

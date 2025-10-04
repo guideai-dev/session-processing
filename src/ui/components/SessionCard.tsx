@@ -4,12 +4,12 @@
  * CONVERTED TO PROPS-BASED: This component requires the following to be passed as props:
  * - session data
  * - isActive state (from WebSocket or other real-time source)
- * - ProviderIcon component (provider-specific icons)
+ * - ProviderIcon component (for rendering provider icons)
  * - Event handlers for interactions
  *
  * The parent component should handle:
  * - WebSocket connection for live session status
- * - Navigation (Link component)
+ * - Navigation
  * - Provider icon rendering
  */
 
@@ -43,9 +43,7 @@ interface SessionCardProps {
   onSyncSession?: (sessionId: string) => void
   onShowSyncError?: (sessionId: string, error: string) => void
   isProcessing?: boolean
-  // Component injections
-  ProviderIcon?: React.ComponentType<{ providerId: string; size: number }>
-  LinkComponent?: React.ComponentType<{ to: string; className?: string; children: React.ReactNode }>
+  ProviderIcon: React.ComponentType<{ providerId: string; size: number; className?: string }>
 }
 
 function SessionCard({
@@ -60,7 +58,6 @@ function SessionCard({
   onShowSyncError,
   isProcessing = false,
   ProviderIcon,
-  LinkComponent,
 }: SessionCardProps) {
   // Determine if processing from session status if not explicitly provided
   const actuallyProcessing = isProcessing || session.processingStatus === 'processing'
@@ -300,13 +297,10 @@ function SessionCard({
         )}
 
         {/* Session Info - Main content */}
-        <div
-          onClick={handleCardClick}
-          className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1 min-w-0 cursor-pointer"
-        >
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 flex-1 min-w-0">
           {/* Provider + Username + Project Name + Active Badge */}
           <div className="flex items-center gap-2 shrink-0">
-            {ProviderIcon && <ProviderIcon providerId={session.provider} size={16} />}
+            <ProviderIcon providerId={session.provider} size={16} />
             {isActive && (
               <span className="badge badge-success badge-xs gap-1 animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
@@ -376,18 +370,35 @@ function SessionCard({
             )}
           </div>
 
-          {/* Sync Status Indicator */}
-          <div
-            className={`flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-full ${syncInfo.bgColor} ${
-              syncInfo.clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-            } transition-all tooltip tooltip-left`}
-            data-tip={syncInfo.label}
-            onClick={syncInfo.clickable ? handleSyncClick : undefined}
-          >
-            <span className={syncInfo.color}>
-              {syncInfo.icon}
-            </span>
-          </div>
+          {/* Assessment Status Indicator - Only show when onAssessSession is provided */}
+          {onAssessSession && (
+            <div
+              className={`flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-full ${assessmentInfo.bgColor} ${
+                assessmentInfo.clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+              } transition-all tooltip tooltip-left`}
+              data-tip={assessmentInfo.label}
+              onClick={assessmentInfo.clickable ? handleAssessClick : undefined}
+            >
+              <span className={`text-base md:text-sm ${assessmentInfo.color}`}>
+                {assessmentInfo.icon}
+              </span>
+            </div>
+          )}
+
+          {/* Sync Status Indicator - Only show when onSyncSession or onShowSyncError is provided */}
+          {(onSyncSession || onShowSyncError) && (
+            <div
+              className={`flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-full ${syncInfo.bgColor} ${
+                syncInfo.clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+              } transition-all tooltip tooltip-left`}
+              data-tip={syncInfo.label}
+              onClick={syncInfo.clickable ? handleSyncClick : undefined}
+            >
+              <span className={syncInfo.color}>
+                {syncInfo.icon}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -401,9 +412,12 @@ function SessionCard({
   )
 
   return (
-    <div className={`relative flex flex-col gap-3 p-3 bg-base-100 border rounded transition-all ${
-      isSelected ? 'border-primary bg-primary/5' : isActive ? 'border-2 border-success/60 shadow-lg shadow-success/20' : 'border-base-300 hover:shadow-md hover:border-primary/50'
-    }`}>
+    <div
+      className={`relative flex flex-col gap-3 p-3 bg-base-100 border rounded transition-all ${
+        isSelected ? 'border-primary bg-primary/5' : isActive ? 'border-2 border-success/60 shadow-lg shadow-success/20' : 'border-base-300 hover:shadow-md hover:border-primary/50'
+      } ${onViewSession ? 'cursor-pointer' : ''}`}
+      onClick={onViewSession ? handleCardClick : undefined}
+    >
       {CardContent}
     </div>
   )
