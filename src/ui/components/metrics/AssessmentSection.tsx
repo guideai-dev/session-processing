@@ -6,7 +6,9 @@
  */
 
 import { MetricSection } from './MetricSection.js'
+import { RatingBadge } from '../RatingBadge.js'
 import type { AssessmentAnswer } from '@guideai-dev/types'
+import type { SessionRating } from '../../../utils/rating.js'
 
 // Type definitions for assessment data
 interface AssessmentQuestion {
@@ -25,6 +27,7 @@ interface Assessment {
   status: 'not_started' | 'in_progress' | 'completed'
   completedAt?: string
   responses: AssessmentResponse[]
+  rating?: string | null
 }
 
 interface AssessmentSectionProps {
@@ -32,13 +35,15 @@ interface AssessmentSectionProps {
   assessment?: Assessment | null
   questions?: AssessmentQuestion[]
   isLoading?: boolean
+  onRate?: (rating: SessionRating) => void
 }
 
 export function AssessmentSection({
   sessionId,
   assessment,
   questions = [],
-  isLoading = false
+  isLoading = false,
+  onRate
 }: AssessmentSectionProps) {
   if (isLoading) {
     return (
@@ -175,7 +180,7 @@ export function AssessmentSection({
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body">
             <h3 className="text-lg font-semibold mb-4">Summary</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="stat bg-base-200 rounded-lg p-4">
                 <div className="stat-title text-xs">Questions Answered</div>
                 <div className="stat-value text-2xl">{assessment.responses.filter(r => r.answer.type !== 'skipped').length}</div>
@@ -195,6 +200,19 @@ export function AssessmentSection({
                 </div>
                 <div className="stat-desc text-xs">
                   {assessment.completedAt ? new Date(assessment.completedAt).toLocaleTimeString() : ''}
+                </div>
+              </div>
+              <div className="stat bg-base-200 rounded-lg p-4">
+                <div className="stat-title text-xs">Rating</div>
+                <div className="stat-value flex items-center justify-center py-2">
+                  <RatingBadge
+                    rating={(assessment.rating as SessionRating) || null}
+                    onRate={onRate}
+                    size="lg"
+                  />
+                </div>
+                <div className="stat-desc text-xs text-center">
+                  {assessment.rating ? 'Quick rating' : 'Click to rate'}
                 </div>
               </div>
             </div>

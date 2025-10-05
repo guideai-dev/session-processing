@@ -3,5 +3,6 @@
 export {
   SessionSummaryTask,
   QualityAssessmentTask,
-  IntentExtractionTask
-} from '../../claude/tasks/index.js'
+  IntentExtractionTask,
+  SessionPhaseAnalysisTask,
+} from "../../claude/tasks/index.js";

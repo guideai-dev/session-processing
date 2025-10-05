@@ -19,6 +19,22 @@ export {
   ToolResultBlock,
 } from './timeline/index.js'
 
+// Phase Timeline Components - For rendering session phase analysis
+export {
+  PhaseTimeline,
+  PhaseBlock,
+  PhaseHeader,
+  PhaseStats,
+  PhaseSummary,
+  getPhaseIcon,
+  getPhaseColor,
+  getPhaseBorderColor,
+  formatPhaseType,
+  type SessionPhaseType,
+  type SessionPhase,
+  type SessionPhaseAnalysis,
+} from './phase/index.js'
+
 // Metrics Components - For displaying session analytics
 export { MetricCard } from './metrics/MetricCard.js'
 export { MetricSection } from './metrics/MetricSection.js'
@@ -29,8 +45,26 @@ export { MetricsOverview, type SessionMetricsUI } from './metrics/MetricsOvervie
 export { default as DateFilter } from './DateFilter.js'
 export type { DateFilterOption, DateRange, DateFilterValue } from './DateFilter.js'
 
+// Rating Components - For quick session ratings
+export { RatingBadge, type RatingBadgeProps } from './RatingBadge.js'
+export { QuickRatingPopover, type QuickRatingPopoverProps } from './QuickRatingPopover.js'
+export type { SessionRating } from '../../utils/rating.js'
+
 // Session Components - For displaying session cards
 export { default as SessionCard } from './SessionCard.js'
+export { SessionDetailHeader, type SessionDetailHeaderProps } from './SessionDetailHeader.js'
+
+// Assessment Components - For session assessment and feedback
+export {
+  AssessmentModal,
+  QuestionCard,
+  LikertScale,
+  TextResponse,
+  ChoiceResponse,
+  ProgressBar,
+  VersionSelector,
+} from './assessment/index.js'
+export type { AssessmentModalProps, QuestionCardProps, LikertScaleProps, TextResponseProps, ProgressBarProps } from './assessment/index.js'
 
 /**
  * Note about SessionList:

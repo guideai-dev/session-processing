@@ -1,0 +1,205 @@
+# Session Processing Package
+
+AI-powered session analysis and processing for coding agent interactions.
+
+## Session Phase Analysis Task
+
+The `SessionPhaseAnalysisTask` analyzes complete AI coding session transcripts and breaks them down into meaningful phases based on the flow of conversation.
+
+### Phase Types
+
+The task identifies 11 distinct phase types:
+
+| Phase Type | Description |
+|------------|-------------|
+| `initial_specification` | User describes what they want to accomplish |
+| `analysis_planning` | AI analyzes requirements and creates a plan |
+| `plan_modification` | User requests changes or clarifications to the plan |
+| `plan_agreement` | Both parties agree on the approach |
+| `execution` | AI executes the plan, making changes |
+| `interruption` | User interrupts or redirects the AI |
+| `task_assignment` | Multiple tasks being worked on simultaneously |
+| `completion` | Initial task is completed |
+| `correction` | Issues found that need fixing (not working, not right) |
+| `final_completion` | All issues resolved and task is done |
+| `other` | Any phase that doesn't fit the above patterns |
+
+### Output Structure
+
+#### TypeScript Interfaces
+
+```typescript
+interface SessionPhase {
+  phaseType: SessionPhaseType
+  startStep: number        // 1-based message index where phase starts
+  endStep: number          // 1-based message index where phase ends
+  stepCount: number        // Number of messages in this phase
+  summary: string          // 1-2 sentence description of what happened
+  durationMs: number       // Approximate duration of this phase in milliseconds
+  timestamp?: string       // ISO 8601 timestamp when phase started
+}
+
+interface SessionPhaseAnalysis {
+  phases: SessionPhase[]
+  totalPhases: number
+  totalSteps: number
+  sessionDurationMs: number
+  pattern: string          // High-level flow pattern (e.g., "initial_specification -> analysis_planning -> execution -> completion")
+}
+```
+
+#### Example Output
+
+Real example from a styling fix session:
+
+```json
+{
+  "phases": [
+    {
+      "phaseType": "initial_specification",
+      "startStep": 1,
+      "endStep": 3,
+      "stepCount": 3,
+      "summary": "Clifton initiated the session and specified several styling issues with the SessionCard component in the session-processing package.",
+      "durationMs": 12051,
+      "timestamp": "2025-10-05T05:43:26.538Z"
+    },
+    {
+      "phaseType": "analysis_planning",
+      "startStep": 4,
+      "endStep": 33,
+      "stepCount": 30,
+      "summary": "The assistant analyzed the problem, read relevant files, and created an execution plan to fix the identified styling issues.",
+      "durationMs": 62346,
+      "timestamp": "2025-10-05T05:45:43.150Z"
+    },
+    {
+      "phaseType": "execution",
+      "startStep": 34,
+      "endStep": 79,
+      "stepCount": 46,
+      "summary": "The assistant executed the plan by modifying files and applied the initial styling fixes, including replacing emojis with heroicons and increasing icon visibility.",
+      "durationMs": 214398,
+      "timestamp": "2025-10-05T05:47:41.809Z"
+    },
+    {
+      "phaseType": "completion",
+      "startStep": 78,
+      "endStep": 79,
+      "stepCount": 2,
+      "summary": "Assistant reported the initial completion of the styling updates and provided a summary of changes made.",
+      "durationMs": 11478,
+      "timestamp": "2025-10-05T05:50:03.729Z"
+    }
+  ],
+  "totalPhases": 4,
+  "totalSteps": 79,
+  "sessionDurationMs": 300273,
+  "pattern": "initial_specification -> analysis_planning -> execution -> completion"
+}
+```
+
+### Field Descriptions
+
+#### SessionPhase Fields
+
+- **phaseType**: One of 11 predefined phase types (see table above)
+- **startStep**: 1-based index of the first message in this phase
+- **endStep**: 1-based index of the last message in this phase
+- **stepCount**: Number of messages/steps in this phase (`endStep - startStep + 1`)
+- **summary**: Human-readable 1-2 sentence summary of what happened in this phase
+- **durationMs**: Estimated duration of this phase in milliseconds
+- **timestamp**: ISO 8601 timestamp indicating when this phase started (optional)
+
+#### SessionPhaseAnalysis Fields
+
+- **phases**: Array of all detected phases in chronological order
+- **totalPhases**: Total count of phases (same as `phases.length`)
+- **totalSteps**: Total number of messages/steps in the entire session
+- **sessionDurationMs**: Total duration of the session in milliseconds
+- **pattern**: Human-readable description of the overall session flow (e.g., `"initial_specification -> analysis_planning -> execution -> completion"`)
+
+### Important Notes for UI Development
+
+1. **Phase Ordering**: Phases are always returned in chronological order
+2. **Step Numbering**: Steps use 1-based indexing (first message is step 1)
+3. **Non-overlapping**: Phases are sequential and do not overlap
+4. **Variable Phases**: Not all sessions will have all phase types
+5. **Pattern String**: Useful for quick visualization of session flow
+6. **Duration**: Phase durations are estimates based on message timestamps
+
+### UI Visualization Recommendations
+
+#### Timeline View
+- Use `durationMs` to size phase blocks proportionally
+- Color-code by `phaseType` for visual distinction
+- Show `summary` on hover or in expanded view
+
+#### Phase Distribution Chart
+- Count phases by type across multiple sessions
+- Show average duration per phase type
+- Identify common patterns
+
+#### Session Flow Diagram
+- Use `pattern` string for high-level overview
+- Expand to show individual phases with details
+- Link phases to actual message ranges via `startStep`/`endStep`
+
+#### Phase Type Colors (Suggestion)
+
+```javascript
+const phaseColors = {
+  initial_specification: '#3B82F6',  // Blue - Starting point
+  analysis_planning: '#8B5CF6',      // Purple - Thinking
+  plan_modification: '#EC4899',      // Pink - Iteration
+  plan_agreement: '#10B981',         // Green - Agreement
+  execution: '#F59E0B',              // Orange - Action
+  interruption: '#EF4444',           // Red - Disruption
+  task_assignment: '#06B6D4',        // Cyan - Parallel work
+  completion: '#84CC16',             // Lime - Initial done
+  correction: '#F97316',             // Deep orange - Fixing
+  final_completion: '#22C55E',       // Bright green - All done
+  other: '#6B7280'                   // Gray - Miscellaneous
+}
+```
+
+### Database Storage
+
+**Server (PostgreSQL):**
+- Column: `ai_model_phase_analysis` (JSONB)
+- Stored in `agent_sessions` table
+
+**Desktop (SQLite):**
+- Column: `ai_model_phase_analysis` (TEXT with JSON mode)
+- Stored in `agent_sessions` table
+
+### Usage Example
+
+```typescript
+import { SessionPhaseAnalysisTask } from '@guideai-dev/session-processing/ai-models'
+
+// The task is automatically registered and executed as part of the processing pipeline
+// Results are stored in the database column ai_model_phase_analysis
+
+// To retrieve and use:
+const session = await db.getSession(sessionId)
+if (session.aiModelPhaseAnalysis) {
+  const analysis = JSON.parse(session.aiModelPhaseAnalysis)
+  console.log(`Session had ${analysis.totalPhases} phases`)
+  console.log(`Pattern: ${analysis.pattern}`)
+
+  // Render each phase
+  analysis.phases.forEach(phase => {
+    console.log(`${phase.phaseType}: ${phase.summary}`)
+  })
+}
+```
+
+## Other Tasks
+
+This package also includes:
+- `SessionSummaryTask` - Generates human-readable session summaries
+- `QualityAssessmentTask` - Scores session quality (0-100)
+- `IntentExtractionTask` - Extracts user intents and goals
+
+See examples in `examples/` directory for detailed usage.

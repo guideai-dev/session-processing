@@ -13,6 +13,10 @@
  * - Provider icon rendering
  */
 
+import { ChartBarIcon, XCircleIcon, CloudArrowUpIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { RatingBadge } from './RatingBadge.js'
+import type { SessionRating } from '../../utils/rating.js'
+
 interface AgentSession {
   id: string
   sessionId: string
@@ -25,6 +29,7 @@ interface AgentSession {
   durationMs: number | null
   processingStatus: string
   assessmentStatus: string
+  assessmentRating?: string | null
   aiModelSummary?: string | null
   aiModelQualityScore?: number | null
   createdAt: string
@@ -40,6 +45,7 @@ interface SessionCardProps {
   onViewSession?: (sessionId: string) => void
   onProcessSession?: (sessionId: string) => void
   onAssessSession?: (sessionId: string) => void
+  onRateSession?: (sessionId: string, rating: SessionRating) => void | Promise<void>
   onSyncSession?: (sessionId: string) => void
   onShowSyncError?: (sessionId: string, error: string) => void
   isProcessing?: boolean
@@ -54,6 +60,7 @@ function SessionCard({
   onViewSession,
   onProcessSession,
   onAssessSession,
+  onRateSession,
   onSyncSession,
   onShowSyncError,
   isProcessing = false,
@@ -125,6 +132,12 @@ function SessionCard({
     }
   }
 
+  const handleRate = (rating: SessionRating) => {
+    if (onRateSession) {
+      onRateSession(session.sessionId, rating)
+    }
+  }
+
   const handleSyncClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -149,41 +162,41 @@ function SessionCard({
     switch (status) {
       case 'pending':
         return {
-          icon: '⏳',
-          color: 'text-warning',
-          bgColor: 'bg-warning/10',
+          icon: <ChartBarIcon className="w-4 h-4" strokeWidth={2} />,
+          color: 'text-base-content/30',
+          bgColor: 'bg-base-200',
           label: 'Pending Processing',
           clickable: true
         }
       case 'processing':
         return {
-          icon: '🔄',
+          icon: null, // Will use loading spinner instead
           color: 'text-info',
-          bgColor: 'bg-info/10',
+          bgColor: 'bg-info/20',
           label: 'Processing...',
           clickable: false
         }
       case 'completed':
         return {
-          icon: '✅',
+          icon: <ChartBarIcon className="w-4 h-4" strokeWidth={2} />,
           color: 'text-success',
-          bgColor: 'bg-success/10',
+          bgColor: 'bg-success/20',
           label: 'Processed',
           clickable: true
         }
       case 'failed':
         return {
-          icon: '❌',
+          icon: <XCircleIcon className="w-4 h-4" strokeWidth={2} />,
           color: 'text-error',
-          bgColor: 'bg-error/10',
+          bgColor: 'bg-error/20',
           label: 'Processing Failed',
           clickable: true
         }
       default:
         return {
-          icon: '⏳',
-          color: 'text-warning',
-          bgColor: 'bg-warning/10',
+          icon: <ChartBarIcon className="w-4 h-4" strokeWidth={2} />,
+          color: 'text-base-content/30',
+          bgColor: 'bg-base-200',
           label: 'Pending Processing',
           clickable: true
         }
@@ -224,35 +237,23 @@ function SessionCard({
     // Priority: error > synced > not synced
     if (session.syncFailedReason) {
       return {
-        icon: (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        ),
+        icon: <ExclamationTriangleIcon className="w-4 h-4" strokeWidth={2} />,
         color: 'text-error',
-        bgColor: 'bg-error/10',
+        bgColor: 'bg-error/20',
         label: 'Sync Failed - Click to view error',
         clickable: true
       }
     } else if (session.syncedToServer) {
       return {
-        icon: (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        ),
+        icon: <CloudArrowUpIcon className="w-4 h-4" strokeWidth={2} />,
         color: 'text-success',
-        bgColor: 'bg-success/10',
+        bgColor: 'bg-success/20',
         label: 'Synced to server',
         clickable: false
       }
     } else {
       return {
-        icon: (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-          </svg>
-        ),
+        icon: <CloudArrowUpIcon className="w-4 h-4" strokeWidth={2} />,
         color: 'text-base-content/30',
         bgColor: 'bg-base-200',
         label: 'Click to sync to server',
@@ -303,7 +304,7 @@ function SessionCard({
             <ProviderIcon providerId={session.provider} size={16} />
             {isActive && (
               <span className="badge badge-success badge-xs gap-1 animate-pulse">
-                <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                <span className="w-2 h-2 rounded-full bg-white"></span>
                 LIVE
               </span>
             )}
@@ -355,7 +356,7 @@ function SessionCard({
         <div className="flex items-center gap-2 shrink-0">
           {/* Processing Status Indicator */}
           <div
-            className={`flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-full ${processingInfo.bgColor} ${
+            className={`flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md ${processingInfo.bgColor} ${
               processingInfo.clickable && !actuallyProcessing ? 'cursor-pointer hover:scale-110' : 'cursor-default'
             } transition-all tooltip tooltip-left`}
             data-tip={actuallyProcessing ? 'Processing...' : processingInfo.label}
@@ -364,31 +365,32 @@ function SessionCard({
             {actuallyProcessing ? (
               <span className="loading loading-spinner loading-xs text-info"></span>
             ) : (
-              <span className={`text-base md:text-sm ${processingInfo.color}`}>
+              <span className={processingInfo.color}>
                 {processingInfo.icon}
               </span>
             )}
           </div>
 
-          {/* Assessment Status Indicator - Only show when onAssessSession is provided */}
-          {onAssessSession && (
+          {/* Rating Badge - Quick rating for the session (compact icon-only) */}
+          {onRateSession && (
             <div
-              className={`flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-full ${assessmentInfo.bgColor} ${
-                assessmentInfo.clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
-              } transition-all tooltip tooltip-left`}
-              data-tip={assessmentInfo.label}
-              onClick={assessmentInfo.clickable ? handleAssessClick : undefined}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center justify-center"
             >
-              <span className={`text-base md:text-sm ${assessmentInfo.color}`}>
-                {assessmentInfo.icon}
-              </span>
+              <RatingBadge
+                rating={(session.assessmentRating as SessionRating) || null}
+                onRate={handleRate}
+                disabled={actuallyProcessing}
+                size="md"
+                compact={true}
+              />
             </div>
           )}
 
           {/* Sync Status Indicator - Only show when onSyncSession or onShowSyncError is provided */}
           {(onSyncSession || onShowSyncError) && (
             <div
-              className={`flex items-center justify-center w-10 h-10 md:w-8 md:h-8 rounded-full ${syncInfo.bgColor} ${
+              className={`flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md ${syncInfo.bgColor} ${
                 syncInfo.clickable ? 'cursor-pointer hover:scale-110' : 'cursor-default'
               } transition-all tooltip tooltip-left`}
               data-tip={syncInfo.label}
@@ -414,7 +416,7 @@ function SessionCard({
   return (
     <div
       className={`relative flex flex-col gap-3 p-3 bg-base-100 border rounded transition-all ${
-        isSelected ? 'border-primary bg-primary/5' : isActive ? 'border-2 border-success/60 shadow-lg shadow-success/20' : 'border-base-300 hover:shadow-md hover:border-primary/50'
+        isSelected ? 'border-primary bg-primary/5' : isActive ? 'border-2 border-success shadow-lg shadow-success/30' : 'border-base-300 hover:shadow-md hover:border-primary/50'
       } ${onViewSession ? 'cursor-pointer' : ''}`}
       onClick={onViewSession ? handleCardClick : undefined}
     >

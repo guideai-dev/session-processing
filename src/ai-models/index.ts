@@ -11,5 +11,6 @@ export {
 export {
   SessionSummaryTask,
   QualityAssessmentTask,
-  IntentExtractionTask
+  IntentExtractionTask,
+  SessionPhaseAnalysisTask
 } from './providers/index.js'

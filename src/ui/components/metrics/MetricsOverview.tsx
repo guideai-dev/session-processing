@@ -9,6 +9,7 @@ import { useState } from "react";
 import { MetricCard } from "./MetricCard.js";
 import { MetricSection } from "./MetricSection.js";
 import { AssessmentSection } from "./AssessmentSection.js";
+import type { SessionRating } from '../../../utils/rating.js'
 
 // Type definition for session metrics UI data
 export interface SessionMetricsUI {
@@ -67,6 +68,7 @@ interface MetricsOverviewProps {
   assessment?: any
   assessmentQuestions?: any[]
   assessmentLoading?: boolean
+  onRateSession?: (rating: SessionRating) => void
 }
 
 export function MetricsOverview({
@@ -85,6 +87,7 @@ export function MetricsOverview({
   assessment,
   assessmentQuestions = [],
   assessmentLoading = false,
+  onRateSession,
 }: MetricsOverviewProps) {
   const [showRawData, setShowRawData] = useState(false);
 
@@ -759,6 +762,7 @@ export function MetricsOverview({
         assessment={assessment}
         questions={assessmentQuestions}
         isLoading={assessmentLoading}
+        onRate={onRateSession}
       />
 
       {/* Raw Data View */}
