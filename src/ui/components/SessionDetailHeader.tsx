@@ -302,12 +302,16 @@ export function SessionDetailHeader({
               <div className="stat-value text-sm">{messageCount}</div>
             </div>
           )}
-          {session.fileSize !== undefined && (
-            <div className="stat bg-base-200 rounded-lg p-2.5">
-              <div className="stat-title text-xs">Size</div>
-              <div className="stat-value text-sm">{formatFileSize(session.fileSize)}</div>
+          <div className="stat bg-base-200 rounded-lg p-2.5">
+            <div className="stat-title text-xs">
+              {session.fileSize !== undefined && session.fileSize !== null ? 'Size' : 'Type'}
             </div>
-          )}
+            <div className="stat-value text-sm">
+              {session.fileSize !== undefined && session.fileSize !== null
+                ? formatFileSize(session.fileSize)
+                : <span className="badge badge-ghost badge-sm">Metrics Only</span>}
+            </div>
+          </div>
           {onRate && (
             <div className="stat bg-base-200 rounded-lg p-2.5">
               <div className="stat-title text-xs">Rating</div>

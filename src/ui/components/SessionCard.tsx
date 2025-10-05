@@ -25,7 +25,7 @@ interface AgentSession {
   projectName: string
   sessionStartTime: string | null
   sessionEndTime: string | null
-  fileSize: number
+  fileSize: number | null
   durationMs: number | null
   processingStatus: string
   assessmentStatus: string
@@ -87,7 +87,8 @@ function SessionCard({
     })
   }
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes: number | null) => {
+    if (bytes === null || bytes === undefined) return null
     if (bytes === 0) return '0 B'
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB']
@@ -159,6 +160,19 @@ function SessionCard({
   }
 
   const getProcessingStatusInfo = (status: string) => {
+    // For metrics-only sessions (no transcript file), show as "Metrics Only" with green styling
+    const isMetricsOnly = session.fileSize === null || session.fileSize === undefined
+
+    if (isMetricsOnly) {
+      return {
+        icon: <ChartBarIcon className="w-4 h-4" strokeWidth={2} />,
+        color: 'text-success',
+        bgColor: 'bg-success/20',
+        label: 'Metrics Only - No transcript file to process',
+        clickable: false
+      }
+    }
+
     switch (status) {
       case 'pending':
         return {
@@ -333,10 +347,14 @@ function SessionCard({
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-1">
-              <span className="hidden md:inline">Size:</span>
-              <span className="font-medium">{formatFileSize(session.fileSize)}</span>
-            </div>
+            {formatFileSize(session.fileSize) ? (
+              <div className="flex items-center gap-1">
+                <span className="hidden md:inline">Size:</span>
+                <span className="font-medium">{formatFileSize(session.fileSize)}</span>
+              </div>
+            ) : (
+              <div className="badge badge-ghost badge-xs">Metrics Only</div>
+            )}
             <div className="flex items-center gap-1">
               <span className="hidden md:inline">Duration:</span>
               <span className="font-medium">{formatDuration(session.durationMs)}</span>

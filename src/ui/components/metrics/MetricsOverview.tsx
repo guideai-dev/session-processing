@@ -124,6 +124,9 @@ export function MetricsOverview({
   }
 
   if (!metrics) {
+    // If no processing handlers provided, this is a metrics-only session
+    const isMetricsOnly = !onProcessSession && !onCancelProcessing
+
     return (
       <div className="text-center py-12">
         <div className="mb-6">
@@ -143,8 +146,9 @@ export function MetricsOverview({
         </div>
         <h3 className="text-lg font-semibold mb-2">No Metrics Available</h3>
         <p className="text-base-content/70 mb-6">
-          This session hasn't been processed yet. Process it to generate
-          comprehensive metrics.
+          {isMetricsOnly
+            ? 'This session does not have a transcript file. Metrics cannot be generated for metrics-only sessions.'
+            : 'This session hasn\'t been processed yet. Process it to generate comprehensive metrics.'}
         </p>
         {(onProcessSession || onCancelProcessing) && (
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
