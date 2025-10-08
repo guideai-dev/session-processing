@@ -5,7 +5,6 @@
  * instead of fetching via hooks. The parent component should handle data fetching.
  */
 
-import { useState } from "react";
 import { MetricCard } from "./MetricCard.js";
 import { MetricSection } from "./MetricSection.js";
 import { AssessmentSection } from "./AssessmentSection.js";
@@ -89,8 +88,6 @@ export function MetricsOverview({
   assessmentLoading = false,
   onRateSession,
 }: MetricsOverviewProps) {
-  const [showRawData, setShowRawData] = useState(false);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -201,180 +198,139 @@ export function MetricsOverview({
           icon="🤖"
         >
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {aiModelQualityScore !== null && aiModelQualityScore !== undefined && (
-                <div className="stat bg-base-200 rounded-lg p-4">
-                  <div className="stat-title text-xs">Quality Score</div>
-                  <div className={`stat-value text-3xl ${
-                    aiModelQualityScore >= 80 ? 'text-success' :
-                    aiModelQualityScore >= 60 ? 'text-warning' :
-                    'text-error'
-                  }`}>
-                    {aiModelQualityScore}%
-                  </div>
-                  <div className="stat-desc">
-                    {aiModelQualityScore >= 80 ? 'Excellent session quality' :
-                     aiModelQualityScore >= 60 ? 'Good session quality' :
-                     'Room for improvement'}
-                  </div>
+            {/* Top Row: Score + Summary */}
+            {(aiModelQualityScore !== null && aiModelQualityScore !== undefined) || aiModelSummary ? (
+              <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  {aiModelQualityScore !== null && aiModelQualityScore !== undefined && (
+                    <div className="bg-base-200 rounded-lg p-4 md:w-1/4 flex-shrink-0">
+                      <div className="text-xs text-base-content/60 mb-1">Quality Score</div>
+                      <div className={`text-3xl font-bold ${
+                        aiModelQualityScore >= 80 ? 'text-success' :
+                        aiModelQualityScore >= 60 ? 'text-warning' :
+                        'text-error'
+                      }`}>
+                        {aiModelQualityScore}%
+                      </div>
+                      <div className="text-xs text-base-content/60 mt-1">
+                        {aiModelQualityScore >= 80 ? 'Excellent session quality' :
+                         aiModelQualityScore >= 60 ? 'Good session quality' :
+                         'Room for improvement'}
+                      </div>
+                    </div>
+                  )}
+                  {aiModelSummary && (
+                    <div className="bg-base-200 rounded-lg p-4 flex-1">
+                      <div className="text-xs font-semibold mb-2 text-base-content/60">Summary</div>
+                      <div className="text-sm leading-relaxed">{aiModelSummary}</div>
+                    </div>
+                  )}
                 </div>
-              )}
-              {aiModelSummary && (
-                <div className={`${aiModelQualityScore !== null ? 'md:col-span-2' : 'md:col-span-3'} bg-base-200 rounded-lg p-4`}>
-                  <div className="text-xs font-semibold mb-2 text-base-content/60">Summary</div>
-                  <div className="text-sm leading-relaxed">{aiModelSummary}</div>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : null}
 
-            {/* AI Metadata Panel */}
-            {aiModelMetadata && Object.keys(aiModelMetadata).length > 0 && (
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold flex items-center gap-2">
-                  <span>📊</span>
-                  Detailed AI Analysis
-                </h4>
+            {/* Bottom Row: Improvements + Strengths */}
+            {aiModelMetadata && aiModelMetadata['quality-assessment'] && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Improvements */}
+                {aiModelMetadata['quality-assessment'].improvements && aiModelMetadata['quality-assessment'].improvements.length > 0 && (
+                  <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                    <div className="text-sm font-semibold mb-3 text-base-content/80">Areas for Improvement</div>
+                    <ul className="space-y-2">
+                      {aiModelMetadata['quality-assessment'].improvements.map((item: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="text-warning mt-1">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-                {/* Intent Extraction Card */}
-                {aiModelMetadata['intent-extraction'] && (
-                  <div className="card bg-base-100 border border-base-300 p-4">
-                    <h5 className="font-semibold mb-3">Intent Extraction</h5>
-                    <div className="space-y-3">
-                      {aiModelMetadata['intent-extraction'].taskType && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Task Type</div>
-                          <div className="badge badge-primary">{aiModelMetadata['intent-extraction'].taskType.replace(/_/g, ' ')}</div>
-                        </div>
-                      )}
-                      {aiModelMetadata['intent-extraction'].primaryGoal && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Primary Goal</div>
-                          <div className="text-sm">{aiModelMetadata['intent-extraction'].primaryGoal}</div>
-                        </div>
-                      )}
-                      {aiModelMetadata['intent-extraction'].technologies && aiModelMetadata['intent-extraction'].technologies.length > 0 && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Technologies</div>
-                          <div className="flex flex-wrap gap-2">
-                            {Array.isArray(aiModelMetadata['intent-extraction'].technologies)
-                              ? aiModelMetadata['intent-extraction'].technologies.map((tech: string, idx: number) => (
-                                  <span key={idx} className="badge badge-ghost">{tech}</span>
-                                ))
-                              : Object.entries(aiModelMetadata['intent-extraction'].technologies).map(([key, val]: [string, any]) => (
-                                  <span key={key} className="badge badge-ghost">{val}</span>
-                                ))
-                            }
-                          </div>
-                        </div>
-                      )}
-                      {aiModelMetadata['intent-extraction'].challenges && aiModelMetadata['intent-extraction'].challenges.length > 0 && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Challenges</div>
-                          {Array.isArray(aiModelMetadata['intent-extraction'].challenges) ? (
-                            <ul className="space-y-1">
-                              {aiModelMetadata['intent-extraction'].challenges.map((challenge: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
-                                  <span className="text-primary mt-1">•</span>
-                                  <span>{challenge}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="text-sm">{aiModelMetadata['intent-extraction'].challenges}</div>
-                          )}
-                        </div>
-                      )}
-                      {aiModelMetadata['intent-extraction'].secondaryGoals && aiModelMetadata['intent-extraction'].secondaryGoals.length > 0 && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Secondary Goals</div>
-                          {Array.isArray(aiModelMetadata['intent-extraction'].secondaryGoals) ? (
-                            <ul className="space-y-1">
-                              {aiModelMetadata['intent-extraction'].secondaryGoals.map((goal: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
-                                  <span className="text-primary mt-1">•</span>
-                                  <span>{goal}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="text-sm">{aiModelMetadata['intent-extraction'].secondaryGoals}</div>
-                          )}
-                        </div>
+                {/* Strengths */}
+                {aiModelMetadata['quality-assessment'].strengths && aiModelMetadata['quality-assessment'].strengths.length > 0 && (
+                  <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                    <div className="text-sm font-semibold mb-3 text-base-content/80">Strengths</div>
+                    <ul className="space-y-2">
+                      {aiModelMetadata['quality-assessment'].strengths.map((item: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="text-success mt-1">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Additional Metadata (Intent Extraction, etc.) */}
+            {aiModelMetadata && aiModelMetadata['intent-extraction'] && (
+              <div className="card bg-base-100 border border-base-300 p-4">
+                <h5 className="font-semibold mb-3">Intent Extraction</h5>
+                <div className="space-y-3">
+                  {aiModelMetadata['intent-extraction'].taskType && (
+                    <div>
+                      <div className="text-xs text-base-content/60 mb-1">Task Type</div>
+                      <div className="badge badge-primary">{aiModelMetadata['intent-extraction'].taskType.replace(/_/g, ' ')}</div>
+                    </div>
+                  )}
+                  {aiModelMetadata['intent-extraction'].primaryGoal && (
+                    <div>
+                      <div className="text-xs text-base-content/60 mb-1">Primary Goal</div>
+                      <div className="text-sm">{aiModelMetadata['intent-extraction'].primaryGoal}</div>
+                    </div>
+                  )}
+                  {aiModelMetadata['intent-extraction'].technologies && aiModelMetadata['intent-extraction'].technologies.length > 0 && (
+                    <div>
+                      <div className="text-xs text-base-content/60 mb-1">Technologies</div>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(aiModelMetadata['intent-extraction'].technologies)
+                          ? aiModelMetadata['intent-extraction'].technologies.map((tech: string, idx: number) => (
+                              <span key={idx} className="badge badge-ghost">{tech}</span>
+                            ))
+                          : Object.entries(aiModelMetadata['intent-extraction'].technologies).map(([key, val]: [string, any]) => (
+                              <span key={key} className="badge badge-ghost">{val}</span>
+                            ))
+                        }
+                      </div>
+                    </div>
+                  )}
+                  {aiModelMetadata['intent-extraction'].challenges && aiModelMetadata['intent-extraction'].challenges.length > 0 && (
+                    <div>
+                      <div className="text-xs text-base-content/60 mb-1">Challenges</div>
+                      {Array.isArray(aiModelMetadata['intent-extraction'].challenges) ? (
+                        <ul className="space-y-1">
+                          {aiModelMetadata['intent-extraction'].challenges.map((challenge: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <span className="text-primary mt-1">•</span>
+                              <span>{challenge}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-sm">{aiModelMetadata['intent-extraction'].challenges}</div>
                       )}
                     </div>
-                  </div>
-                )}
-
-                {/* Quality Assessment Card */}
-                {aiModelMetadata['quality-assessment'] && (
-                  <div className="card bg-base-100 border border-base-300 p-4">
-                    <h5 className="font-semibold mb-3">Quality Assessment</h5>
-                    <div className="space-y-3">
-                      {aiModelMetadata['quality-assessment'].score !== undefined && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Score</div>
-                          <div className={`text-2xl font-bold ${
-                            aiModelMetadata['quality-assessment'].score >= 80 ? 'text-success' :
-                            aiModelMetadata['quality-assessment'].score >= 60 ? 'text-warning' :
-                            'text-error'
-                          }`}>
-                            {aiModelMetadata['quality-assessment'].score}/100
-                          </div>
-                        </div>
-                      )}
-                      {aiModelMetadata['quality-assessment'].reasoning && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Reasoning</div>
-                          <div className="text-sm leading-relaxed">{aiModelMetadata['quality-assessment'].reasoning}</div>
-                        </div>
-                      )}
-                      {aiModelMetadata['quality-assessment'].strengths && aiModelMetadata['quality-assessment'].strengths.length > 0 && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-1">Strengths</div>
-                          {Array.isArray(aiModelMetadata['quality-assessment'].strengths) ? (
-                            <ul className="space-y-1">
-                              {aiModelMetadata['quality-assessment'].strengths.map((item: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
-                                  <span className="text-success mt-1">•</span>
-                                  <span>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="text-sm">{aiModelMetadata['quality-assessment'].strengths}</div>
-                          )}
-                        </div>
-                      )}
-                      {aiModelMetadata['quality-assessment'].improvements && aiModelMetadata['quality-assessment'].improvements.length > 0 && (
-                        <div>
-                          <div className="text-xs text-base-content/60 mb-2">Areas for Improvement</div>
-                          {Array.isArray(aiModelMetadata['quality-assessment'].improvements) ? (
-                            <ul className="space-y-1">
-                              {aiModelMetadata['quality-assessment'].improvements.map((item: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
-                                  <span className="text-warning mt-1">•</span>
-                                  <span>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <div className="text-sm">{aiModelMetadata['quality-assessment'].improvements}</div>
-                          )}
-                        </div>
+                  )}
+                  {aiModelMetadata['intent-extraction'].secondaryGoals && aiModelMetadata['intent-extraction'].secondaryGoals.length > 0 && (
+                    <div>
+                      <div className="text-xs text-base-content/60 mb-1">Secondary Goals</div>
+                      {Array.isArray(aiModelMetadata['intent-extraction'].secondaryGoals) ? (
+                        <ul className="space-y-1">
+                          {aiModelMetadata['intent-extraction'].secondaryGoals.map((goal: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <span className="text-primary mt-1">•</span>
+                              <span>{goal}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="text-sm">{aiModelMetadata['intent-extraction'].secondaryGoals}</div>
                       )}
                     </div>
-                  </div>
-                )}
-
-                {/* Fallback: Show raw data if structure doesn't match */}
-                {!aiModelMetadata['intent-extraction'] && !aiModelMetadata['quality-assessment'] && (
-                  <div className="card bg-base-100 border border-base-300 p-4">
-                    <h5 className="font-semibold mb-3">AI Metadata (Raw)</h5>
-                    <pre className="text-xs overflow-auto max-h-96 bg-base-200 p-3 rounded">
-                      {JSON.stringify(aiModelMetadata, null, 2)}
-                    </pre>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -389,14 +345,6 @@ export function MetricsOverview({
             Last updated:{" "}
             {new Date(metrics.createdAt || "").toLocaleString()}
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowRawData(!showRawData)}
-            className="btn btn-sm btn-ghost"
-          >
-            {showRawData ? "Hide Raw Data" : "Show Raw Data"}
-          </button>
         </div>
       </div>
 
@@ -768,22 +716,6 @@ export function MetricsOverview({
         isLoading={assessmentLoading}
         onRate={onRateSession}
       />
-
-      {/* Raw Data View */}
-      {showRawData && (
-        <MetricSection
-          title="Raw Data"
-          subtitle="Complete metrics data for debugging"
-          icon="📊"
-          defaultExpanded={false}
-        >
-          <div className="mockup-code">
-            <pre className="text-xs overflow-auto max-h-96">
-              <code>{JSON.stringify(metrics, null, 2)}</code>
-            </pre>
-          </div>
-        </MetricSection>
-      )}
     </div>
   );
 }

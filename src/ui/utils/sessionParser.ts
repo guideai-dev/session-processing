@@ -105,6 +105,11 @@ class ClaudeAdapter implements ProviderAdapter {
     if (message.isMeta) return 'meta'
 
     if (message.type === 'user') {
+      // Skip messages without message.content (e.g., file-history-snapshot)
+      if (!message.message?.content) {
+        return 'meta'
+      }
+
       // Check if this is a tool result vs real user input
       const content = message.message.content
       if (Array.isArray(content) && content.some(item => item.type === 'tool_result')) {
@@ -207,6 +212,11 @@ class ClaudeAdapter implements ProviderAdapter {
   }
 
   private processContent(message: ClaudeMessage) {
+    // Skip messages without content (e.g., file-history-snapshot)
+    if (!message.message?.content) {
+      return null
+    }
+
     const content = message.message.content
 
     // First check if it's a parts structure
@@ -873,6 +883,11 @@ export class ConversationParser {
 
     for (const message of rawMessages) {
       if (message.type === 'user') {
+        // Skip messages without content (e.g., file-history-snapshot)
+        if (!message.message?.content) {
+          continue
+        }
+
         // Start new turn with user input
         if (currentTurn && (currentTurn.userInput || currentTurn.assistantResponse)) {
           turns.push(currentTurn as ConversationTurn)
@@ -889,6 +904,11 @@ export class ConversationParser {
           },
         }
       } else if (message.type === 'assistant' && currentTurn) {
+        // Skip messages without content
+        if (!message.message?.content) {
+          continue
+        }
+
         // Add assistant response to current turn
         const toolUses = this.extractToolUses(message.message.content)
 

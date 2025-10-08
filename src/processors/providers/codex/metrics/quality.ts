@@ -172,24 +172,21 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
   private generateImprovementTips(taskSuccessRate: number, iterationCount: number, processQuality: number, usedPlanMode: boolean, usedTodoTracking: boolean): string[] {
     const tips: string[] = []
 
-    // Plan mode tips
-    if (!usedPlanMode) {
+    // Determine if there are actual quality issues
+    const hasQualityIssues = taskSuccessRate < 70 || iterationCount > 10 || processQuality < 50
+
+    // Only suggest plan mode if there are quality issues or low process quality
+    if ((hasQualityIssues || processQuality < 60) && !usedPlanMode) {
       tips.push("🎯 For complex tasks, consider using plan mode to organize your approach")
     }
 
+    // Task success and iteration tips (quality-specific)
     if (taskSuccessRate < 70) {
-      tips.push("Low success rate - try providing more specific file paths and context")
       tips.push("Consider breaking complex tasks into smaller, testable parts")
     }
 
     if (iterationCount > 10) {
       tips.push("Many iterations needed - try being more specific in initial requirements")
-      tips.push("Provide examples or templates to reduce back-and-forth refinement")
-    }
-
-    if (processQuality < 50) {
-      tips.push("Improve process by providing file paths upfront to reduce searching")
-      tips.push("Let AI read files before making changes for better context")
     }
 
     // Excellent practices recognition

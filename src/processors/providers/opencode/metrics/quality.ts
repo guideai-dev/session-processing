@@ -182,29 +182,28 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
   private generateImprovementTips(taskSuccessRate: number, iterationCount: number, processQuality: number, usedPlanMode: boolean, usedTodoTracking: boolean): string[] {
     const tips: string[] = []
 
-    // Plan mode and todo tracking tips (highest priority)
-    if (!usedPlanMode && !usedTodoTracking) {
-      tips.push("🎯 For complex tasks, use plan mode first to organize your approach")
-      tips.push("📋 Consider using TodoWrite to track progress on multi-step tasks")
-    } else if (!usedPlanMode) {
-      tips.push("🎯 For complex tasks, try using plan mode to outline your approach before starting")
-    } else if (!usedTodoTracking) {
-      tips.push("📋 Consider using TodoWrite to track progress and ensure all steps are completed")
+    // Determine if there are actual quality issues
+    const hasQualityIssues = taskSuccessRate < 70 || iterationCount > 10 || processQuality < 50
+
+    // Plan mode and todo tracking tips (quality-specific)
+    if (hasQualityIssues || processQuality < 60) {
+      if (!usedPlanMode && !usedTodoTracking) {
+        tips.push("🎯 For complex tasks, use plan mode first to organize your approach")
+        tips.push("📋 Consider using TodoWrite to track progress on multi-step tasks")
+      } else if (!usedPlanMode) {
+        tips.push("🎯 For complex tasks, try using plan mode to outline your approach before starting")
+      } else if (!usedTodoTracking) {
+        tips.push("📋 Consider using TodoWrite to track progress and ensure all steps are completed")
+      }
     }
 
+    // Task success and iteration tips (quality-specific)
     if (taskSuccessRate < 70) {
-      tips.push("Low success rate - try providing more specific file paths and context")
       tips.push("Consider breaking complex tasks into smaller, testable parts")
     }
 
     if (iterationCount > 10) {
       tips.push("Many iterations needed - try being more specific in initial requirements")
-      tips.push("Provide examples or templates to reduce back-and-forth refinement")
-    }
-
-    if (processQuality < 50) {
-      tips.push("Improve process by providing file paths upfront to reduce searching")
-      tips.push("Let AI read files before making changes for better context")
     }
 
     // Excellent practices recognition

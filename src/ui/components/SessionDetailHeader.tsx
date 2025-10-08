@@ -44,6 +44,12 @@ export interface SessionDetailHeaderProps {
   isProcessing?: boolean
   assessmentStatus?: 'not_started' | 'in_progress' | 'completed'
 
+  // Processing progress (optional - for detailed step tracking)
+  processingProgress?: {
+    stepName: string
+    percentage: number
+  } | null
+
   // Desktop-specific sync status
   syncStatus?: {
     synced: boolean
@@ -68,6 +74,7 @@ export function SessionDetailHeader({
   processingStatus = 'pending',
   isProcessing = false,
   assessmentStatus = 'not_started',
+  processingProgress,
   syncStatus,
   ProviderIcon,
 }: SessionDetailHeaderProps) {
@@ -196,11 +203,13 @@ export function SessionDetailHeader({
                     </svg>
                   )}
                   <span className="hidden lg:inline text-xs">
-                    {actuallyProcessing
-                      ? 'Processing...'
-                      : processingStatus === 'completed'
-                        ? 'Metrics Processed ✓'
-                        : 'Process Session'}
+                    {actuallyProcessing && processingProgress
+                      ? `${processingProgress.stepName} (${processingProgress.percentage}%)`
+                      : actuallyProcessing
+                        ? 'Processing...'
+                        : processingStatus === 'completed'
+                          ? 'AI Processed ✓'
+                          : 'Process Session'}
                   </span>
                 </button>
               )}
@@ -252,11 +261,13 @@ export function SessionDetailHeader({
                     </svg>
                   )}
                   <span className="text-xs">
-                    {actuallyProcessing
-                      ? 'Processing...'
-                      : processingStatus === 'completed'
-                        ? 'Processed ✓'
-                        : 'Process'}
+                    {actuallyProcessing && processingProgress
+                      ? `${processingProgress.stepName} (${processingProgress.percentage}%)`
+                      : actuallyProcessing
+                        ? 'Processing...'
+                        : processingStatus === 'completed'
+                          ? 'Processed ✓'
+                          : 'Process'}
                   </span>
                 </button>
               )}

@@ -13,7 +13,7 @@
  * - Provider icon rendering
  */
 
-import { ChartBarIcon, XCircleIcon, CloudArrowUpIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, XCircleIcon, CloudArrowUpIcon, ExclamationTriangleIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { RatingBadge } from './RatingBadge.js'
 import type { SessionRating } from '../../utils/rating.js'
 
@@ -176,10 +176,10 @@ function SessionCard({
     switch (status) {
       case 'pending':
         return {
-          icon: <ChartBarIcon className="w-4 h-4" strokeWidth={2} />,
+          icon: <SparklesIcon className="w-4 h-4" strokeWidth={2} />,
           color: 'text-base-content/30',
           bgColor: 'bg-base-200',
-          label: 'Pending Processing',
+          label: 'Pending AI Processing',
           clickable: true
         }
       case 'processing':
@@ -187,15 +187,15 @@ function SessionCard({
           icon: null, // Will use loading spinner instead
           color: 'text-info',
           bgColor: 'bg-info/20',
-          label: 'Processing...',
+          label: 'AI Processing...',
           clickable: false
         }
       case 'completed':
         return {
-          icon: <ChartBarIcon className="w-4 h-4" strokeWidth={2} />,
+          icon: <SparklesIcon className="w-4 h-4" strokeWidth={2} />,
           color: 'text-success',
           bgColor: 'bg-success/20',
-          label: 'Processed',
+          label: 'AI Processed',
           clickable: true
         }
       case 'failed':
@@ -203,15 +203,15 @@ function SessionCard({
           icon: <XCircleIcon className="w-4 h-4" strokeWidth={2} />,
           color: 'text-error',
           bgColor: 'bg-error/20',
-          label: 'Processing Failed',
+          label: 'AI Processing Failed',
           clickable: true
         }
       default:
         return {
-          icon: <ChartBarIcon className="w-4 h-4" strokeWidth={2} />,
+          icon: <SparklesIcon className="w-4 h-4" strokeWidth={2} />,
           color: 'text-base-content/30',
           bgColor: 'bg-base-200',
-          label: 'Pending Processing',
+          label: 'Pending AI Processing',
           clickable: true
         }
     }
