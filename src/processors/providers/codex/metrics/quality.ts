@@ -177,25 +177,26 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
 
     // Only suggest plan mode if there are quality issues or low process quality
     if ((hasQualityIssues || processQuality < 60) && !usedPlanMode) {
-      tips.push("🎯 For complex tasks, consider using plan mode to organize your approach")
+      tips.push("🎯 For complex tasks, consider using plan mode to organize your approach upfront")
     }
 
-    // Task success and iteration tips (quality-specific)
+    // Task success and iteration tips (reframed for context quality)
     if (taskSuccessRate < 70) {
-      tips.push("Consider breaking complex tasks into smaller, testable parts")
+      tips.push("Low success rate - ensure comprehensive upfront context (file paths, specs, code examples)")
+      tips.push("Consider improving documentation to reduce AI exploration")
     }
 
     if (iterationCount > 10) {
-      tips.push("Many iterations needed - try being more specific in initial requirements")
+      tips.push("Many iterations - consider whether initial prompt provided enough technical detail and context")
     }
 
     // Excellent practices recognition
     if (usedPlanMode && taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 80) {
-      tips.push("🌟 Outstanding AI collaboration! You're using excellent process discipline")
+      tips.push("🌟 Outstanding! Excellent process discipline with plan mode and clear context")
     } else if (usedPlanMode && taskSuccessRate > 75 && processQuality > 70) {
       tips.push("✨ Great collaboration! Your use of planning shows excellent AI process discipline")
     } else if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 70) {
-      tips.push("Excellent collaboration! You're using AI efficiently and effectively")
+      tips.push("Excellent! Effective context and steering led to efficient execution")
     }
 
     return tips

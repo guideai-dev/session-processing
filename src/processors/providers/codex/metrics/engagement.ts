@@ -45,17 +45,17 @@ export class CodexEngagementProcessor extends BaseMetricProcessor {
     const tips: string[] = []
 
     if (interruptionRate > 50) {
-      tips.push("High interruption rate suggests impatience - try letting AI finish responses")
-      tips.push("Consider asking more specific questions to get better initial responses")
+      tips.push("High interruption rate - consider whether initial prompt provided enough context")
+      tips.push("Note: Some interruptions are effective steering when AI goes off track")
     }
 
     if (sessionLength > 60) { // > 1 hour
-      tips.push("Long sessions may indicate unclear initial requirements")
-      tips.push("Try breaking complex tasks into smaller, well-defined parts")
+      tips.push("Long session - complex tasks take time, ensure you're making steady progress")
+      tips.push("Consider whether initial requirements and context were comprehensive")
     }
 
-    if (interruptionRate < 10 && sessionLength < 10) {
-      tips.push("Great collaboration! You're patient and efficient with AI")
+    if (interruptionRate < 10 && sessionLength < 30) {
+      tips.push("Excellent collaboration! Efficient session with minimal course corrections")
     }
 
     return tips

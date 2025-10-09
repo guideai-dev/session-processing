@@ -202,32 +202,32 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     const tips: string[] = []
 
     if (taskSuccessRate < 70) {
-      tips.push("Low success rate - try providing more specific file paths and context")
-      tips.push("Consider breaking complex tasks into smaller, testable parts")
+      tips.push("Low success rate - ensure comprehensive upfront context (file paths, specs, code examples)")
+      tips.push("Consider improving documentation to reduce AI exploration")
     }
 
     if (iterationCount > 10) {
-      tips.push("Many iterations needed - try being more specific in initial requirements")
-      tips.push("Provide examples or templates to reduce back-and-forth refinement")
+      tips.push("Many iterations - consider whether initial prompt provided enough technical detail and context")
+      tips.push("Provide examples or templates upfront to reduce back-and-forth")
     }
 
     if (processQuality < 50) {
-      tips.push("Improve process by providing file paths upfront to reduce searching")
+      tips.push("Improve process by providing file paths and context upfront to reduce searching")
       tips.push("Let AI view files before making changes for better context")
     }
 
     if (cancellations > 3) {
-      tips.push("High cancellation rate suggests unclear direction or impatience")
-      tips.push("Try to let AI complete its thought process before interrupting")
+      tips.push("High cancellation rate - consider whether initial specs and context were clear")
+      tips.push("Note: Some cancellations are effective steering when AI goes off track")
     }
 
     // Excellent practices recognition
-    if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 75 && cancellations === 0) {
-      tips.push("🌟 Outstanding AI collaboration! Efficient, successful, and patient")
-    } else if (taskSuccessRate > 75 && processQuality > 70 && cancellations <= 1) {
-      tips.push("✨ Great collaboration! You're using AI effectively")
+    if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 75 && cancellations <= 1) {
+      tips.push("🌟 Outstanding! Efficient execution with clear context and effective steering")
+    } else if (taskSuccessRate > 75 && processQuality > 70 && cancellations <= 2) {
+      tips.push("✨ Great collaboration! Effective context and process discipline")
     } else if (taskSuccessRate > 80 && iterationCount <= 5) {
-      tips.push("Excellent collaboration! High success rate with minimal iterations")
+      tips.push("Excellent! High success rate with minimal iteration shows clear direction")
     }
 
     return tips

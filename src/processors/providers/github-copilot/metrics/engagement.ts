@@ -95,24 +95,24 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
     const tips: string[] = []
 
     if (interruptionRate > 50) {
-      tips.push("High interruption rate suggests impatience - try letting AI finish responses")
-      tips.push("Consider asking more specific questions to get better initial responses")
+      tips.push("High interruption rate - consider whether initial prompt provided enough context")
+      tips.push("Note: Some interruptions are effective steering when AI goes off track")
     }
 
     if (sessionLength > 60) { // > 1 hour
-      tips.push("Long sessions may indicate unclear initial requirements")
-      tips.push("Try breaking complex tasks into smaller, well-defined parts")
+      tips.push("Long session - complex tasks take time, ensure you're making steady progress")
+      tips.push("Consider whether initial requirements and context were comprehensive")
     }
 
     if (conversationTurns > 20) {
-      tips.push("Many conversation turns - try providing more context upfront")
-      tips.push("Consider bundling related requests together to reduce back-and-forth")
+      tips.push("Many conversation turns - consider providing more comprehensive context upfront")
+      tips.push("Try bundling related requests to reduce back-and-forth")
     }
 
-    if (interruptionRate < 10 && sessionLength < 10 && conversationTurns <= 5) {
-      tips.push("⚡ Great collaboration! You're patient, efficient, and focused with AI")
+    if (interruptionRate < 10 && sessionLength < 30 && conversationTurns <= 10) {
+      tips.push("⚡ Great collaboration! Efficient session with clear direction")
     } else if (interruptionRate < 10 && sessionLength < 30) {
-      tips.push("✨ Good collaboration! Patient interaction with reasonable session length")
+      tips.push("✨ Good collaboration! Effective steering with reasonable session length")
     }
 
     return tips

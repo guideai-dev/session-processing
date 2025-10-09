@@ -182,31 +182,32 @@ export class ClaudeQualityProcessor extends BaseMetricProcessor {
     // Plan mode and todo tracking tips (quality-specific)
     if (hasQualityIssues || processQuality < 60) {
       if (!usedPlanMode && !usedTodoTracking) {
-        tips.push("🎯 For complex tasks, use plan mode first to organize your approach")
+        tips.push("🎯 For complex tasks, use plan mode to organize your approach upfront")
         tips.push("📋 Consider using TodoWrite to track progress on multi-step tasks")
       } else if (!usedPlanMode) {
-        tips.push("🎯 For complex tasks, try using plan mode to outline your approach before starting")
+        tips.push("🎯 Try using plan mode to outline your approach before starting complex tasks")
       } else if (!usedTodoTracking) {
         tips.push("📋 Consider using TodoWrite to track progress and ensure all steps are completed")
       }
     }
 
-    // Task success and iteration tips (quality-specific)
+    // Task success and iteration tips (reframed for context quality)
     if (taskSuccessRate < 70) {
-      tips.push("Consider breaking complex tasks into smaller, testable parts")
+      tips.push("Low success rate - ensure comprehensive upfront context (file paths, specs, code examples)")
+      tips.push("Consider improving documentation (CLAUDE.md) to reduce AI exploration")
     }
 
     if (iterationCount > 10) {
-      tips.push("Many iterations needed - try being more specific in initial requirements")
+      tips.push("Many iterations - consider whether initial prompt provided enough technical detail and context")
     }
 
     // Excellent practices recognition
     if (usedPlanMode && usedTodoTracking && taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 80) {
-      tips.push("🌟 Outstanding AI collaboration! You're using excellent process discipline with plan mode and todo tracking")
+      tips.push("🌟 Outstanding! Excellent process discipline with plan mode, todo tracking, and clear context")
     } else if ((usedPlanMode || usedTodoTracking) && taskSuccessRate > 75 && processQuality > 70) {
       tips.push("✨ Great collaboration! Your use of planning tools shows excellent AI process discipline")
     } else if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 70) {
-      tips.push("Excellent collaboration! You're using AI efficiently and effectively")
+      tips.push("Excellent! Effective context and steering led to efficient execution")
     }
 
     return tips

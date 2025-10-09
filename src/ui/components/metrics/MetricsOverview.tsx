@@ -7,8 +7,6 @@
 
 import { MetricCard } from "./MetricCard.js";
 import { MetricSection } from "./MetricSection.js";
-import { AssessmentSection } from "./AssessmentSection.js";
-import type { SessionRating } from '../../../utils/rating.js'
 
 // Type definition for session metrics UI data
 export interface SessionMetricsUI {
@@ -63,11 +61,6 @@ interface MetricsOverviewProps {
   aiModelSummary?: string | null
   aiModelQualityScore?: number | null
   aiModelMetadata?: any | null
-  // Assessment data
-  assessment?: any
-  assessmentQuestions?: any[]
-  assessmentLoading?: boolean
-  onRateSession?: (rating: SessionRating) => void
 }
 
 export function MetricsOverview({
@@ -83,10 +76,6 @@ export function MetricsOverview({
   aiModelSummary,
   aiModelQualityScore,
   aiModelMetadata,
-  assessment,
-  assessmentQuestions = [],
-  assessmentLoading = false,
-  onRateSession,
 }: MetricsOverviewProps) {
   if (isLoading) {
     return (
@@ -707,15 +696,6 @@ export function MetricsOverview({
           </div>
         </MetricSection>
       )}
-
-      {/* Assessment Section */}
-      <AssessmentSection
-        sessionId={sessionId}
-        assessment={assessment}
-        questions={assessmentQuestions}
-        isLoading={assessmentLoading}
-        onRate={onRateSession}
-      />
     </div>
   );
 }

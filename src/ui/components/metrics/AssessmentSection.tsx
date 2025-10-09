@@ -24,7 +24,7 @@ interface AssessmentResponse {
 }
 
 interface Assessment {
-  status: 'not_started' | 'in_progress' | 'completed'
+  status: 'not_started' | 'rating_only' | 'in_progress' | 'completed'
   completedAt?: string
   responses: AssessmentResponse[]
   rating?: string | null
@@ -65,11 +65,15 @@ export function AssessmentSection({
     )
   }
 
+  // Handle rating_only status (quick rating without full assessment)
+  const isRatingOnly = assessment.status === 'rating_only'
+  const hasResponses = assessment.responses && assessment.responses.length > 0
+
   // Create a map of question IDs to question configs
   const questionMap = new Map(questions.map(q => [q.id, q]))
 
   // Create a map of response IDs to responses for quick lookup
-  const responseMap = new Map(assessment.responses.map(r => [r.questionId, r]))
+  const responseMap = new Map((assessment.responses || []).map(r => [r.questionId, r]))
 
   // Sort responses in the same order as questions
   const orderedResponses = questions
@@ -131,16 +135,42 @@ export function AssessmentSection({
   return (
     <MetricSection
       title="Session Assessment"
-      subtitle={`User feedback completed ${new Date(assessment.completedAt || '').toLocaleDateString()}`}
+      subtitle={
+        isRatingOnly
+          ? 'Quick rating provided'
+          : `User feedback completed ${new Date(assessment.completedAt || '').toLocaleDateString()}`
+      }
       icon="📝"
     >
       <div className="space-y-6">
+        {/* Quick Rating Only Message */}
+        {isRatingOnly && !hasResponses && (
+          <div className="card bg-base-100 border border-base-300">
+            <div className="card-body text-center py-8">
+              <div className="mb-4">
+                <RatingBadge
+                  rating={(assessment.rating as SessionRating) || null}
+                  onRate={onRate}
+                  size="lg"
+                />
+              </div>
+              <p className="text-base-content/70">
+                This session was given a quick rating without completing the full assessment.
+              </p>
+              <p className="text-sm text-base-content/60 mt-2">
+                Completed {new Date(assessment.completedAt || '').toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Questions in survey order */}
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body">
-            <div className="space-y-4">
-              {orderedResponses.map(({ question, response }, index) => (
-                <div key={response.questionId} className="pb-4 border-b border-base-300 last:border-b-0 last:pb-0">
+        {hasResponses && (
+          <div className="card bg-base-100 border border-base-300">
+            <div className="card-body">
+              <div className="space-y-4">
+                {orderedResponses.map(({ question, response }, index) => (
+                <div key={response.questionId}>
                   <div className="flex items-start gap-4">
                     {/* Question number */}
                     <div className="shrink-0 w-8 h-8 rounded-full bg-base-200 flex items-center justify-center text-sm font-semibold">
@@ -175,8 +205,10 @@ export function AssessmentSection({
             </div>
           </div>
         </div>
+        )}
 
-        {/* Summary Stats */}
+        {/* Summary Stats - only show if we have full assessment data */}
+        {hasResponses && (
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body">
             <h3 className="text-lg font-semibold mb-4">Summary</h3>
@@ -218,6 +250,7 @@ export function AssessmentSection({
             </div>
           </div>
         </div>
+        )}
       </div>
     </MetricSection>
   )

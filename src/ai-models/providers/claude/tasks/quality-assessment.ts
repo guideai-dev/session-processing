@@ -14,7 +14,7 @@ export class QualityAssessmentTask extends BaseModelTask {
   getConfig(): ModelTaskConfig {
     return {
       taskType: this.taskType,
-      prompt: `You are evaluating the quality of an AI coding agent session with {{userName}}. Assess the following aspects and provide a quality score from 0-100:
+      prompt: `You are evaluating the quality of an AI coding agent session with {{userName}}. Quality is determined by how well {{userName}} set up the AI for success through effective collaboration practices. Provide a score from 0-100:
 
 Session Details:
 - Provider: {{provider}}
@@ -24,19 +24,21 @@ Session Details:
 - Tools Used: {{toolCount}}
 - Errors: {{errorCount}}
 
-Consider these factors:
-1. Task Completion: Did the session achieve {{userName}}'s goals?
-2. Efficiency: Was the agent's approach efficient?
-3. Code Quality: Was generated code clean and correct?
-4. User Experience: Was {{userName}}'s interaction smooth with minimal issues?
-5. Error Handling: Were errors handled gracefully?
+Consider these factors (what {{userName}} can control):
+1. Context Quality: Did {{userName}} provide comprehensive upfront context (file paths, technical details, relevant code)?
+2. Prompt Clarity: Were instructions specific, actionable, and technical (not vague)?
+3. Steering Effectiveness: Did {{userName}}'s interruptions/corrections keep the AI on track effectively?
+4. Process Discipline: Did {{userName}} use available tools well (plan mode, todo tracking, iterative refinement)?
+5. Efficiency Indicators: Low error count and read/write ratio suggest {{userName}} provided excellent context and documentation.
+
+Note: Errors are normal AI exploration - fewer errors indicate better upfront context was provided. Some interruptions show effective steering. Focus on what {{userName}} did to enable AI success.
 
 Respond with a JSON object containing:
 {
   "score": <number 0-100>,
-  "reasoning": "<brief explanation>",
-  "strengths": ["<strength 1>", "<strength 2>"],
-  "improvements": ["<improvement 1>", "<improvement 2>"]
+  "reasoning": "<brief explanation focusing on context quality and collaboration practices>",
+  "strengths": ["<what {{userName}} did well to enable AI success>", "<another strength>"],
+  "improvements": ["<how {{userName}} could improve context/prompts>", "<another improvement>"]
 }`,
       responseFormat: {
         type: 'json',
