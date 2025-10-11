@@ -25,6 +25,8 @@ interface AgentSession {
   projectName: string
   sessionStartTime: string | null
   sessionEndTime: string | null
+  fileName?: string | null
+  filePath?: string | null
   fileSize: number | null
   durationMs: number | null
   processingStatus: string
@@ -112,9 +114,14 @@ function SessionCard({
   }
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation() // Prevent card click when checking checkbox
     if (onSelect) {
       onSelect(e.target.checked)
     }
+  }
+
+  const handleCheckboxClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click when clicking checkbox area
   }
 
   const handleProcessClick = (e: React.MouseEvent) => {
@@ -161,7 +168,8 @@ function SessionCard({
 
   const getProcessingStatusInfo = (status: string) => {
     // For metrics-only sessions (no transcript file), show as "Metrics Only" with green styling
-    const isMetricsOnly = session.fileSize === null || session.fileSize === undefined
+    // We check filePath instead of fileSize since fileSize is now sent for analytics even in metrics-only mode
+    const isMetricsOnly = !session.filePath
 
     if (isMetricsOnly) {
       return {
@@ -301,7 +309,7 @@ function SessionCard({
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Checkbox */}
         {onSelect && (
-          <div className="shrink-0">
+          <div className="shrink-0" onClick={handleCheckboxClick}>
             <input
               type="checkbox"
               className="checkbox checkbox-sm cursor-pointer"
@@ -347,7 +355,7 @@ function SessionCard({
                 </span>
               </div>
             )}
-            {formatFileSize(session.fileSize) ? (
+            {session.filePath && formatFileSize(session.fileSize) ? (
               <div className="flex items-center gap-1">
                 <span className="hidden md:inline">Size:</span>
                 <span className="font-medium">{formatFileSize(session.fileSize)}</span>

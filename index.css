@@ -1,0 +1,15 @@
+/**
+ * Session Processing Package - Tailwind CSS Configuration
+ *
+ * This file tells Tailwind where to find classes used by this package.
+ * It's automatically imported by consuming applications via the "style" export.
+ */
+
+/* Scan source files for Tailwind classes */
+@source "./src/**/*.{js,ts,jsx,tsx}";
+
+/* Scan compiled ESM output */
+@source "./dist/esm/**/*.{js,jsx}";
+
+/* Scan compiled CJS output */
+@source "./dist/cjs/**/*.{js,jsx}";
