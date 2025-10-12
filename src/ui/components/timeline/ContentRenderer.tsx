@@ -10,6 +10,7 @@ import {
   JsonBlock,
   ToolBlock,
   ToolResultBlock,
+  ThinkingBlock,
 } from './blocks/index.js'
 
 interface ContentRendererProps {
@@ -67,6 +68,15 @@ export function ContentRenderer({ blocks }: ContentRendererProps) {
           case 'tool_result':
             return (
               <ToolResultBlock
+                key={index}
+                content={block.content}
+                collapsed={block.metadata?.collapsed}
+              />
+            )
+
+          case 'thinking':
+            return (
+              <ThinkingBlock
                 key={index}
                 content={block.content}
                 collapsed={block.metadata?.collapsed}

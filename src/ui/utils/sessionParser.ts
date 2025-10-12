@@ -653,6 +653,117 @@ class CopilotAdapter implements ProviderAdapter {
   }
 }
 
+class GeminiAdapter implements ProviderAdapter {
+  name = 'gemini-code'
+
+  detect(content: any): boolean {
+    // Gemini JSONL format has gemini_raw field with the full message
+    return !!(
+      content &&
+      typeof content === 'object' &&
+      content.provider === 'gemini-code' &&
+      content.gemini_raw &&
+      content.sessionId
+    )
+  }
+
+  transform(rawMessage: any): BaseSessionMessage[] {
+    // Extract the Gemini message from gemini_raw field
+    const geminiMsg = rawMessage.gemini_raw
+
+    if (!geminiMsg) {
+      return []
+    }
+
+    // Check if this is a tool result message (user message starting with [Function Response:])
+    if (geminiMsg.type === 'user' && geminiMsg.content && geminiMsg.content.startsWith('[Function Response:')) {
+      // Extract tool name from [Function Response: tool_name]
+      const toolNameMatch = geminiMsg.content.match(/\[Function Response: ([^\]]+)\]/)
+      const toolName = toolNameMatch ? toolNameMatch[1] : 'unknown'
+      const toolUseId = `tool-${geminiMsg.id}-${toolName}`
+
+      // Return BOTH tool_use and tool_result messages
+      return [
+        // Tool use (implicit request)
+        {
+          id: toolUseId,
+          timestamp: geminiMsg.timestamp,
+          type: 'tool_use',
+          content: {
+            type: 'tool_use',
+            name: toolName,
+            input: {},
+          },
+          metadata: {
+            sessionId: rawMessage.sessionId,
+            toolName,
+          },
+        },
+        // Tool result (explicit response)
+        {
+          id: geminiMsg.id,
+          timestamp: geminiMsg.timestamp,
+          type: 'tool_result',
+          content: {
+            type: 'tool_result',
+            content: geminiMsg.content,
+          },
+          metadata: {
+            sessionId: rawMessage.sessionId,
+            toolName,
+          },
+          linkedTo: toolUseId,
+        }
+      ]
+    }
+
+    const messageType = this.getMessageType(geminiMsg)
+    const processedContent = this.processContent(geminiMsg)
+
+    // Default single message
+    return [{
+      id: geminiMsg.id,
+      timestamp: geminiMsg.timestamp,
+      type: messageType,
+      content: processedContent,
+      metadata: {
+        sessionId: rawMessage.sessionId,
+        model: geminiMsg.model,
+        thoughts: geminiMsg.thoughts,
+        tokens: geminiMsg.tokens,
+        cwd: rawMessage.cwd,
+      },
+    }]
+  }
+
+  private getMessageType(message: any): BaseSessionMessage['type'] {
+    if (message.type === 'user') {
+      return 'user_input'
+    }
+
+    if (message.type === 'gemini') {
+      return 'assistant_response'
+    }
+
+    return 'meta'
+  }
+
+  private processContent(message: any) {
+    // For text content, return simple structure
+    if (message.content) {
+      return {
+        text: message.content,
+        parts: [{
+          type: 'text',
+          text: message.content,
+        }]
+      }
+    }
+
+    return { text: '' }
+  }
+}
+
 class GenericJSONLParser implements SessionParser {
   name = 'generic-jsonl'
   private adapters = new Map<string, ProviderAdapter>([
@@ -662,6 +773,8 @@ class GenericJSONLParser implements SessionParser {
     ['copilot', new CopilotAdapter()],
     ['codex', new CodexAdapter()],
     ['opencode', new OpenCodeAdapter()],
+    ['gemini-code', new GeminiAdapter()],
+    ['gemini', new GeminiAdapter()],
   ])
 
   canParse(content: string): boolean {
@@ -958,4 +1071,4 @@ export class ConversationParser {
   }
 }
 
-export { ClaudeAdapter, CopilotAdapter, CodexAdapter, OpenCodeAdapter, GenericJSONLParser }
+export { ClaudeAdapter, CopilotAdapter, CodexAdapter, OpenCodeAdapter, GeminiAdapter, GenericJSONLParser }

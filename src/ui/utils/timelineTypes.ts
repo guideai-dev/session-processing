@@ -11,7 +11,7 @@ import { BaseSessionMessage } from './sessionTypes.js'
 /**
  * Content block types that can appear in a timeline message
  */
-export type ContentBlockType = 'text' | 'code' | 'image' | 'json' | 'tool_use' | 'tool_result'
+export type ContentBlockType = 'text' | 'code' | 'image' | 'json' | 'tool_use' | 'tool_result' | 'thinking'
 
 /**
  * Display type for timeline messages
@@ -34,9 +34,10 @@ export interface ContentBlock {
   metadata?: {
     language?: string // For code blocks
     format?: string // For images (png, jpg, etc.)
-    collapsed?: boolean // For json/tool blocks
+    collapsed?: boolean // For json/tool/thinking blocks
     toolName?: string // For tool blocks
     toolUseId?: string // For tool result blocks
+    thoughtCount?: number // For thinking blocks
     [key: string]: any // Additional provider-specific metadata
   }
 }

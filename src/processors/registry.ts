@@ -3,6 +3,7 @@ import { ClaudeCodeProcessor } from './providers/claude-code/index.js'
 import { GitHubCopilotProcessor } from './providers/github-copilot/index.js'
 import { CodexProcessor } from './providers/codex/index.js'
 import { OpenCodeProcessor } from './providers/opencode/index.js'
+import { GeminiProcessor } from './providers/gemini/index.js'
 
 export class ProcessorRegistry {
   private processors = new Map<string, BaseProviderProcessor>()
@@ -30,6 +31,7 @@ export class ProcessorRegistry {
     this.register(new GitHubCopilotProcessor())
     this.register(new CodexProcessor())
     this.register(new OpenCodeProcessor())
+    this.register(new GeminiProcessor())
   }
 
   /**

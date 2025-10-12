@@ -2,7 +2,7 @@
  * Processor Registry - Registry for message processors
  *
  * Manages the collection of message processors and provides lookup by provider name.
- * Supports Claude Code, GitHub Copilot, Codex, OpenCode, and generic fallback processors.
+ * Supports Claude Code, GitHub Copilot, Codex, OpenCode, Gemini Code, and generic fallback processors.
  */
 
 import { BaseMessageProcessor } from './BaseMessageProcessor.js'
@@ -10,6 +10,7 @@ import { ClaudeMessageProcessor } from './ClaudeMessageProcessor.js'
 import { CopilotMessageProcessor } from './CopilotMessageProcessor.js'
 import { CodexMessageProcessor } from './CodexMessageProcessor.js'
 import { OpenCodeMessageProcessor } from './OpenCodeMessageProcessor.js'
+import { GeminiMessageProcessor } from './GeminiMessageProcessor.js'
 import { GenericMessageProcessor } from './GenericMessageProcessor.js'
 
 class MessageProcessorRegistry {
@@ -24,6 +25,7 @@ class MessageProcessorRegistry {
     this.register(new CopilotMessageProcessor())
     this.register(new CodexMessageProcessor())
     this.register(new OpenCodeMessageProcessor())
+    this.register(new GeminiMessageProcessor())
     this.register(this.defaultProcessor)
   }
 
