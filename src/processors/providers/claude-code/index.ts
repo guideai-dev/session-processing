@@ -1,4 +1,4 @@
-import { BaseProviderProcessor, BaseMetricProcessor } from '../../base/index.js'
+import { BaseProviderProcessor, BaseMetricProcessor, GitDiffMetricProcessor } from '../../base/index.js'
 import { ClaudeCodeParser } from './parser.js'
 
 // Import simplified metric processors
@@ -14,11 +14,13 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
 
   private parser = new ClaudeCodeParser()
   private metricProcessors: BaseMetricProcessor[]
+  private gitDiffProcessor = new GitDiffMetricProcessor()
 
   constructor() {
     super()
 
     // Initialize simplified metric processors
+    // NOTE: Git diff processor is NOT included here - it runs separately AFTER these
     this.metricProcessors = [
       new ClaudePerformanceProcessor(),
       new ClaudeEngagementProcessor(),
@@ -35,6 +37,57 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
 
   getMetricProcessors(): BaseMetricProcessor[] {
     return this.metricProcessors
+  }
+
+  /**
+   * Override to run git diff processor LAST with access to existing metrics
+   */
+  async processMetrics(jsonlContent: string, context: any): Promise<any[]> {
+    const session = this.parseSession(jsonlContent)
+
+    // Attach git diff data from context if available (desktop only)
+    if (context.gitDiffData) {
+      session.metadata = {
+        ...session.metadata,
+        gitDiff: context.gitDiffData
+      }
+    }
+
+    // Run standard metrics first
+    const results = await super.processMetrics(jsonlContent, context)
+
+    // Collect existing metrics for git diff processor
+    const existingMetrics: any = {}
+    for (const result of results) {
+      if (result.metricType === 'performance') existingMetrics.performance = result.metrics
+      if (result.metricType === 'usage') existingMetrics.usage = result.metrics
+      if (result.metricType === 'error') existingMetrics.error = result.metrics
+      if (result.metricType === 'engagement') existingMetrics.engagement = result.metrics
+      if (result.metricType === 'quality') existingMetrics.quality = result.metrics
+    }
+
+    // Run git diff processor LAST with existing metrics
+    try {
+      const gitDiffMetrics = await this.gitDiffProcessor.processWithExistingMetrics(session, existingMetrics)
+      // Only add if there's actual git data (total files > 0)
+      if (gitDiffMetrics && gitDiffMetrics.git_total_files_changed > 0) {
+        results.push({
+          metricType: 'git-diff',
+          metrics: gitDiffMetrics,
+          processingTime: 0,
+          metadata: {
+            processor: 'git-diff',
+            processingTime: 0,
+            messageCount: session.messages.length,
+            sessionDuration: session.duration
+          }
+        })
+      }
+    } catch (error) {
+      console.warn('Git diff processor failed (expected for server sessions):', error)
+    }
+
+    return results
   }
 
   canProcess(content: string): boolean {

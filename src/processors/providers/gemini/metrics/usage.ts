@@ -57,6 +57,9 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
     // Calculate input clarity based on message length and detail
     const inputClarityScore = this.calculateInputClarity(userMessages)
 
+    // Calculate total lines read from tool results (for git diff efficiency ratios)
+    const totalLinesRead = this.calculateLinesRead(tools, session)
+
     // Return metrics matching UsageMetrics interface
     const metrics = {
       // Required UsageMetrics fields
@@ -68,6 +71,7 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
         read_operations: readOps,
         write_operations: writeOps,
         total_user_messages: userMessages.length,
+        total_lines_read: totalLinesRead, // For git diff ratios
         improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore),
 
         // Gemini-specific token metrics
@@ -179,5 +183,21 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
     }
 
     return tips
+  }
+
+  private calculateLinesRead(tools: Array<{ name: string, timestamp: Date }>, session: ParsedSession): number {
+    let total = 0
+
+    // For Gemini, tool results may be in message metadata
+    for (const message of session.messages) {
+      if (message.metadata?.toolResult) {
+        const content = message.metadata.toolResult.content || message.content
+        if (typeof content === 'string') {
+          total += content.split('\n').filter((l: string) => l.trim()).length
+        }
+      }
+    }
+
+    return total
   }
 }

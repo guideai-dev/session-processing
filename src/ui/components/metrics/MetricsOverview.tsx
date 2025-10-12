@@ -46,6 +46,18 @@ export interface SessionMetricsUI {
     taskCompletionTimeMs?: string | null
     improvementTips?: string[] | null
   }
+  gitDiff?: {
+    totalFiles?: number | null
+    linesAdded?: number | null
+    linesRemoved?: number | null
+    linesModified?: number | null
+    netLines?: number | null
+    linesReadPerChanged?: string | null
+    readsPerFile?: string | null
+    linesPerMinute?: string | null
+    linesPerTool?: string | null
+    improvementTips?: string[] | null
+  }
 }
 
 interface MetricsOverviewProps {
@@ -685,6 +697,83 @@ export function MetricsOverview({
                 <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
                 <ul className="text-sm space-y-1">
                   {metrics.performance.improvementTips.map((tip: string, index: number) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-primary mr-2">•</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </MetricSection>
+      )}
+
+      {/* Git Diff Metrics - Desktop Only */}
+      {metrics.gitDiff && (metrics.gitDiff.totalFiles !== undefined && metrics.gitDiff.totalFiles !== null && metrics.gitDiff.totalFiles > 0) && (
+        <MetricSection
+          title="Code Changes"
+          subtitle="Git diff analysis and navigation efficiency"
+          icon="📊"
+        >
+          <div className="space-y-4">
+            {/* Core Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <MetricCard
+                label="Files Changed"
+                value={metrics.gitDiff.totalFiles}
+                tooltip="Total number of files modified or added"
+              />
+              <MetricCard
+                label="Lines Added"
+                value={metrics.gitDiff.linesAdded || 0}
+                tooltip="Total lines added across all files"
+              />
+              <MetricCard
+                label="Lines Removed"
+                value={metrics.gitDiff.linesRemoved || 0}
+                tooltip="Total lines deleted across all files"
+              />
+              <MetricCard
+                label="Net Change"
+                value={metrics.gitDiff.netLines || 0}
+                tooltip="Lines added minus lines removed (growth or reduction)"
+              />
+            </div>
+
+            <div className="divider text-sm">Navigation Efficiency</div>
+
+            {/* Efficiency Ratios */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <MetricCard
+                label="Lines Read / Changed"
+                value={metrics.gitDiff.linesReadPerChanged ? parseFloat(metrics.gitDiff.linesReadPerChanged) : undefined}
+                suffix=":1"
+                tooltip="Lines read per line changed - lower is better (efficient navigation)"
+              />
+              <MetricCard
+                label="Reads / File"
+                value={metrics.gitDiff.readsPerFile ? parseFloat(metrics.gitDiff.readsPerFile) : undefined}
+                tooltip="Read operations per file changed - lower is better"
+              />
+              <MetricCard
+                label="Lines/Min"
+                value={metrics.gitDiff.linesPerMinute ? parseFloat(metrics.gitDiff.linesPerMinute) : undefined}
+                tooltip="Code velocity - lines changed per minute"
+              />
+              <MetricCard
+                label="Lines/Tool"
+                value={metrics.gitDiff.linesPerTool ? parseFloat(metrics.gitDiff.linesPerTool) : undefined}
+                tooltip="Lines changed per tool use - higher is better"
+              />
+            </div>
+
+            {/* Improvement Tips */}
+            {metrics.gitDiff.improvementTips && metrics.gitDiff.improvementTips.length > 0 && (
+              <div className="card bg-base-100 p-4">
+                <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
+                <ul className="text-sm space-y-1">
+                  {metrics.gitDiff.improvementTips.map((tip: string, index: number) => (
                     <li key={index} className="flex items-start">
                       <span className="text-primary mr-2">•</span>
                       {tip}

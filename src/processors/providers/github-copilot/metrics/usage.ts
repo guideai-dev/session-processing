@@ -33,6 +33,10 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     // Calculate input clarity score (how technical and specific user inputs are)
     const inputClarityScore = this.calculateInputClarityScore(userMessages)
 
+    // Calculate total lines read from actual tool results (for git diff efficiency ratios)
+    const toolResults = this.parser.extractToolResults(session)
+    const totalLinesRead = this.calculateLinesRead(toolUses, toolResults)
+
     return {
       read_write_ratio: readWriteRatio,
       input_clarity_score: inputClarityScore,
@@ -42,6 +46,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
         read_operations: readCount,
         write_operations: writeCount,
         total_user_messages: userMessages.length,
+        total_lines_read: totalLinesRead, // For git diff ratios
         improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore, toolDiversity),
         // Extra fields for analysis
         tool_diversity: toolDiversity,
@@ -194,5 +199,36 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     }
 
     return tips
+  }
+
+  private calculateLinesRead(toolUses: any[], toolResults: any[]): number {
+    let total = 0
+
+    // Map tool uses to their results by ID
+    const resultMap = new Map()
+    for (const result of toolResults) {
+      if (result.tool_use_id) {
+        resultMap.set(result.tool_use_id, result)
+      }
+    }
+
+    for (const tool of toolUses) {
+      const result = resultMap.get(tool.id)
+      if (!result || !result.content) continue
+
+      // Count actual lines in the result content
+      if (tool.name === 'str_replace_editor' && tool.input?.command === 'view') {
+        const content = typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
+        const lines = content.split('\n').length
+        total += lines
+      } else if (tool.name === 'bash') {
+        // Parse bash output
+        const content = typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
+        const lines = content.split('\n').filter((l: string) => l.trim()).length
+        total += lines
+      }
+    }
+
+    return total
   }
 }
