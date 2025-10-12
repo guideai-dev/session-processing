@@ -37,6 +37,9 @@ interface AgentSession {
   createdAt: string
   syncedToServer?: boolean
   syncFailedReason?: string | null
+  gitBranch?: string | null
+  firstCommitHash?: string | null
+  latestCommitHash?: string | null
 }
 
 interface SessionCardProps {
@@ -111,6 +114,29 @@ function SessionCard({
     } else {
       return `${seconds}s`
     }
+  }
+
+  const formatCommitRange = () => {
+    const firstCommit = session.firstCommitHash?.substring(0, 7)
+    const latestCommit = session.latestCommitHash?.substring(0, 7)
+
+    if (!firstCommit) return null
+
+    // If no latest commit or same as first, show "UNSTAGED" pattern
+    if (!latestCommit || firstCommit === latestCommit) {
+      return (
+        <span className="font-mono text-xs" title={`Unstaged changes from ${session.firstCommitHash}`}>
+          {firstCommit} → <span className="text-warning">UNSTAGED</span>
+        </span>
+      )
+    }
+
+    // Show commit range
+    return (
+      <span className="font-mono text-xs" title={`Changes from ${session.firstCommitHash} to ${session.latestCommitHash}`}>
+        {firstCommit} → {latestCommit}
+      </span>
+    )
   }
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -338,7 +364,15 @@ function SessionCard({
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-medium truncate">{session.projectName}</h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-medium truncate">{session.projectName}</h3>
+              {session.gitBranch && (
+                <span className="badge badge-ghost badge-xs font-mono" title="Git branch">
+                  {session.gitBranch}
+                </span>
+              )}
+              {formatCommitRange()}
+            </div>
           </div>
 
           {/* Metadata - Stack on mobile, inline on desktop */}

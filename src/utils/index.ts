@@ -4,3 +4,4 @@
 
 export * from './rating.js'
 export * from './user.js'
+export * from './git-url.js'

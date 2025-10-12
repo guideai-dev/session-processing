@@ -7,6 +7,7 @@
 
 import { RatingBadge } from './RatingBadge.js'
 import type { SessionRating } from '../../utils/rating.js'
+import { buildGitHubDiffUrl } from '../../utils/git-url.js'
 
 export interface SessionDetailHeaderProps {
   // Session data
@@ -41,6 +42,7 @@ export interface SessionDetailHeaderProps {
   onProcessSession?: () => void
   onAssessSession?: () => void
   onCwdClick?: (path: string) => void | Promise<void> // Desktop only
+  onViewDiff?: () => void | Promise<void> // Desktop only - opens Session Changes tab
 
   // Status states
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed'
@@ -74,6 +76,7 @@ export function SessionDetailHeader({
   onProcessSession,
   onAssessSession,
   onCwdClick,
+  onViewDiff,
   processingStatus = 'pending',
   isProcessing = false,
   assessmentStatus = 'not_started',
@@ -111,6 +114,13 @@ export function SessionDetailHeader({
 
   const actuallyProcessing = isProcessing || processingStatus === 'processing'
   const workingDirectory = session.project?.cwd || session.cwd
+
+  // Build GitHub diff URL if we have the required information
+  const gitHubDiffUrl = buildGitHubDiffUrl(
+    session.project?.gitRemoteUrl,
+    session.firstCommitHash,
+    session.latestCommitHash
+  )
 
   return (
     <div className="card bg-base-100 border border-base-300">
@@ -387,33 +397,61 @@ export function SessionDetailHeader({
                     </div>
                   )}
 
-                  {/* Commits - show differently based on whether they're the same */}
-                  {session.firstCommitHash && session.latestCommitHash && session.firstCommitHash === session.latestCommitHash ? (
+                  {/* Commits - compact format with optional link/button */}
+                  {session.firstCommitHash && (
                     <div>
-                      <span className="text-base-content/60">Commit:</span>
-                      <span className="ml-1.5 font-mono text-base-content" title={session.firstCommitHash}>
-                        {session.firstCommitHash.substring(0, 7)}
-                      </span>
+                      <span className="text-base-content/60">Commits:</span>
+                      {session.latestCommitHash && session.latestCommitHash !== session.firstCommitHash ? (
+                        // Different commits - show commit range
+                        <>
+                          {onViewDiff ? (
+                            // Desktop: clickable button that opens Session Changes tab
+                            <button
+                              onClick={onViewDiff}
+                              className="ml-1.5 font-mono text-primary hover:text-primary-focus transition-colors hover:underline"
+                              title={`View changes: ${session.firstCommitHash} → ${session.latestCommitHash}`}
+                            >
+                              {session.firstCommitHash.substring(0, 7)} → {session.latestCommitHash.substring(0, 7)}
+                            </button>
+                          ) : gitHubDiffUrl ? (
+                            // Server: link to GitHub diff
+                            <a
+                              href={gitHubDiffUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-1.5 font-mono text-primary hover:text-primary-focus transition-colors hover:underline"
+                              title={`View diff: ${session.firstCommitHash} → ${session.latestCommitHash}`}
+                            >
+                              {session.firstCommitHash.substring(0, 7)} → {session.latestCommitHash.substring(0, 7)}
+                            </a>
+                          ) : (
+                            // No action available: plain text
+                            <span className="ml-1.5 font-mono text-base-content" title={`${session.firstCommitHash} → ${session.latestCommitHash}`}>
+                              {session.firstCommitHash.substring(0, 7)} → {session.latestCommitHash.substring(0, 7)}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        // Same commit or no latest commit - show unstaged changes
+                        <>
+                          {onViewDiff ? (
+                            // Desktop: clickable button for unstaged changes
+                            <button
+                              onClick={onViewDiff}
+                              className="ml-1.5 font-mono text-primary hover:text-primary-focus transition-colors hover:underline"
+                              title={`View unstaged changes from ${session.firstCommitHash}`}
+                            >
+                              {session.firstCommitHash.substring(0, 7)} → <span className="text-warning">UNSTAGED</span>
+                            </button>
+                          ) : (
+                            // Plain text (server or no action)
+                            <span className="ml-1.5 font-mono text-base-content" title={`Unstaged changes from ${session.firstCommitHash}`}>
+                              {session.firstCommitHash.substring(0, 7)} → <span className="text-warning">UNSTAGED</span>
+                            </span>
+                          )}
+                        </>
+                      )}
                     </div>
-                  ) : (
-                    <>
-                      {session.firstCommitHash && (
-                        <div>
-                          <span className="text-base-content/60">First:</span>
-                          <span className="ml-1.5 font-mono text-base-content" title={session.firstCommitHash}>
-                            {session.firstCommitHash.substring(0, 7)}
-                          </span>
-                        </div>
-                      )}
-                      {session.latestCommitHash && (
-                        <div>
-                          <span className="text-base-content/60">Latest:</span>
-                          <span className="ml-1.5 font-mono text-base-content" title={session.latestCommitHash}>
-                            {session.latestCommitHash.substring(0, 7)}
-                          </span>
-                        </div>
-                      )}
-                    </>
                   )}
                 </div>
               </div>
