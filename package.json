@@ -1,6 +1,6 @@
 {
   "name": "@guideai-dev/session-processing",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "description": "Shared session processing, metrics calculation, AI processing, and UI components for GuideAI",
   "type": "module",
   "main": "./dist/cjs/index.js",
