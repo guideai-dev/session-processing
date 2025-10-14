@@ -41,6 +41,7 @@ export interface SessionDetailHeaderProps {
   // Action handlers
   onProcessSession?: () => void
   onAssessSession?: () => void
+  onDeleteSession?: () => void
   onCwdClick?: (path: string) => void | Promise<void> // Desktop only
   onViewDiff?: () => void | Promise<void> // Desktop only - opens Session Changes tab
 
@@ -75,6 +76,7 @@ export function SessionDetailHeader({
   onRate,
   onProcessSession,
   onAssessSession,
+  onDeleteSession,
   onCwdClick,
   onViewDiff,
   processingStatus = 'pending',
@@ -252,11 +254,23 @@ export function SessionDetailHeader({
                   </span>
                 </button>
               )}
+              {onDeleteSession && (
+                <button
+                  onClick={onDeleteSession}
+                  className="btn btn-xs btn-error gap-1.5"
+                  title="Delete this session"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span className="hidden lg:inline text-xs">Delete</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Mobile: Action Buttons */}
-          {(onProcessSession || onAssessSession) && (
+          {(onProcessSession || onAssessSession || onDeleteSession) && (
             <div className="md:hidden mb-2 flex gap-1.5">
               {onProcessSession && (
                 <button
@@ -301,6 +315,17 @@ export function SessionDetailHeader({
                         ? 'In Progress'
                         : 'Assess'}
                   </span>
+                </button>
+              )}
+              {onDeleteSession && (
+                <button
+                  onClick={onDeleteSession}
+                  className="btn btn-xs btn-error gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span className="text-xs">Delete</span>
                 </button>
               )}
             </div>
