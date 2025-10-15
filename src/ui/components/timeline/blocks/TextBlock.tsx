@@ -13,6 +13,7 @@ interface MarkdownDeps {
   ReactMarkdown: any
   Prism: any
   oneDark: any
+  oneLight: any
 }
 
 /**
@@ -38,63 +39,26 @@ function looksLikeMarkdown(text: string): boolean {
 
 /**
  * Load markdown dependencies dynamically (optional peer deps)
- * Uses light build to only include common languages, reducing bundle size significantly
+ * Uses full Prism build with all languages included
  */
 async function loadMarkdownDeps(): Promise<MarkdownDeps | null> {
   try {
-    // Import light build (no languages included by default)
-    const [markdown, lightModule, styles, ...languages] = await Promise.all([
+    const [markdown, prismModule, oneDarkStyle, oneLightStyle] = await Promise.all([
       import('react-markdown'),
-      import('react-syntax-highlighter/dist/esm/light'),
+      import('react-syntax-highlighter/dist/esm/prism'),
       import('react-syntax-highlighter/dist/esm/styles/prism/one-dark'),
-      // Register only commonly used languages to reduce bundle size (21 languages vs 200+)
-      import('react-syntax-highlighter/dist/esm/languages/prism/javascript'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/typescript'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/jsx'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/tsx'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/python'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/java'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/json'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/yaml'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/markdown'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/bash'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/sql'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/css'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/scss'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/go'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/rust'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/c'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/cpp'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/csharp'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/ruby'),
-      import('react-syntax-highlighter/dist/esm/languages/prism/php'),
+      import('react-syntax-highlighter/dist/esm/styles/prism/one-light'),
     ])
-
-    // Get the Prism component from the light module
-    const { default: PrismLight } = lightModule
-
-    // Register languages with the light build
-    const languageNames = [
-      'javascript', 'typescript', 'jsx', 'tsx', 'python', 'java',
-      'json', 'yaml', 'markdown', 'bash', 'sql',
-      'css', 'scss', 'go', 'rust', 'c', 'cpp', 'csharp',
-      'ruby', 'php'
-    ]
-
-    languageNames.forEach((name, index) => {
-      PrismLight.registerLanguage(name, languages[index].default)
-    })
-
-    // Also register shell as an alias for bash
-    PrismLight.registerLanguage('shell', languages[9].default) // bash is at index 9
 
     return {
       ReactMarkdown: markdown.default,
-      Prism: PrismLight,
-      oneDark: styles.default,
+      Prism: prismModule.default,
+      oneDark: oneDarkStyle.default,
+      oneLight: oneLightStyle.default,
     }
-  } catch {
+  } catch (err) {
     // Markdown dependencies not installed - will fall back to plain text
+    console.error('Failed to load markdown dependencies:', err)
     return null
   }
 }
@@ -103,6 +67,12 @@ export function TextBlock({ content }: TextBlockProps) {
   const [showRaw, setShowRaw] = useState(false)
   const [markdownDeps, setMarkdownDeps] = useState<MarkdownDeps | null>(null)
   const [depsChecked, setDepsChecked] = useState(false)
+
+  // Detect current theme for syntax highlighting
+  const theme = typeof document !== 'undefined'
+    ? (document.documentElement.dataset.theme || 'guideai-dark')
+    : 'guideai-dark'
+  const isDark = theme.includes('dark')
 
   const isMarkdown = looksLikeMarkdown(content)
 
@@ -135,7 +105,10 @@ export function TextBlock({ content }: TextBlockProps) {
     )
   }
 
-  const { ReactMarkdown, Prism, oneDark } = markdownDeps
+  const { ReactMarkdown, Prism, oneDark, oneLight } = markdownDeps
+
+  // Select theme based on current mode
+  const syntaxTheme = isDark ? oneDark : oneLight
 
   // Render markdown with custom styling
   return (
@@ -211,7 +184,7 @@ export function TextBlock({ content }: TextBlockProps) {
                   <div className="my-2">
                     <Prism
                       language={language}
-                      style={oneDark}
+                      style={syntaxTheme}
                       customStyle={{
                         margin: 0,
                         borderRadius: '0.375rem',
