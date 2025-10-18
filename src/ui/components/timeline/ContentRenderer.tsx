@@ -31,20 +31,12 @@ export function ContentRenderer({ blocks }: ContentRendererProps) {
 
           case 'code':
             return (
-              <CodeBlock
-                key={index}
-                content={block.content}
-                language={block.metadata?.language}
-              />
+              <CodeBlock key={index} content={block.content} language={block.metadata?.language} />
             )
 
           case 'image':
             return (
-              <ImageBlock
-                key={index}
-                content={block.content}
-                format={block.metadata?.format}
-              />
+              <ImageBlock key={index} content={block.content} format={block.metadata?.format} />
             )
 
           case 'json':

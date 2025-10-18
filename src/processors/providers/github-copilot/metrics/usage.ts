@@ -47,12 +47,16 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
         write_operations: writeCount,
         total_user_messages: userMessages.length,
         total_lines_read: totalLinesRead, // For git diff ratios
-        improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore, toolDiversity),
+        improvement_tips: this.generateImprovementTips(
+          readWriteRatio,
+          inputClarityScore,
+          toolDiversity
+        ),
         // Extra fields for analysis
         tool_diversity: toolDiversity,
         bash_command_count: bashCommandCount,
-        unique_tools: Array.from(uniqueTools)
-      } as any
+        unique_tools: Array.from(uniqueTools),
+      } as any,
     }
   }
 
@@ -70,7 +74,19 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
       } else if (tool.name === 'bash') {
         // Check if bash command is a read operation
         const command = tool.input?.command || ''
-        const readCommands = ['cat', 'grep', 'find', 'ls', 'head', 'tail', 'less', 'more', 'git diff', 'git log', 'git status']
+        const readCommands = [
+          'cat',
+          'grep',
+          'find',
+          'ls',
+          'head',
+          'tail',
+          'less',
+          'more',
+          'git diff',
+          'git log',
+          'git status',
+        ]
         if (readCommands.some(cmd => command.trim().startsWith(cmd))) {
           count++
         }
@@ -98,7 +114,18 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
       } else if (tool.name === 'bash') {
         // Check if bash command is a write operation
         const command = tool.input?.command || ''
-        const writeCommands = ['echo', 'sed', 'awk', 'tee', 'git add', 'git commit', 'git push', 'npm install', 'pnpm install', 'yarn add']
+        const writeCommands = [
+          'echo',
+          'sed',
+          'awk',
+          'tee',
+          'git add',
+          'git commit',
+          'git push',
+          'npm install',
+          'pnpm install',
+          'yarn add',
+        ]
         if (writeCommands.some(cmd => command.trim().startsWith(cmd)) || command.includes('>')) {
           count++
         }
@@ -129,7 +156,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
       const fileReferences = this.countFileReferences(content)
 
       // Score based on technical content density
-      const messageScore = technicalTerms + (codeSnippets * 2) + fileReferences
+      const messageScore = technicalTerms + codeSnippets * 2 + fileReferences
       totalScore += messageScore
     }
 
@@ -140,11 +167,41 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
 
   private countTechnicalTerms(content: string): number {
     const technicalKeywords = [
-      'function', 'variable', 'class', 'method', 'api', 'database', 'query',
-      'component', 'interface', 'type', 'import', 'export', 'async', 'await',
-      'typescript', 'javascript', 'react', 'node', 'npm', 'pnpm', 'package',
-      'schema', 'table', 'column', 'index', 'migration', 'build', 'test',
-      'lint', 'format', 'deploy', 'server', 'client', 'frontend', 'backend'
+      'function',
+      'variable',
+      'class',
+      'method',
+      'api',
+      'database',
+      'query',
+      'component',
+      'interface',
+      'type',
+      'import',
+      'export',
+      'async',
+      'await',
+      'typescript',
+      'javascript',
+      'react',
+      'node',
+      'npm',
+      'pnpm',
+      'package',
+      'schema',
+      'table',
+      'column',
+      'index',
+      'migration',
+      'build',
+      'test',
+      'lint',
+      'format',
+      'deploy',
+      'server',
+      'client',
+      'frontend',
+      'backend',
     ]
 
     const contentLower = content.toLowerCase()
@@ -169,33 +226,37 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     return extensions + paths
   }
 
-  private generateImprovementTips(readWriteRatio: number, inputClarityScore: number, toolDiversity: number): string[] {
+  private generateImprovementTips(
+    readWriteRatio: number,
+    inputClarityScore: number,
+    toolDiversity: number
+  ): string[] {
     const tips: string[] = []
 
     if (readWriteRatio > 5) {
       tips.push("High Read/Write ratio suggests AI is 'lost' - provide specific file paths upfront")
-      tips.push("Include relevant code context in your requests to reduce searching")
+      tips.push('Include relevant code context in your requests to reduce searching')
     }
 
     if (readWriteRatio <= 2) {
-      tips.push("Excellent efficiency! AI found and modified files quickly")
+      tips.push('Excellent efficiency! AI found and modified files quickly')
     }
 
     if (inputClarityScore < 20) {
-      tips.push("Low input clarity - try including more technical details and code examples")
-      tips.push("Specify exact file paths and function names for better results")
+      tips.push('Low input clarity - try including more technical details and code examples')
+      tips.push('Specify exact file paths and function names for better results')
     }
 
     if (inputClarityScore > 50) {
-      tips.push("Great technical communication! Clear, specific inputs lead to better results")
+      tips.push('Great technical communication! Clear, specific inputs lead to better results')
     }
 
     if (toolDiversity > 5) {
-      tips.push("High tool diversity shows AI is exploring multiple approaches")
+      tips.push('High tool diversity shows AI is exploring multiple approaches')
     }
 
     if (toolDiversity === 1) {
-      tips.push("Low tool diversity - task may have been very straightforward or too narrow")
+      tips.push('Low tool diversity - task may have been very straightforward or too narrow')
     }
 
     return tips
@@ -218,12 +279,14 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
 
       // Count actual lines in the result content
       if (tool.name === 'str_replace_editor' && tool.input?.command === 'view') {
-        const content = typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
+        const content =
+          typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
         const lines = content.split('\n').length
         total += lines
       } else if (tool.name === 'bash') {
         // Parse bash output
-        const content = typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
+        const content =
+          typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
         const lines = content.split('\n').filter((l: string) => l.trim()).length
         total += lines
       }

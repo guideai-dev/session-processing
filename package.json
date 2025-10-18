@@ -37,10 +37,7 @@
       "require": "./dist/cjs/ui/index.js"
     }
   },
-  "files": [
-    "dist",
-    "index.css"
-  ],
+  "files": ["dist", "index.css"],
   "scripts": {
     "build": "pnpm run clean && pnpm run build:esm && pnpm run build:cjs && pnpm run build:cjs-package",
     "build:esm": "tsc -p tsconfig.json",
@@ -93,11 +90,5 @@
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
-  "keywords": [
-    "session-processing",
-    "metrics",
-    "ai",
-    "typescript",
-    "guideai"
-  ]
+  "keywords": ["session-processing", "metrics", "ai", "typescript", "guideai"]
 }

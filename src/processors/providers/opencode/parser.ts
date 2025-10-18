@@ -18,7 +18,7 @@ export class OpenCodeParser extends ClaudeCodeParser {
     // Override provider from 'claude-code' to 'opencode'
     return {
       ...session,
-      provider: 'opencode'
+      provider: 'opencode',
     }
   }
 
@@ -53,8 +53,11 @@ export class OpenCodeParser extends ClaudeCodeParser {
    * Override calculateResponseTimes to handle OpenCode's message structure
    * where tool_use messages appear between user and assistant messages
    */
-  calculateResponseTimes(session: ParsedSession): Array<{ userMessage: any; assistantMessage: any; responseTime: number }> {
-    const responseTimes: Array<{ userMessage: any; assistantMessage: any; responseTime: number }> = []
+  calculateResponseTimes(
+    session: ParsedSession
+  ): Array<{ userMessage: any; assistantMessage: any; responseTime: number }> {
+    const responseTimes: Array<{ userMessage: any; assistantMessage: any; responseTime: number }> =
+      []
 
     for (let i = 0; i < session.messages.length; i++) {
       const current = session.messages[i]
@@ -70,7 +73,7 @@ export class OpenCodeParser extends ClaudeCodeParser {
             responseTimes.push({
               userMessage: current,
               assistantMessage: next,
-              responseTime
+              responseTime,
             })
             break // Found the assistant response, move to next user message
           }

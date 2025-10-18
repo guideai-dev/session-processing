@@ -22,7 +22,7 @@ export function QuickRatingPopover({
   isOpen,
   onClose,
   onSelect,
-  anchorRef
+  anchorRef,
 }: QuickRatingPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
 
@@ -77,7 +77,7 @@ export function QuickRatingPopover({
     <div
       ref={popoverRef}
       className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50"
-      onClick={(e) => e.stopPropagation()}
+      onClick={e => e.stopPropagation()}
     >
       {/* Popover content */}
       <div className="bg-base-100 border border-base-300 rounded-lg shadow-lg p-1.5">

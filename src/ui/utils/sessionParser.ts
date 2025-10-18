@@ -86,19 +86,21 @@ class ClaudeAdapter implements ProviderAdapter {
     }
 
     // Default single message
-    return [{
-      id: rawMessage.uuid,
-      timestamp: rawMessage.timestamp,
-      type: messageType,
-      content: processedContent,
-      metadata: {
-        sessionId: rawMessage.sessionId,
-        userType: rawMessage.userType,
-        requestId: rawMessage.requestId,
-        isMeta: rawMessage.isMeta,
+    return [
+      {
+        id: rawMessage.uuid,
+        timestamp: rawMessage.timestamp,
+        type: messageType,
+        content: processedContent,
+        metadata: {
+          sessionId: rawMessage.sessionId,
+          userType: rawMessage.userType,
+          requestId: rawMessage.requestId,
+          isMeta: rawMessage.isMeta,
+        },
+        parentId: rawMessage.parentUuid,
       },
-      parentId: rawMessage.parentUuid,
-    }]
+    ]
   }
 
   private getMessageType(message: ClaudeMessage): BaseSessionMessage['type'] {
@@ -120,16 +122,18 @@ class ClaudeAdapter implements ProviderAdapter {
       const parsedContent = this.parsePartsContent(content)
       if (parsedContent) {
         // Check for interruption in parts structure - ONLY if it's specifically about interruption
-        const hasInterruptionText = parsedContent.parts?.some((part: any) =>
-          part.type === 'text' &&
-          (part.text?.includes('[Request interrupted by user]') ||
-           part.text?.includes('Request interrupted by user'))
+        const hasInterruptionText = parsedContent.parts?.some(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.includes('[Request interrupted by user]') ||
+              part.text?.includes('Request interrupted by user'))
         )
-        const hasOnlyInterruptionText = parsedContent.parts?.every((part: any) =>
-          part.type === 'text' &&
-          (part.text?.includes('[Request interrupted by user]') ||
-           part.text?.includes('Request interrupted by user') ||
-           !part.text?.trim())
+        const hasOnlyInterruptionText = parsedContent.parts?.every(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.includes('[Request interrupted by user]') ||
+              part.text?.includes('Request interrupted by user') ||
+              !part.text?.trim())
         )
 
         if (hasInterruptionText && hasOnlyInterruptionText) {
@@ -137,14 +141,17 @@ class ClaudeAdapter implements ProviderAdapter {
         }
 
         // Check for commands in parts structure - ONLY if it's specifically a command
-        const hasCommandText = parsedContent.parts?.some((part: any) =>
-          part.type === 'text' &&
-          (part.text?.startsWith('/') || part.text?.includes('<command-name>'))
+        const hasCommandText = parsedContent.parts?.some(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.startsWith('/') || part.text?.includes('<command-name>'))
         )
-        const hasOnlyCommandText = parsedContent.parts?.every((part: any) =>
-          part.type === 'text' &&
-          (part.text?.startsWith('/') || part.text?.includes('<command-name>') ||
-           !part.text?.trim())
+        const hasOnlyCommandText = parsedContent.parts?.every(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.startsWith('/') ||
+              part.text?.includes('<command-name>') ||
+              !part.text?.trim())
         )
 
         if (hasCommandText && hasOnlyCommandText) {
@@ -161,22 +168,28 @@ class ClaudeAdapter implements ProviderAdapter {
           return 'command'
         }
 
-        if (content.includes('Request interrupted by user') || content.includes('[Request interrupted by user]')) {
+        if (
+          content.includes('Request interrupted by user') ||
+          content.includes('[Request interrupted by user]')
+        ) {
           return 'interruption'
         }
       }
 
       // Check if this is a simple interruption message (array with only interruption text)
       if (Array.isArray(content)) {
-        const hasInterruptionText = content.some(item =>
-          item.type === 'text' &&
-          (item.text?.includes('[Request interrupted by user]') || item.text?.includes('Request interrupted by user'))
+        const hasInterruptionText = content.some(
+          item =>
+            item.type === 'text' &&
+            (item.text?.includes('[Request interrupted by user]') ||
+              item.text?.includes('Request interrupted by user'))
         )
-        const hasOnlyInterruptionText = content.every(item =>
-          item.type === 'text' &&
-          (item.text?.includes('[Request interrupted by user]') ||
-           item.text?.includes('Request interrupted by user') ||
-           !item.text?.trim())
+        const hasOnlyInterruptionText = content.every(
+          item =>
+            item.type === 'text' &&
+            (item.text?.includes('[Request interrupted by user]') ||
+              item.text?.includes('Request interrupted by user') ||
+              !item.text?.trim())
         )
 
         if (hasInterruptionText && hasOnlyInterruptionText) {
@@ -329,9 +342,9 @@ class OpenCodeAdapter implements ProviderAdapter {
       content.type &&
       content.message &&
       (content.type === 'user' ||
-       content.type === 'assistant' ||
-       content.type === 'tool_use' ||
-       content.type === 'tool_result')
+        content.type === 'assistant' ||
+        content.type === 'tool_use' ||
+        content.type === 'tool_result')
     )
   }
 
@@ -345,16 +358,18 @@ class OpenCodeAdapter implements ProviderAdapter {
       const content = processedContent.parts?.[0] || processedContent
       const toolUseId = content.id || `tool-${rawMessage.timestamp}`
 
-      return [{
-        id: `${rawMessage.sessionId}-${rawMessage.timestamp}-tool-${toolUseId}`,
-        timestamp: rawMessage.timestamp,
-        type: 'tool_use',
-        content: content,
-        metadata: {
-          sessionId: rawMessage.sessionId,
-          toolUseId: toolUseId,
+      return [
+        {
+          id: `${rawMessage.sessionId}-${rawMessage.timestamp}-tool-${toolUseId}`,
+          timestamp: rawMessage.timestamp,
+          type: 'tool_use',
+          content: content,
+          metadata: {
+            sessionId: rawMessage.sessionId,
+            toolUseId: toolUseId,
+          },
         },
-      }]
+      ]
     }
 
     // Handle direct tool_result messages (from new format)
@@ -363,16 +378,18 @@ class OpenCodeAdapter implements ProviderAdapter {
       const content = processedContent.parts?.[0] || processedContent
       const toolUseId = content.tool_use_id || 'unknown'
 
-      return [{
-        id: `${rawMessage.sessionId}-${rawMessage.timestamp}-result-${toolUseId}`,
-        timestamp: rawMessage.timestamp,
-        type: 'tool_result',
-        content: content,
-        metadata: {
-          sessionId: rawMessage.sessionId,
+      return [
+        {
+          id: `${rawMessage.sessionId}-${rawMessage.timestamp}-result-${toolUseId}`,
+          timestamp: rawMessage.timestamp,
+          type: 'tool_result',
+          content: content,
+          metadata: {
+            sessionId: rawMessage.sessionId,
+          },
+          linkedTo: toolUseId,
         },
-        linkedTo: toolUseId,
-      }]
+      ]
     }
 
     // For assistant messages with tool uses, split into separate messages (legacy format)
@@ -438,7 +455,7 @@ class OpenCodeAdapter implements ProviderAdapter {
     if (message.type === 'user') {
       // Check if this is a tool result vs real user input
       const content = message.message?.content
-      if (Array.isArray(content) && content.some((item) => item.type === 'tool_result')) {
+      if (Array.isArray(content) && content.some(item => item.type === 'tool_result')) {
         return 'tool_result'
       }
       return 'user_input'
@@ -459,7 +476,7 @@ class OpenCodeAdapter implements ProviderAdapter {
     }
 
     if (Array.isArray(content)) {
-      const processed = content.map((item) => {
+      const processed = content.map(item => {
         if (item.type === 'text') {
           return { type: 'text', text: item.text }
         }
@@ -497,11 +514,11 @@ class CopilotAdapter implements ProviderAdapter {
       typeof content === 'object' &&
       content.timestamp &&
       content.type &&
-      (content.type === 'user' || 
-       content.type === 'copilot' || 
-       content.type === 'tool_call_requested' || 
-       content.type === 'tool_call_completed' ||
-       content.type === 'info')
+      (content.type === 'user' ||
+        content.type === 'copilot' ||
+        content.type === 'tool_call_requested' ||
+        content.type === 'tool_call_completed' ||
+        content.type === 'info')
     )
   }
 
@@ -511,34 +528,38 @@ class CopilotAdapter implements ProviderAdapter {
 
     // Handle tool call requested (tool use only, no result yet)
     if (rawMessage.type === 'tool_call_requested') {
-      return [{
-        id: rawMessage.callId || `tool-${rawMessage.timestamp}`,
-        timestamp: rawMessage.timestamp,
-        type: 'tool_use',
-        content: {
+      return [
+        {
+          id: rawMessage.callId || `tool-${rawMessage.timestamp}`,
+          timestamp: rawMessage.timestamp,
           type: 'tool_use',
-          id: rawMessage.callId,
-          name: rawMessage.name,
-          input: rawMessage.arguments || {},
-          parts: [{
+          content: {
             type: 'tool_use',
             id: rawMessage.callId,
             name: rawMessage.name,
             input: rawMessage.arguments || {},
-          }]
+            parts: [
+              {
+                type: 'tool_use',
+                id: rawMessage.callId,
+                name: rawMessage.name,
+                input: rawMessage.arguments || {},
+              },
+            ],
+          },
+          metadata: {
+            toolTitle: rawMessage.toolTitle,
+            intentionSummary: rawMessage.intentionSummary,
+          },
         },
-        metadata: {
-          toolTitle: rawMessage.toolTitle,
-          intentionSummary: rawMessage.intentionSummary,
-        },
-      }]
+      ]
     }
 
     // Handle tool call completed - create BOTH tool_use and tool_result messages
     // from the single timeline entry so they can be grouped for side-by-side display
     if (rawMessage.type === 'tool_call_completed') {
       const toolUseId = rawMessage.callId || `tool-${rawMessage.timestamp}`
-      
+
       return [
         // Tool use message (left side of group)
         {
@@ -550,12 +571,14 @@ class CopilotAdapter implements ProviderAdapter {
             id: rawMessage.callId,
             name: rawMessage.name,
             input: rawMessage.arguments || {},
-            parts: [{
-              type: 'tool_use',
-              id: rawMessage.callId,
-              name: rawMessage.name,
-              input: rawMessage.arguments || {},
-            }]
+            parts: [
+              {
+                type: 'tool_use',
+                id: rawMessage.callId,
+                name: rawMessage.name,
+                input: rawMessage.arguments || {},
+              },
+            ],
           },
           metadata: {
             toolTitle: rawMessage.toolTitle,
@@ -571,31 +594,35 @@ class CopilotAdapter implements ProviderAdapter {
             type: 'tool_result',
             tool_use_id: rawMessage.callId,
             content: rawMessage.result?.log || rawMessage.result,
-            parts: [{
-              type: 'tool_result',
-              tool_use_id: rawMessage.callId,
-              content: rawMessage.result?.log || rawMessage.result,
-            }]
+            parts: [
+              {
+                type: 'tool_result',
+                tool_use_id: rawMessage.callId,
+                content: rawMessage.result?.log || rawMessage.result,
+              },
+            ],
           },
           metadata: {
             toolName: rawMessage.name,
             resultType: rawMessage.result?.type,
           },
           linkedTo: toolUseId,
-        }
+        },
       ]
     }
 
     // Handle regular messages (user, copilot, info)
-    return [{
-      id: rawMessage.id || `msg-${rawMessage.timestamp}`,
-      timestamp: rawMessage.timestamp,
-      type: messageType,
-      content: processedContent,
-      metadata: {
-        entryType: rawMessage.type,
+    return [
+      {
+        id: rawMessage.id || `msg-${rawMessage.timestamp}`,
+        timestamp: rawMessage.timestamp,
+        type: messageType,
+        content: processedContent,
+        metadata: {
+          entryType: rawMessage.type,
+        },
       },
-    }]
+    ]
   }
 
   private getMessageType(message: any): BaseSessionMessage['type'] {
@@ -620,32 +647,38 @@ class CopilotAdapter implements ProviderAdapter {
     if (message.text) {
       return {
         text: message.text,
-        parts: [{
-          type: 'text',
-          text: message.text
-        }]
+        parts: [
+          {
+            type: 'text',
+            text: message.text,
+          },
+        ],
       }
     }
 
     // For tool calls, create appropriate structure
     if (message.type === 'tool_call_requested') {
       return {
-        parts: [{
-          type: 'tool_use',
-          id: message.callId,
-          name: message.name,
-          input: message.arguments || {},
-        }]
+        parts: [
+          {
+            type: 'tool_use',
+            id: message.callId,
+            name: message.name,
+            input: message.arguments || {},
+          },
+        ],
       }
     }
 
     if (message.type === 'tool_call_completed') {
       return {
-        parts: [{
-          type: 'tool_result',
-          tool_use_id: message.callId,
-          content: message.result?.log || message.result,
-        }]
+        parts: [
+          {
+            type: 'tool_result',
+            tool_use_id: message.callId,
+            content: message.result?.log || message.result,
+          },
+        ],
       }
     }
 
@@ -676,7 +709,11 @@ class GeminiAdapter implements ProviderAdapter {
     }
 
     // Check if this is a tool result message (user message starting with [Function Response:])
-    if (geminiMsg.type === 'user' && geminiMsg.content && geminiMsg.content.startsWith('[Function Response:')) {
+    if (
+      geminiMsg.type === 'user' &&
+      geminiMsg.content &&
+      geminiMsg.content.startsWith('[Function Response:')
+    ) {
       // Extract tool name from [Function Response: tool_name]
       const toolNameMatch = geminiMsg.content.match(/\[Function Response: ([^\]]+)\]/)
       const toolName = toolNameMatch ? toolNameMatch[1] : 'unknown'
@@ -713,7 +750,7 @@ class GeminiAdapter implements ProviderAdapter {
             toolName,
           },
           linkedTo: toolUseId,
-        }
+        },
       ]
     }
 
@@ -721,19 +758,21 @@ class GeminiAdapter implements ProviderAdapter {
     const processedContent = this.processContent(geminiMsg)
 
     // Default single message
-    return [{
-      id: geminiMsg.id,
-      timestamp: geminiMsg.timestamp,
-      type: messageType,
-      content: processedContent,
-      metadata: {
-        sessionId: rawMessage.sessionId,
-        model: geminiMsg.model,
-        thoughts: geminiMsg.thoughts,
-        tokens: geminiMsg.tokens,
-        cwd: rawMessage.cwd,
+    return [
+      {
+        id: geminiMsg.id,
+        timestamp: geminiMsg.timestamp,
+        type: messageType,
+        content: processedContent,
+        metadata: {
+          sessionId: rawMessage.sessionId,
+          model: geminiMsg.model,
+          thoughts: geminiMsg.thoughts,
+          tokens: geminiMsg.tokens,
+          cwd: rawMessage.cwd,
+        },
       },
-    }]
+    ]
   }
 
   private getMessageType(message: any): BaseSessionMessage['type'] {
@@ -753,10 +792,12 @@ class GeminiAdapter implements ProviderAdapter {
     if (message.content) {
       return {
         text: message.content,
-        parts: [{
-          type: 'text',
-          text: message.content,
-        }]
+        parts: [
+          {
+            type: 'text',
+            text: message.content,
+          },
+        ],
       }
     }
 
@@ -819,7 +860,9 @@ class GenericJSONLParser implements SessionParser {
       }
     }
 
-    return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    return messages.sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    )
   }
 
   private getAdapter(provider: string): ProviderAdapter | null {
@@ -856,16 +899,18 @@ class GenericJSONLParser implements SessionParser {
       const parsedContent = this.parsePartsContent(content)
       if (parsedContent) {
         // Check for interruption in parts structure - ONLY if it's specifically about interruption
-        const hasInterruptionText = parsedContent.parts?.some((part: any) =>
-          part.type === 'text' &&
-          (part.text?.includes('[Request interrupted by user]') ||
-           part.text?.includes('Request interrupted by user'))
+        const hasInterruptionText = parsedContent.parts?.some(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.includes('[Request interrupted by user]') ||
+              part.text?.includes('Request interrupted by user'))
         )
-        const hasOnlyInterruptionText = parsedContent.parts?.every((part: any) =>
-          part.type === 'text' &&
-          (part.text?.includes('[Request interrupted by user]') ||
-           part.text?.includes('Request interrupted by user') ||
-           !part.text?.trim())
+        const hasOnlyInterruptionText = parsedContent.parts?.every(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.includes('[Request interrupted by user]') ||
+              part.text?.includes('Request interrupted by user') ||
+              !part.text?.trim())
         )
 
         if (hasInterruptionText && hasOnlyInterruptionText) {
@@ -873,14 +918,17 @@ class GenericJSONLParser implements SessionParser {
         }
 
         // Check for commands in parts structure - ONLY if it's specifically a command
-        const hasCommandText = parsedContent.parts?.some((part: any) =>
-          part.type === 'text' &&
-          (part.text?.startsWith('/') || part.text?.includes('<command-name>'))
+        const hasCommandText = parsedContent.parts?.some(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.startsWith('/') || part.text?.includes('<command-name>'))
         )
-        const hasOnlyCommandText = parsedContent.parts?.every((part: any) =>
-          part.type === 'text' &&
-          (part.text?.startsWith('/') || part.text?.includes('<command-name>') ||
-           !part.text?.trim())
+        const hasOnlyCommandText = parsedContent.parts?.every(
+          (part: any) =>
+            part.type === 'text' &&
+            (part.text?.startsWith('/') ||
+              part.text?.includes('<command-name>') ||
+              !part.text?.trim())
         )
 
         if (hasCommandText && hasOnlyCommandText) {
@@ -897,22 +945,28 @@ class GenericJSONLParser implements SessionParser {
           return 'command'
         }
 
-        if (content.includes('Request interrupted by user') || content.includes('[Request interrupted by user]')) {
+        if (
+          content.includes('Request interrupted by user') ||
+          content.includes('[Request interrupted by user]')
+        ) {
           return 'interruption'
         }
       }
 
       // Check if this is a simple interruption message (array with only interruption text)
       if (Array.isArray(content)) {
-        const hasInterruptionText = content.some((item: any) =>
-          item.type === 'text' &&
-          (item.text?.includes('[Request interrupted by user]') || item.text?.includes('Request interrupted by user'))
+        const hasInterruptionText = content.some(
+          (item: any) =>
+            item.type === 'text' &&
+            (item.text?.includes('[Request interrupted by user]') ||
+              item.text?.includes('Request interrupted by user'))
         )
-        const hasOnlyInterruptionText = content.every((item: any) =>
-          item.type === 'text' &&
-          (item.text?.includes('[Request interrupted by user]') ||
-           item.text?.includes('Request interrupted by user') ||
-           !item.text?.trim())
+        const hasOnlyInterruptionText = content.every(
+          (item: any) =>
+            item.type === 'text' &&
+            (item.text?.includes('[Request interrupted by user]') ||
+              item.text?.includes('Request interrupted by user') ||
+              !item.text?.trim())
         )
 
         if (hasInterruptionText && hasOnlyInterruptionText) {
@@ -1010,9 +1064,10 @@ export class ConversationParser {
           id: message.uuid,
           timestamp: message.timestamp,
           userInput: {
-            content: typeof message.message.content === 'string'
-              ? message.message.content
-              : JSON.stringify(message.message.content),
+            content:
+              typeof message.message.content === 'string'
+                ? message.message.content
+                : JSON.stringify(message.message.content),
             timestamp: message.timestamp,
           },
         }
@@ -1071,4 +1126,11 @@ export class ConversationParser {
   }
 }
 
-export { ClaudeAdapter, CopilotAdapter, CodexAdapter, OpenCodeAdapter, GeminiAdapter, GenericJSONLParser }
+export {
+  ClaudeAdapter,
+  CopilotAdapter,
+  CodexAdapter,
+  OpenCodeAdapter,
+  GeminiAdapter,
+  GenericJSONLParser,
+}

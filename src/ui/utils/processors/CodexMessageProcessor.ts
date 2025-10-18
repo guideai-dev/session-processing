@@ -77,9 +77,7 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
     // Token count
     if (payloadType === 'token_count') {
       const tokens = payload?.info?.total_token_usage
-      const badge = tokens
-        ? `${tokens.input_tokens}↓ ${tokens.output_tokens}↑`
-        : 'TOKENS'
+      const badge = tokens ? `${tokens.input_tokens}↓ ${tokens.output_tokens}↑` : 'TOKENS'
 
       return createDisplayMetadata({
         icon: 'TOK',
@@ -269,9 +267,7 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
 
       // Note about encrypted content
       if (payload?.encrypted_content && blocks.length === 0) {
-        blocks.push(
-          createContentBlock('text', '_[Encrypted reasoning content not displayed]_')
-        )
+        blocks.push(createContentBlock('text', '_[Encrypted reasoning content not displayed]_'))
       }
 
       return blocks.length > 0 ? blocks : [createContentBlock('json', payload, { collapsed: true })]

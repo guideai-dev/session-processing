@@ -20,7 +20,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
         error_types: [],
         last_error_message: undefined,
         recovery_attempts: 0,
-        fatal_errors: 0
+        fatal_errors: 0,
       }
     }
 
@@ -35,12 +35,18 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
       error_types: Array.from(new Set(errorTypes)), // Unique error types
       last_error_message: errors.length > 0 ? errors[errors.length - 1].message : undefined,
       recovery_attempts: recoveryAttempts,
-      fatal_errors: fatalErrors
+      fatal_errors: fatalErrors,
     }
   }
 
-  private extractErrors(toolResults: any[]): Array<{ message: string; tool: string; severity: 'warning' | 'error' | 'fatal' }> {
-    const errors: Array<{ message: string; tool: string; severity: 'warning' | 'error' | 'fatal' }> = []
+  private extractErrors(
+    toolResults: any[]
+  ): Array<{ message: string; tool: string; severity: 'warning' | 'error' | 'fatal' }> {
+    const errors: Array<{
+      message: string
+      tool: string
+      severity: 'warning' | 'error' | 'fatal'
+    }> = []
 
     for (const result of toolResults) {
       const resultStr = JSON.stringify(result).toLowerCase()
@@ -50,7 +56,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
         errors.push({
           message: errorIndicators.message || 'Unknown error',
           tool: result.name || 'unknown',
-          severity: errorIndicators.severity
+          severity: errorIndicators.severity,
         })
       }
     }
@@ -58,7 +64,10 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
     return errors
   }
 
-  private getErrorIndicators(resultStr: string, result: any): {
+  private getErrorIndicators(
+    resultStr: string,
+    result: any
+  ): {
     hasError: boolean
     message?: string
     severity: 'warning' | 'error' | 'fatal'
@@ -68,8 +77,9 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
       if (result.is_error === true) {
         return {
           hasError: true,
-          message: typeof result.content === 'string' ? result.content : JSON.stringify(result.content),
-          severity: 'error'
+          message:
+            typeof result.content === 'string' ? result.content : JSON.stringify(result.content),
+          severity: 'error',
         }
       }
       // If is_error is false, this is not an error
@@ -81,7 +91,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
       return {
         hasError: true,
         message: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
-        severity: 'error'
+        severity: 'error',
       }
     }
 
@@ -91,7 +101,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
       'critical error',
       'cannot continue',
       'system failure',
-      'unrecoverable'
+      'unrecoverable',
     ]
 
     // Error keywords
@@ -107,23 +117,18 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
       'invalid',
       'cannot',
       'unable to',
-      'could not'
+      'could not',
     ]
 
     // Warning keywords (less severe)
-    const warningKeywords = [
-      'warning:',
-      'deprecated',
-      'caution',
-      'notice'
-    ]
+    const warningKeywords = ['warning:', 'deprecated', 'caution', 'notice']
 
     for (const keyword of fatalKeywords) {
       if (resultStr.includes(keyword)) {
         return {
           hasError: true,
           message: this.extractErrorMessage(resultStr, keyword),
-          severity: 'fatal'
+          severity: 'fatal',
         }
       }
     }
@@ -133,7 +138,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
         return {
           hasError: true,
           message: this.extractErrorMessage(resultStr, keyword),
-          severity: 'error'
+          severity: 'error',
         }
       }
     }
@@ -143,7 +148,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
         return {
           hasError: true,
           message: this.extractErrorMessage(resultStr, keyword),
-          severity: 'warning'
+          severity: 'warning',
         }
       }
     }
@@ -167,7 +172,9 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
     return errorLine ? errorLine.trim() : chunk
   }
 
-  private categorizeErrors(errors: Array<{ message: string; tool: string; severity: string }>): string[] {
+  private categorizeErrors(
+    errors: Array<{ message: string; tool: string; severity: string }>
+  ): string[] {
     const categories = new Set<string>()
 
     for (const error of errors) {
@@ -179,7 +186,10 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
         categories.add('file_not_found')
       } else if (message.includes('permission denied') || message.includes('access denied')) {
         categories.add('permission_error')
-      } else if (message.includes('file') && (message.includes('error') || message.includes('failed'))) {
+      } else if (
+        message.includes('file') &&
+        (message.includes('error') || message.includes('failed'))
+      ) {
         categories.add('file_operation_error')
       }
 
@@ -215,7 +225,10 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
     return Array.from(categories)
   }
 
-  private countRecoveryAttempts(session: ParsedSession, errors: Array<{ message: string; tool: string; severity: string }>): number {
+  private countRecoveryAttempts(
+    session: ParsedSession,
+    errors: Array<{ message: string; tool: string; severity: string }>
+  ): number {
     // Recovery attempt is when the same tool is used again after a failure
     // or when a different approach is tried after an error
 
@@ -237,7 +250,10 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
     return recoveryCount
   }
 
-  private countFatalErrors(errors: Array<{ message: string; tool: string; severity: string }>, toolUses: any[]): number {
+  private countFatalErrors(
+    errors: Array<{ message: string; tool: string; severity: string }>,
+    toolUses: any[]
+  ): number {
     // Fatal errors are those that stop progress
     let fatalCount = 0
 
@@ -256,7 +272,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
         'authorization failed',
         'quota exceeded',
         'out of memory',
-        'disk full'
+        'disk full',
       ]
 
       const message = error.message.toLowerCase()

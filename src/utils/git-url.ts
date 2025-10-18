@@ -9,7 +9,9 @@
  * - HTTPS: https://github.com/owner/repo.git
  * - HTTPS (no .git): https://github.com/owner/repo
  */
-export function parseGitHubUrl(url: string | null | undefined): { owner: string; repo: string } | null {
+export function parseGitHubUrl(
+  url: string | null | undefined
+): { owner: string; repo: string } | null {
   if (!url) return null
 
   // Try SSH format first: git@github.com:owner/repo.git

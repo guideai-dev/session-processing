@@ -145,27 +145,17 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
       {/* Question text */}
       <div className="text-center space-y-2">
         <h3 className="text-2xl font-semibold">{question.text}</h3>
-        {question.helpText && (
-          <p className="text-sm text-base-content/60">{question.helpText}</p>
-        )}
-        {!question.required && (
-          <p className="text-xs text-base-content/50">(Optional)</p>
-        )}
+        {question.helpText && <p className="text-sm text-base-content/60">{question.helpText}</p>}
+        {!question.required && <p className="text-xs text-base-content/50">(Optional)</p>}
       </div>
 
       {/* Input */}
-      <div className="max-w-2xl mx-auto">
-        {renderInput()}
-      </div>
+      <div className="max-w-2xl mx-auto">{renderInput()}</div>
 
       {/* Skip button for optional questions */}
       {!question.required && !hasAnswer && (
         <div className="text-center">
-          <button
-            type="button"
-            onClick={handleSkip}
-            className="btn btn-ghost btn-sm"
-          >
+          <button type="button" onClick={handleSkip} className="btn btn-ghost btn-sm">
             {question.skipLabel || 'Skip'}
           </button>
         </div>

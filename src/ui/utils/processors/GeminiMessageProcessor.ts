@@ -29,10 +29,13 @@ export class GeminiMessageProcessor extends BaseMessageProcessor {
         ...baseMetadata,
         title: 'Gemini',
         IconComponent: CpuChipIcon,
-        badge: thoughtCount > 0 ? {
-          text: `${thoughtCount} thought${thoughtCount === 1 ? '' : 's'}`,
-          color: 'badge-primary',
-        } : undefined,
+        badge:
+          thoughtCount > 0
+            ? {
+                text: `${thoughtCount} thought${thoughtCount === 1 ? '' : 's'}`,
+                color: 'badge-primary',
+              }
+            : undefined,
       }
     }
 
@@ -90,7 +93,9 @@ export class GeminiMessageProcessor extends BaseMessageProcessor {
         const blocks: ContentBlock[] = []
 
         // Add a summary block
-        blocks.push(createContentBlock('text', `Tool: ${toolName || 'unknown'} - ${sections.length} file(s)`))
+        blocks.push(
+          createContentBlock('text', `Tool: ${toolName || 'unknown'} - ${sections.length} file(s)`)
+        )
 
         // Add each file section
         for (const section of sections) {
@@ -153,29 +158,29 @@ export class GeminiMessageProcessor extends BaseMessageProcessor {
     const ext = path.split('.').pop()?.toLowerCase()
 
     const languageMap: Record<string, string> = {
-      'ts': 'typescript',
-      'tsx': 'typescript',
-      'js': 'javascript',
-      'jsx': 'javascript',
-      'py': 'python',
-      'rs': 'rust',
-      'go': 'go',
-      'java': 'java',
-      'c': 'c',
-      'cpp': 'cpp',
-      'h': 'c',
-      'hpp': 'cpp',
-      'json': 'json',
-      'yaml': 'yaml',
-      'yml': 'yaml',
-      'md': 'markdown',
-      'sh': 'bash',
-      'bash': 'bash',
-      'zsh': 'bash',
-      'sql': 'sql',
-      'css': 'css',
-      'scss': 'scss',
-      'html': 'html',
+      ts: 'typescript',
+      tsx: 'typescript',
+      js: 'javascript',
+      jsx: 'javascript',
+      py: 'python',
+      rs: 'rust',
+      go: 'go',
+      java: 'java',
+      c: 'c',
+      cpp: 'cpp',
+      h: 'c',
+      hpp: 'cpp',
+      json: 'json',
+      yaml: 'yaml',
+      yml: 'yaml',
+      md: 'markdown',
+      sh: 'bash',
+      bash: 'bash',
+      zsh: 'bash',
+      sql: 'sql',
+      css: 'css',
+      scss: 'scss',
+      html: 'html',
     }
 
     return languageMap[ext || ''] || 'text'

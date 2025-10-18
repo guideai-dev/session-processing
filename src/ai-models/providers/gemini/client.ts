@@ -82,13 +82,13 @@ export class GeminiAPIClient {
       generationConfig: {
         temperature: options?.temperature ?? this.defaultTemperature,
         maxOutputTokens: options?.maxOutputTokens || this.defaultMaxOutputTokens,
-        ...(options?.responseMimeType && { responseMimeType: options.responseMimeType })
-      }
+        ...(options?.responseMimeType && { responseMimeType: options.responseMimeType }),
+      },
     }
 
     if (options?.systemInstruction) {
       request.systemInstruction = {
-        parts: [{ text: options.systemInstruction }]
+        parts: [{ text: options.systemInstruction }],
       }
     }
 
@@ -111,23 +111,21 @@ export class GeminiAPIClient {
     const messages: GeminiMessage[] = [
       {
         role: 'user',
-        parts: [{ text: prompt }]
-      }
+        parts: [{ text: prompt }],
+      },
     ]
 
     const response = await this.generateContent(messages, options)
 
     // Extract text from response
-    const text = response.candidates[0]?.content.parts
-      .map(part => part.text)
-      .join('\n') || ''
+    const text = response.candidates[0]?.content.parts.map(part => part.text).join('\n') || ''
 
     return {
       text,
       usage: {
         input_tokens: response.usageMetadata.promptTokenCount,
-        output_tokens: response.usageMetadata.candidatesTokenCount
-      }
+        output_tokens: response.usageMetadata.candidatesTokenCount,
+      },
     }
   }
 
@@ -169,10 +167,12 @@ export class GeminiAPIClient {
       const data = JSON.parse(jsonText) as T
       return {
         data,
-        usage: result.usage
+        usage: result.usage,
       }
     } catch (error) {
-      throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : 'Unknown error'}\nResponse: ${jsonText}`)
+      throw new Error(
+        `Failed to parse JSON response: ${error instanceof Error ? error.message : 'Unknown error'}\nResponse: ${jsonText}`
+      )
     }
   }
 
@@ -186,13 +186,13 @@ export class GeminiAPIClient {
       await this.prompt('Hello', { maxOutputTokens: 10 })
       return {
         healthy: true,
-        latency: Date.now() - startTime
+        latency: Date.now() - startTime,
       }
     } catch (error) {
       return {
         healthy: false,
         latency: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -211,10 +211,10 @@ export class GeminiAPIClient {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       clearTimeout(timeoutId)

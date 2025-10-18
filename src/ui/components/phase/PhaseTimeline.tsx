@@ -57,9 +57,7 @@ export function PhaseTimeline({ phaseAnalysis }: PhaseTimelineProps) {
           {pattern && (
             <div className="mt-2 p-2.5 bg-base-200/50 rounded-lg">
               <div className="text-xs font-medium text-base-content/70 mb-1">Pattern</div>
-              <div className="text-xs text-base-content/80 font-mono break-words">
-                {pattern}
-              </div>
+              <div className="text-xs text-base-content/80 font-mono break-words">{pattern}</div>
             </div>
           )}
         </div>

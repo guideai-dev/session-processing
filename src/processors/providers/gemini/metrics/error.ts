@@ -7,7 +7,6 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
   readonly description = 'Detects and analyzes errors and issues in Gemini sessions'
 
   async process(session: ParsedSession): Promise<SessionMetricsData> {
-
     const errors: Array<{
       messageId: string
       timestamp: Date
@@ -24,9 +23,8 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
 
     // Analyze each message for errors or warnings
     for (const message of session.messages) {
-      const text = typeof message.content === 'string'
-        ? message.content
-        : message.content?.text || ''
+      const text =
+        typeof message.content === 'string' ? message.content : message.content?.text || ''
 
       // Check for error indicators in content
       if (this.containsErrorPattern(text)) {
@@ -34,7 +32,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
           messageId: message.id,
           timestamp: message.timestamp,
           errorType: 'content_error',
-          description: 'Error pattern detected in message content'
+          description: 'Error pattern detected in message content',
         })
       }
 
@@ -44,7 +42,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
           messageId: message.id,
           timestamp: message.timestamp,
           errorType: 'api_error',
-          description: 'API error or failure detected'
+          description: 'API error or failure detected',
         })
       }
 
@@ -54,7 +52,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
           messageId: message.id,
           timestamp: message.timestamp,
           warningType: 'incomplete_response',
-          description: 'Response appears to be incomplete or truncated'
+          description: 'Response appears to be incomplete or truncated',
         })
       }
 
@@ -64,7 +62,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
           messageId: message.id,
           timestamp: message.timestamp,
           warningType: 'missing_token_data',
-          description: 'Token usage data not available'
+          description: 'Token usage data not available',
         })
       }
 
@@ -74,7 +72,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
           messageId: message.id,
           timestamp: message.timestamp,
           warningType: 'missing_thoughts',
-          description: 'Thinking data not available (unusual for Gemini)'
+          description: 'Thinking data not available (unusual for Gemini)',
         })
       }
     }
@@ -129,10 +127,11 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
         missing_thoughts: warnings.filter(w => w.warningType === 'missing_thoughts').length,
         total_messages: totalMessages,
         messages_with_issues: errors.length + warnings.length,
-        issue_rate: totalMessages > 0 ? ((errors.length + warnings.length) / totalMessages) * 100 : 0,
+        issue_rate:
+          totalMessages > 0 ? ((errors.length + warnings.length) / totalMessages) * 100 : 0,
         error_details: errors,
-        warning_details: warnings
-      }
+        warning_details: warnings,
+      },
     }
 
     return metrics
@@ -144,7 +143,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
       /failed to/i,
       /exception/i,
       /stack trace/i,
-      /\berror\b.*\boccurred\b/i
+      /\berror\b.*\boccurred\b/i,
     ]
 
     return errorPatterns.some(pattern => pattern.test(text))
@@ -157,7 +156,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
       /quota exceeded/i,
       /authentication failed/i,
       /request failed/i,
-      /status code:\s*[45]\d{2}/i
+      /status code:\s*[45]\d{2}/i,
     ]
 
     return apiErrorPatterns.some(pattern => pattern.test(text))
@@ -175,11 +174,15 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
     return text.length > 50 && incompletePatterns.some(pattern => pattern.test(text))
   }
 
-  private generateImprovementTips(errorCount: number, warningCount: number, healthScore: number): string[] {
+  private generateImprovementTips(
+    errorCount: number,
+    warningCount: number,
+    healthScore: number
+  ): string[] {
     const tips: string[] = []
 
     if (errorCount === 0 && warningCount === 0) {
-      tips.push("Perfect session with no errors or warnings")
+      tips.push('Perfect session with no errors or warnings')
       return tips
     }
 
@@ -188,13 +191,13 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
     }
 
     if (warningCount > 5) {
-      tips.push("Many warnings detected - check for missing data or incomplete responses")
+      tips.push('Many warnings detected - check for missing data or incomplete responses')
     }
 
     if (healthScore < 50) {
-      tips.push("Low health score - session had significant issues that need attention")
+      tips.push('Low health score - session had significant issues that need attention')
     } else if (healthScore > 80) {
-      tips.push("Good health score - minor issues only")
+      tips.push('Good health score - minor issues only')
     }
 
     return tips

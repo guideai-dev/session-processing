@@ -17,13 +17,12 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     const assistantMessages = session.messages.filter(m => m.type === 'assistant')
 
     // Calculate task success rate (key metric for quality)
-    const successfulOperations = toolResults.filter(result =>
-      !this.hasErrorIndicators(result)
+    const successfulOperations = toolResults.filter(
+      result => !this.hasErrorIndicators(result)
     ).length
     const totalOperations = toolResults.length
-    const taskSuccessRate = totalOperations > 0
-      ? Math.round((successfulOperations / totalOperations) * 100)
-      : 0
+    const taskSuccessRate =
+      totalOperations > 0 ? Math.round((successfulOperations / totalOperations) * 100) : 0
 
     // Calculate iteration count (number of refinement cycles)
     const iterationCount = this.calculateIterations(userMessages, session)
@@ -53,11 +52,16 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
         successful_operations: successfulOperations,
         total_operations: totalOperations,
         over_top_affirmations_phrases: overTopAffirmations.phrases,
-        improvement_tips: this.generateImprovementTips(taskSuccessRate, iterationCount, processQualityScore, cancellations),
+        improvement_tips: this.generateImprovementTips(
+          taskSuccessRate,
+          iterationCount,
+          processQualityScore,
+          cancellations
+        ),
         // Extra fields for analysis
         cancellations: cancellations,
-        average_response_length: avgResponseLength
-      } as any
+        average_response_length: avgResponseLength,
+      } as any,
     }
   }
 
@@ -100,8 +104,14 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
   private hasErrorIndicators(result: any): boolean {
     const resultStr = JSON.stringify(result).toLowerCase()
     const errorKeywords = [
-      'error', 'failed', 'exception', 'not found',
-      'permission denied', 'invalid', 'cannot', 'unable'
+      'error',
+      'failed',
+      'exception',
+      'not found',
+      'permission denied',
+      'invalid',
+      'cannot',
+      'unable',
     ]
     return errorKeywords.some(keyword => resultStr.includes(keyword))
   }
@@ -126,17 +136,32 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
       // More specific refinement patterns that indicate actual iterations
       const refinementPatterns = [
         // Direct corrections
-        'actually,', 'instead,', 'wait,', 'no,', 'correction:',
+        'actually,',
+        'instead,',
+        'wait,',
+        'no,',
+        'correction:',
         // Change requests
-        'change that', 'modify that', 'update that', 'fix that',
-        'make it', 'let\'s change', 'can you change',
+        'change that',
+        'modify that',
+        'update that',
+        'fix that',
+        'make it',
+        "let's change",
+        'can you change',
         // Direction changes
-        'different approach', 'try a different', 'let\'s try',
-        'that\'s not', 'that won\'t work', 'that\'s wrong',
+        'different approach',
+        'try a different',
+        "let's try",
+        "that's not",
+        "that won't work",
+        "that's wrong",
         // Refinements
-        'rather than', 'instead of', 'better to',
+        'rather than',
+        'instead of',
+        'better to',
         // Interruptions with corrections
-        '[request interrupted by user]'
+        '[request interrupted by user]',
       ]
 
       // Only count if message contains refinement patterns
@@ -148,16 +173,21 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     return iterations
   }
 
-  private calculateProcessQuality(toolUses: any[], session: ParsedSession, cancellations: number): number {
+  private calculateProcessQuality(
+    toolUses: any[],
+    session: ParsedSession,
+    cancellations: number
+  ): number {
     let score = 50 // Start at 50 as baseline
 
     // Check for "View before Edit" pattern (good practice with str_replace_editor)
-    const viewCommands = toolUses.filter(tool =>
-      tool.name === 'str_replace_editor' && tool.input?.command === 'view'
+    const viewCommands = toolUses.filter(
+      tool => tool.name === 'str_replace_editor' && tool.input?.command === 'view'
     )
-    const editCommands = toolUses.filter(tool =>
-      tool.name === 'str_replace_editor' &&
-      ['str_replace', 'create', 'insert'].includes(tool.input?.command || '')
+    const editCommands = toolUses.filter(
+      tool =>
+        tool.name === 'str_replace_editor' &&
+        ['str_replace', 'create', 'insert'].includes(tool.input?.command || '')
     )
 
     if (viewCommands.length > 0 && editCommands.length > 0) {
@@ -198,36 +228,45 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     return Math.max(0, Math.min(score, 100))
   }
 
-  private generateImprovementTips(taskSuccessRate: number, iterationCount: number, processQuality: number, cancellations: number): string[] {
+  private generateImprovementTips(
+    taskSuccessRate: number,
+    iterationCount: number,
+    processQuality: number,
+    cancellations: number
+  ): string[] {
     const tips: string[] = []
 
     if (taskSuccessRate < 70) {
-      tips.push("Low success rate - ensure comprehensive upfront context (file paths, specs, code examples)")
-      tips.push("Consider improving documentation to reduce AI exploration")
+      tips.push(
+        'Low success rate - ensure comprehensive upfront context (file paths, specs, code examples)'
+      )
+      tips.push('Consider improving documentation to reduce AI exploration')
     }
 
     if (iterationCount > 10) {
-      tips.push("Many iterations - consider whether initial prompt provided enough technical detail and context")
-      tips.push("Provide examples or templates upfront to reduce back-and-forth")
+      tips.push(
+        'Many iterations - consider whether initial prompt provided enough technical detail and context'
+      )
+      tips.push('Provide examples or templates upfront to reduce back-and-forth')
     }
 
     if (processQuality < 50) {
-      tips.push("Improve process by providing file paths and context upfront to reduce searching")
-      tips.push("Let AI view files before making changes for better context")
+      tips.push('Improve process by providing file paths and context upfront to reduce searching')
+      tips.push('Let AI view files before making changes for better context')
     }
 
     if (cancellations > 3) {
-      tips.push("High cancellation rate - consider whether initial specs and context were clear")
-      tips.push("Note: Some cancellations are effective steering when AI goes off track")
+      tips.push('High cancellation rate - consider whether initial specs and context were clear')
+      tips.push('Note: Some cancellations are effective steering when AI goes off track')
     }
 
     // Excellent practices recognition
     if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 75 && cancellations <= 1) {
-      tips.push("🌟 Outstanding! Efficient execution with clear context and effective steering")
+      tips.push('🌟 Outstanding! Efficient execution with clear context and effective steering')
     } else if (taskSuccessRate > 75 && processQuality > 70 && cancellations <= 2) {
-      tips.push("✨ Great collaboration! Effective context and process discipline")
+      tips.push('✨ Great collaboration! Effective context and process discipline')
     } else if (taskSuccessRate > 80 && iterationCount <= 5) {
-      tips.push("Excellent! High success rate with minimal iteration shows clear direction")
+      tips.push('Excellent! High success rate with minimal iteration shows clear direction')
     }
 
     return tips
@@ -282,7 +321,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
 
     return {
       count: totalCount,
-      phrases: Array.from(new Set(foundPhrases)) // Remove duplicates
+      phrases: Array.from(new Set(foundPhrases)), // Remove duplicates
     }
   }
 }

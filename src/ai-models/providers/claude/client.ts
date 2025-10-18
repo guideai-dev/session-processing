@@ -75,7 +75,7 @@ export class ClaudeAPIClient {
       max_tokens: options?.maxTokens || this.defaultMaxTokens,
       messages,
       temperature: options?.temperature ?? this.defaultTemperature,
-      ...(options?.system && { system: options.system })
+      ...(options?.system && { system: options.system }),
     }
 
     const response = await this.makeRequest('/messages', request)
@@ -97,8 +97,8 @@ export class ClaudeAPIClient {
     const messages: ClaudeMessage[] = [
       {
         role: 'user',
-        content: prompt
-      }
+        content: prompt,
+      },
     ]
 
     const response = await this.sendMessage(messages, options)
@@ -111,7 +111,7 @@ export class ClaudeAPIClient {
 
     return {
       text,
-      usage: response.usage
+      usage: response.usage,
     }
   }
 
@@ -134,7 +134,7 @@ export class ClaudeAPIClient {
 
     const result = await this.prompt(prompt, {
       ...options,
-      system: systemPrompt
+      system: systemPrompt,
     })
 
     // Parse JSON from response
@@ -151,10 +151,12 @@ export class ClaudeAPIClient {
       const data = JSON.parse(jsonText) as T
       return {
         data,
-        usage: result.usage
+        usage: result.usage,
       }
     } catch (error) {
-      throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : 'Unknown error'}\nResponse: ${jsonText}`)
+      throw new Error(
+        `Failed to parse JSON response: ${error instanceof Error ? error.message : 'Unknown error'}\nResponse: ${jsonText}`
+      )
     }
   }
 
@@ -168,13 +170,13 @@ export class ClaudeAPIClient {
       await this.prompt('Hello', { maxTokens: 10 })
       return {
         healthy: true,
-        latency: Date.now() - startTime
+        latency: Date.now() - startTime,
       }
     } catch (error) {
       return {
         healthy: false,
         latency: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -192,10 +194,10 @@ export class ClaudeAPIClient {
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01'
+          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify(body),
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       clearTimeout(timeoutId)

@@ -44,17 +44,24 @@ Respond with a JSON object:
             challenges: { type: 'array', items: { type: 'string' } },
             taskType: {
               type: 'string',
-              enum: ['feature_development', 'bug_fix', 'refactoring', 'learning', 'debugging', 'other']
-            }
+              enum: [
+                'feature_development',
+                'bug_fix',
+                'refactoring',
+                'learning',
+                'debugging',
+                'other',
+              ],
+            },
           },
-          required: ['primaryGoal', 'taskType']
-        }
+          required: ['primaryGoal', 'taskType'],
+        },
       },
       recordingStrategy: {
         updateAgentSession: ['aiModelMetadata'],
         createMetrics: true,
-        metricType: 'ai_model'
-      }
+        metricType: 'ai_model',
+      },
     }
   }
 
@@ -91,7 +98,7 @@ Respond with a JSON object:
 
     return {
       userName,
-      userMessages: userMessages || 'No user messages found'
+      userMessages: userMessages || 'No user messages found',
     }
   }
 
@@ -115,7 +122,14 @@ Respond with a JSON object:
       throw new Error('Primary goal is required and must be a string')
     }
 
-    const validTaskTypes = ['feature_development', 'bug_fix', 'refactoring', 'learning', 'debugging', 'other']
+    const validTaskTypes = [
+      'feature_development',
+      'bug_fix',
+      'refactoring',
+      'learning',
+      'debugging',
+      'other',
+    ]
     if (!output.taskType || !validTaskTypes.includes(output.taskType)) {
       output.taskType = 'other'
     }
@@ -126,7 +140,7 @@ Respond with a JSON object:
       secondaryGoals: Array.isArray(output.secondaryGoals) ? output.secondaryGoals : [],
       technologies: Array.isArray(output.technologies) ? output.technologies : [],
       challenges: Array.isArray(output.challenges) ? output.challenges : [],
-      taskType: output.taskType
+      taskType: output.taskType,
     }
   }
 }

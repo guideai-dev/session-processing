@@ -15,7 +15,7 @@ const versionOptions: VersionOption[] = [
   {
     version: 'short',
     title: 'Quick',
-    subtitle: "Just the essentials",
+    subtitle: 'Just the essentials',
     icon: RocketLaunchIcon,
     estimatedTime: '< 1m',
     questionCount: 8,
@@ -74,13 +74,15 @@ export function VersionSelector({ onSelect }: VersionSelectorProps) {
       <div className="text-center mb-6">
         <h3 className="text-base md:text-lg font-semibold mb-1">Choose assessment length</h3>
         <p className="text-xs md:text-sm text-base-content/60">
-          <span className="hidden md:inline">Use arrow keys to select, press Enter to continue</span>
+          <span className="hidden md:inline">
+            Use arrow keys to select, press Enter to continue
+          </span>
           <span className="md:hidden">Tap to select an option</span>
         </p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 max-w-2xl mx-auto">
-        {versionOptions.map((option) => {
+        {versionOptions.map(option => {
           const Icon = option.icon
           const isSelected = selected === option.version
           return (
@@ -92,9 +94,10 @@ export function VersionSelector({ onSelect }: VersionSelectorProps) {
               className={`
                 flex-1 card cursor-pointer
                 transition-all duration-200
-                ${isSelected
-                  ? 'bg-primary text-primary-content border-2 border-primary shadow-lg md:scale-105'
-                  : 'bg-base-100 border border-base-300 hover:border-base-content/20'
+                ${
+                  isSelected
+                    ? 'bg-primary text-primary-content border-2 border-primary shadow-lg md:scale-105'
+                    : 'bg-base-100 border border-base-300 hover:border-base-content/20'
                 }
               `}
             >
@@ -107,7 +110,9 @@ export function VersionSelector({ onSelect }: VersionSelectorProps) {
                       {option.subtitle}
                     </p>
                   </div>
-                  <div className={`text-xs md:mt-2 md:pt-2 md:border-t md:w-full ${isSelected ? 'md:border-primary-content/20' : 'md:border-base-300'} shrink-0`}>
+                  <div
+                    className={`text-xs md:mt-2 md:pt-2 md:border-t md:w-full ${isSelected ? 'md:border-primary-content/20' : 'md:border-base-300'} shrink-0`}
+                  >
                     {option.estimatedTime} • {option.questionCount} questions
                   </div>
                 </div>

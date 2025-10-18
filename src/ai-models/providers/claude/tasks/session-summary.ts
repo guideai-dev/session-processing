@@ -30,11 +30,11 @@ Assistant Actions:
 
 Provide a clear, professional summary in 2-3 sentences. Always refer to the person as {{userName}}, not "the user".`,
       responseFormat: {
-        type: 'text'
+        type: 'text',
       },
       recordingStrategy: {
-        updateAgentSession: ['aiModelSummary']
-      }
+        updateAgentSession: ['aiModelSummary'],
+      },
     }
   }
 
@@ -94,9 +94,7 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
     const assistantActions = toolNames.slice(0, 20).join(', ')
     const toolsUsed = [...new Set(toolNames)].join(', ') || 'None'
 
-    const durationMinutes = session.duration
-      ? Math.round(session.duration / 60000)
-      : 'Unknown'
+    const durationMinutes = session.duration ? Math.round(session.duration / 60000) : 'Unknown'
 
     return {
       userName,
@@ -105,7 +103,7 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
       messageCount: session.messages.length,
       toolsUsed,
       userMessages: userMessages || 'No user messages found',
-      assistantActions: assistantActions || 'No tool uses found'
+      assistantActions: assistantActions || 'No tool uses found',
     }
   }
 

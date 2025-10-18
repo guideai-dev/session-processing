@@ -16,13 +16,12 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     const userMessages = session.messages.filter(m => m.type === 'user')
 
     // Calculate task success rate (key metric for quality)
-    const successfulOperations = toolResults.filter(result =>
-      !this.hasErrorIndicators(result)
+    const successfulOperations = toolResults.filter(
+      result => !this.hasErrorIndicators(result)
     ).length
     const totalOperations = toolResults.length
-    const taskSuccessRate = totalOperations > 0
-      ? Math.round((successfulOperations / totalOperations) * 100)
-      : 0
+    const taskSuccessRate =
+      totalOperations > 0 ? Math.round((successfulOperations / totalOperations) * 100) : 0
 
     // Calculate iteration count (number of refinement cycles)
     const iterationCount = this.calculateIterations(userMessages, session)
@@ -35,7 +34,12 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     const overTopAffirmations = this.detectOverTopAffirmations(session)
 
     // Calculate process quality score (good AI usage practices)
-    const processQualityScore = this.calculateProcessQuality(toolUses, session, planModeUsage.used, todoTrackingUsage.used)
+    const processQualityScore = this.calculateProcessQuality(
+      toolUses,
+      session,
+      planModeUsage.used,
+      todoTrackingUsage.used
+    )
 
     return {
       task_success_rate: taskSuccessRate,
@@ -52,8 +56,14 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
         exit_plan_mode_count: planModeUsage.count,
         todo_write_count: todoTrackingUsage.count,
         over_top_affirmations_phrases: overTopAffirmations.phrases,
-        improvement_tips: this.generateImprovementTips(taskSuccessRate, iterationCount, processQualityScore, planModeUsage.used, todoTrackingUsage.used)
-      }
+        improvement_tips: this.generateImprovementTips(
+          taskSuccessRate,
+          iterationCount,
+          processQualityScore,
+          planModeUsage.used,
+          todoTrackingUsage.used
+        ),
+      },
     }
   }
 
@@ -66,8 +76,14 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     // Fallback to content scanning only if is_error field is not present
     const resultStr = JSON.stringify(result).toLowerCase()
     const errorKeywords = [
-      'error', 'failed', 'exception', 'not found',
-      'permission denied', 'invalid', 'cannot', 'unable'
+      'error',
+      'failed',
+      'exception',
+      'not found',
+      'permission denied',
+      'invalid',
+      'cannot',
+      'unable',
     ]
     return errorKeywords.some(keyword => resultStr.includes(keyword))
   }
@@ -92,17 +108,32 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
       // More specific refinement patterns that indicate actual iterations
       const refinementPatterns = [
         // Direct corrections
-        'actually,', 'instead,', 'wait,', 'no,', 'correction:',
+        'actually,',
+        'instead,',
+        'wait,',
+        'no,',
+        'correction:',
         // Change requests
-        'change that', 'modify that', 'update that', 'fix that',
-        'make it', 'let\'s change', 'can you change',
+        'change that',
+        'modify that',
+        'update that',
+        'fix that',
+        'make it',
+        "let's change",
+        'can you change',
         // Direction changes
-        'different approach', 'try a different', 'let\'s try',
-        'that\'s not', 'that won\'t work', 'that\'s wrong',
+        'different approach',
+        'try a different',
+        "let's try",
+        "that's not",
+        "that won't work",
+        "that's wrong",
         // Refinements
-        'rather than', 'instead of', 'better to',
+        'rather than',
+        'instead of',
+        'better to',
         // Interruptions with corrections
-        '[request interrupted by user]'
+        '[request interrupted by user]',
       ]
 
       // Only count if message contains refinement patterns
@@ -118,7 +149,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     const exitPlanModeTools = toolUses.filter(tool => tool.name === 'ExitPlanMode')
     return {
       used: exitPlanModeTools.length > 0,
-      count: exitPlanModeTools.length
+      count: exitPlanModeTools.length,
     }
   }
 
@@ -126,11 +157,16 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     const todoWriteTools = toolUses.filter(tool => tool.name === 'TodoWrite')
     return {
       used: todoWriteTools.length > 0,
-      count: todoWriteTools.length
+      count: todoWriteTools.length,
     }
   }
 
-  private calculateProcessQuality(toolUses: any[], session: ParsedSession, usedPlanMode: boolean, usedTodoTracking: boolean): number {
+  private calculateProcessQuality(
+    toolUses: any[],
+    session: ParsedSession,
+    usedPlanMode: boolean,
+    usedTodoTracking: boolean
+  ): number {
     let score = 0
     const maxScore = 100
 
@@ -179,7 +215,13 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     return Math.max(0, Math.min(score, maxScore))
   }
 
-  private generateImprovementTips(taskSuccessRate: number, iterationCount: number, processQuality: number, usedPlanMode: boolean, usedTodoTracking: boolean): string[] {
+  private generateImprovementTips(
+    taskSuccessRate: number,
+    iterationCount: number,
+    processQuality: number,
+    usedPlanMode: boolean,
+    usedTodoTracking: boolean
+  ): string[] {
     const tips: string[] = []
 
     // Determine if there are actual quality issues
@@ -188,32 +230,48 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     // Plan mode and todo tracking tips (quality-specific)
     if (hasQualityIssues || processQuality < 60) {
       if (!usedPlanMode && !usedTodoTracking) {
-        tips.push("🎯 For complex tasks, use plan mode to organize your approach upfront")
-        tips.push("📋 Consider using TodoWrite to track progress on multi-step tasks")
+        tips.push('🎯 For complex tasks, use plan mode to organize your approach upfront')
+        tips.push('📋 Consider using TodoWrite to track progress on multi-step tasks')
       } else if (!usedPlanMode) {
-        tips.push("🎯 Try using plan mode to outline your approach before starting complex tasks")
+        tips.push('🎯 Try using plan mode to outline your approach before starting complex tasks')
       } else if (!usedTodoTracking) {
-        tips.push("📋 Consider using TodoWrite to track progress and ensure all steps are completed")
+        tips.push(
+          '📋 Consider using TodoWrite to track progress and ensure all steps are completed'
+        )
       }
     }
 
     // Task success and iteration tips (reframed for context quality)
     if (taskSuccessRate < 70) {
-      tips.push("Low success rate - ensure comprehensive upfront context (file paths, specs, code examples)")
-      tips.push("Consider improving documentation to reduce AI exploration")
+      tips.push(
+        'Low success rate - ensure comprehensive upfront context (file paths, specs, code examples)'
+      )
+      tips.push('Consider improving documentation to reduce AI exploration')
     }
 
     if (iterationCount > 10) {
-      tips.push("Many iterations - consider whether initial prompt provided enough technical detail and context")
+      tips.push(
+        'Many iterations - consider whether initial prompt provided enough technical detail and context'
+      )
     }
 
     // Excellent practices recognition
-    if (usedPlanMode && usedTodoTracking && taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 80) {
-      tips.push("🌟 Outstanding! Excellent process discipline with plan mode, todo tracking, and clear context")
+    if (
+      usedPlanMode &&
+      usedTodoTracking &&
+      taskSuccessRate > 80 &&
+      iterationCount <= 5 &&
+      processQuality > 80
+    ) {
+      tips.push(
+        '🌟 Outstanding! Excellent process discipline with plan mode, todo tracking, and clear context'
+      )
     } else if ((usedPlanMode || usedTodoTracking) && taskSuccessRate > 75 && processQuality > 70) {
-      tips.push("✨ Great collaboration! Your use of planning tools shows excellent AI process discipline")
+      tips.push(
+        '✨ Great collaboration! Your use of planning tools shows excellent AI process discipline'
+      )
     } else if (taskSuccessRate > 80 && iterationCount <= 5 && processQuality > 70) {
-      tips.push("Excellent! Effective context and steering led to efficient execution")
+      tips.push('Excellent! Effective context and steering led to efficient execution')
     }
 
     return tips
@@ -268,7 +326,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
 
     return {
       count: totalCount,
-      phrases: Array.from(new Set(foundPhrases)) // Remove duplicates
+      phrases: Array.from(new Set(foundPhrases)), // Remove duplicates
     }
   }
 }

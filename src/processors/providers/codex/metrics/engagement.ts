@@ -17,7 +17,7 @@ export class CodexEngagementProcessor extends BaseMetricProcessor {
     if (userMessages.length === 0 || assistantMessages.length === 0) {
       return {
         interruption_rate: 0,
-        session_length_minutes: 0
+        session_length_minutes: 0,
       }
     }
 
@@ -36,8 +36,8 @@ export class CodexEngagementProcessor extends BaseMetricProcessor {
       metadata: {
         total_interruptions: interruptions.length,
         total_responses: assistantMessages.length,
-        improvement_tips: this.generateImprovementTips(interruptionRate, sessionLengthMinutes)
-      }
+        improvement_tips: this.generateImprovementTips(interruptionRate, sessionLengthMinutes),
+      },
     }
   }
 
@@ -45,17 +45,18 @@ export class CodexEngagementProcessor extends BaseMetricProcessor {
     const tips: string[] = []
 
     if (interruptionRate > 50) {
-      tips.push("High interruption rate - consider whether initial prompt provided enough context")
-      tips.push("Note: Some interruptions are effective steering when AI goes off track")
+      tips.push('High interruption rate - consider whether initial prompt provided enough context')
+      tips.push('Note: Some interruptions are effective steering when AI goes off track')
     }
 
-    if (sessionLength > 60) { // > 1 hour
+    if (sessionLength > 60) {
+      // > 1 hour
       tips.push("Long session - complex tasks take time, ensure you're making steady progress")
-      tips.push("Consider whether initial requirements and context were comprehensive")
+      tips.push('Consider whether initial requirements and context were comprehensive')
     }
 
     if (interruptionRate < 10 && sessionLength < 30) {
-      tips.push("Excellent collaboration! Efficient session with minimal course corrections")
+      tips.push('Excellent collaboration! Efficient session with minimal course corrections')
     }
 
     return tips

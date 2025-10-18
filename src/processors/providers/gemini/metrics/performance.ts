@@ -23,29 +23,32 @@ export class GeminiPerformanceProcessor extends BaseMetricProcessor {
 
     // Calculate median
     const sortedTimes = [...times].sort((a, b) => a - b)
-    const medianResponseTime = sortedTimes.length % 2 === 0
-      ? (sortedTimes[sortedTimes.length / 2 - 1] + sortedTimes[sortedTimes.length / 2]) / 2
-      : sortedTimes[Math.floor(sortedTimes.length / 2)]
+    const medianResponseTime =
+      sortedTimes.length % 2 === 0
+        ? (sortedTimes[sortedTimes.length / 2 - 1] + sortedTimes[sortedTimes.length / 2]) / 2
+        : sortedTimes[Math.floor(sortedTimes.length / 2)]
 
     // Calculate 95th percentile
     const p95Index = Math.floor(sortedTimes.length * 0.95)
     const p95ResponseTime = sortedTimes[p95Index] || maxResponseTime
 
     // Analyze response time trends
-    const firstHalfAvg = times.slice(0, Math.floor(times.length / 2))
-      .reduce((a, b) => a + b, 0) / Math.floor(times.length / 2)
-    const secondHalfAvg = times.slice(Math.floor(times.length / 2))
-      .reduce((a, b) => a + b, 0) / (times.length - Math.floor(times.length / 2))
+    const firstHalfAvg =
+      times.slice(0, Math.floor(times.length / 2)).reduce((a, b) => a + b, 0) /
+      Math.floor(times.length / 2)
+    const secondHalfAvg =
+      times.slice(Math.floor(times.length / 2)).reduce((a, b) => a + b, 0) /
+      (times.length - Math.floor(times.length / 2))
 
-    const responseTimeImprovement = firstHalfAvg > 0
-      ? ((firstHalfAvg - secondHalfAvg) / firstHalfAvg) * 100
-      : 0
+    const responseTimeImprovement =
+      firstHalfAvg > 0 ? ((firstHalfAvg - secondHalfAvg) / firstHalfAvg) * 100 : 0
 
     // Performance score (0-100, lower response time is better)
     // Good: < 5s, Acceptable: < 10s, Slow: > 10s
-    const performanceScore = Math.max(0, Math.min(100,
-      100 - ((avgResponseTime / 1000 - 3) / 12) * 100
-    ))
+    const performanceScore = Math.max(
+      0,
+      Math.min(100, 100 - ((avgResponseTime / 1000 - 3) / 12) * 100)
+    )
 
     // Return metrics matching PerformanceMetrics interface
     const metrics = {
@@ -68,12 +71,11 @@ export class GeminiPerformanceProcessor extends BaseMetricProcessor {
         performance_score: performanceScore,
         response_time_variability: maxResponseTime - minResponseTime,
         response_time_improvement_pct: responseTimeImprovement,
-        responses_per_minute: session.duration > 0
-          ? (responseTimes.length / (session.duration / 60000))
-          : 0,
+        responses_per_minute:
+          session.duration > 0 ? responseTimes.length / (session.duration / 60000) : 0,
         first_half_avg_response_time: firstHalfAvg,
-        second_half_avg_response_time: secondHalfAvg
-      }
+        second_half_avg_response_time: secondHalfAvg,
+      },
     }
 
     return metrics
@@ -85,7 +87,7 @@ export class GeminiPerformanceProcessor extends BaseMetricProcessor {
       task_completion_time_ms: session.duration,
       metadata: {
         total_responses: 0,
-        improvement_tips: ["No response times recorded - session may be too short"],
+        improvement_tips: ['No response times recorded - session may be too short'],
         min_response_time: 0,
         max_response_time: 0,
         median_response_time: 0,
@@ -97,8 +99,8 @@ export class GeminiPerformanceProcessor extends BaseMetricProcessor {
         response_time_improvement_pct: 0,
         responses_per_minute: 0,
         first_half_avg_response_time: 0,
-        second_half_avg_response_time: 0
-      }
+        second_half_avg_response_time: 0,
+      },
     }
   }
 
@@ -108,17 +110,17 @@ export class GeminiPerformanceProcessor extends BaseMetricProcessor {
     const avgSeconds = avgResponseTime / 1000
 
     if (avgSeconds < 5) {
-      tips.push("Excellent response times - model is performing very well")
+      tips.push('Excellent response times - model is performing very well')
     } else if (avgSeconds < 10) {
-      tips.push("Good response times - consider optimizing complex queries if needed")
+      tips.push('Good response times - consider optimizing complex queries if needed')
     } else {
-      tips.push("Slow response times - consider breaking down complex requests")
+      tips.push('Slow response times - consider breaking down complex requests')
     }
 
     if (improvement > 20) {
-      tips.push("Great improvement! Response times got faster throughout the session")
+      tips.push('Great improvement! Response times got faster throughout the session')
     } else if (improvement < -20) {
-      tips.push("Response times slowed down - may indicate increasing complexity")
+      tips.push('Response times slowed down - may indicate increasing complexity')
     }
 
     return tips

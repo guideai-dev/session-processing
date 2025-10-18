@@ -17,7 +17,7 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
     if (userMessages.length === 0 || assistantMessages.length === 0) {
       return {
         interruption_rate: 0,
-        session_length_minutes: 0
+        session_length_minutes: 0,
       }
     }
 
@@ -36,9 +36,10 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
     const conversationTurns = this.calculateConversationTurns(session)
 
     // Calculate average time per turn
-    const avgTimePerTurn = conversationTurns > 0
-      ? Math.round(session.duration / conversationTurns / 1000) // seconds per turn
-      : 0
+    const avgTimePerTurn =
+      conversationTurns > 0
+        ? Math.round(session.duration / conversationTurns / 1000) // seconds per turn
+        : 0
 
     return {
       interruption_rate: interruptionRate,
@@ -48,13 +49,17 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
       metadata: {
         total_interruptions: totalInterruptions,
         total_responses: assistantMessages.length,
-        improvement_tips: this.generateImprovementTips(interruptionRate, sessionLengthMinutes, conversationTurns),
+        improvement_tips: this.generateImprovementTips(
+          interruptionRate,
+          sessionLengthMinutes,
+          conversationTurns
+        ),
         // Extra fields for analysis
         interruptions_from_parser: interruptions.length,
         cancellations_from_info: cancellations,
         conversation_turns: conversationTurns,
-        avg_seconds_per_turn: avgTimePerTurn
-      } as any
+        avg_seconds_per_turn: avgTimePerTurn,
+      } as any,
     }
   }
 
@@ -91,28 +96,33 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
     return turns
   }
 
-  private generateImprovementTips(interruptionRate: number, sessionLength: number, conversationTurns: number): string[] {
+  private generateImprovementTips(
+    interruptionRate: number,
+    sessionLength: number,
+    conversationTurns: number
+  ): string[] {
     const tips: string[] = []
 
     if (interruptionRate > 50) {
-      tips.push("High interruption rate - consider whether initial prompt provided enough context")
-      tips.push("Note: Some interruptions are effective steering when AI goes off track")
+      tips.push('High interruption rate - consider whether initial prompt provided enough context')
+      tips.push('Note: Some interruptions are effective steering when AI goes off track')
     }
 
-    if (sessionLength > 60) { // > 1 hour
+    if (sessionLength > 60) {
+      // > 1 hour
       tips.push("Long session - complex tasks take time, ensure you're making steady progress")
-      tips.push("Consider whether initial requirements and context were comprehensive")
+      tips.push('Consider whether initial requirements and context were comprehensive')
     }
 
     if (conversationTurns > 20) {
-      tips.push("Many conversation turns - consider providing more comprehensive context upfront")
-      tips.push("Try bundling related requests to reduce back-and-forth")
+      tips.push('Many conversation turns - consider providing more comprehensive context upfront')
+      tips.push('Try bundling related requests to reduce back-and-forth')
     }
 
     if (interruptionRate < 10 && sessionLength < 30 && conversationTurns <= 10) {
-      tips.push("⚡ Great collaboration! Efficient session with clear direction")
+      tips.push('⚡ Great collaboration! Efficient session with clear direction')
     } else if (interruptionRate < 10 && sessionLength < 30) {
-      tips.push("✨ Good collaboration! Effective steering with reasonable session length")
+      tips.push('✨ Good collaboration! Effective steering with reasonable session length')
     }
 
     return tips

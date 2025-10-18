@@ -168,14 +168,34 @@ export function SessionDetailHeader({
                       data-tip="Sync failed - Click to view error"
                       onClick={() => syncStatus.onShowError?.(syncStatus.reason || 'Unknown error')}
                     >
-                      <svg className="w-4 h-4 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      <svg
+                        className="w-4 h-4 text-error"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
                       </svg>
                     </div>
                   ) : syncStatus.synced ? (
                     <div className="tooltip tooltip-bottom" data-tip="Synced to server">
-                      <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-4 h-4 text-success"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     </div>
                   ) : (
@@ -184,8 +204,18 @@ export function SessionDetailHeader({
                       data-tip="Click to sync to server"
                       onClick={syncStatus.onSync}
                     >
-                      <svg className="w-4 h-4 text-base-content/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      <svg
+                        className="w-4 h-4 text-base-content/30"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
                       </svg>
                     </div>
                   )}
@@ -213,8 +243,18 @@ export function SessionDetailHeader({
                   {actuallyProcessing ? (
                     <span className="loading loading-spinner loading-xs"></span>
                   ) : (
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
                     </svg>
                   )}
                   <span className="hidden lg:inline text-xs">
@@ -242,8 +282,18 @@ export function SessionDetailHeader({
                         : 'Start session assessment'
                   }
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   <span className="hidden lg:inline text-xs">
                     {assessmentStatus === 'completed'
@@ -260,8 +310,18 @@ export function SessionDetailHeader({
                   className="btn btn-xs btn-error gap-1.5"
                   title="Delete this session"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   <span className="hidden lg:inline text-xs">Delete</span>
                 </button>
@@ -283,8 +343,18 @@ export function SessionDetailHeader({
                   {actuallyProcessing ? (
                     <span className="loading loading-spinner loading-xs"></span>
                   ) : (
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <svg
+                      className="w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
                     </svg>
                   )}
                   <span className="text-xs">
@@ -305,8 +375,18 @@ export function SessionDetailHeader({
                     assessmentStatus === 'completed' ? 'btn-secondary' : 'btn-accent'
                   }`}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   <span className="text-xs">
                     {assessmentStatus === 'completed'
@@ -318,12 +398,19 @@ export function SessionDetailHeader({
                 </button>
               )}
               {onDeleteSession && (
-                <button
-                  onClick={onDeleteSession}
-                  className="btn btn-xs btn-error gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <button onClick={onDeleteSession} className="btn btn-xs btn-error gap-1.5">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   <span className="text-xs">Delete</span>
                 </button>
@@ -356,9 +443,11 @@ export function SessionDetailHeader({
               {session.fileSize !== undefined && session.fileSize !== null ? 'Size' : 'Type'}
             </div>
             <div className="stat-value text-sm">
-              {session.fileSize !== undefined && session.fileSize !== null
-                ? formatFileSize(session.fileSize)
-                : <span className="badge badge-ghost badge-sm">Metrics Only</span>}
+              {session.fileSize !== undefined && session.fileSize !== null ? (
+                formatFileSize(session.fileSize)
+              ) : (
+                <span className="badge badge-ghost badge-sm">Metrics Only</span>
+              )}
             </div>
           </div>
           {onRate && (
@@ -372,7 +461,11 @@ export function SessionDetailHeader({
         </div>
 
         {/* Project, Git Info, and Working Directory - 3 columns below stats */}
-        {(session.project || workingDirectory || session.gitBranch || session.firstCommitHash || session.latestCommitHash) && (
+        {(session.project ||
+          workingDirectory ||
+          session.gitBranch ||
+          session.firstCommitHash ||
+          session.latestCommitHash) && (
           <div className="mt-2 grid grid-cols-1 lg:grid-cols-3 gap-2">
             {/* Project Info */}
             {session.project && (
@@ -409,7 +502,7 @@ export function SessionDetailHeader({
               <div className="stat bg-base-200 rounded-lg p-2.5">
                 <div className="stat-title text-xs flex items-center gap-1.5 mb-1">
                   <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M11.182 6.6a2.5 2.5 0 1 1-3.364 0 2.5 2.5 0 0 1 3.364 0zM8 1.5a.5.5 0 0 1 .5.5v4.667l1.205-1.204a.5.5 0 1 1 .707.707l-2 2a.5.5 0 0 1-.707 0l-2-2a.5.5 0 1 1 .707-.707L7.5 6.667V2a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M11.182 6.6a2.5 2.5 0 1 1-3.364 0 2.5 2.5 0 0 1 3.364 0zM8 1.5a.5.5 0 0 1 .5.5v4.667l1.205-1.204a.5.5 0 1 1 .707.707l-2 2a.5.5 0 0 1-.707 0l-2-2a.5.5 0 1 1 .707-.707L7.5 6.667V2a.5.5 0 0 1 .5-.5z" />
                   </svg>
                   Git Information
                 </div>
@@ -418,7 +511,9 @@ export function SessionDetailHeader({
                   {session.gitBranch && (
                     <div>
                       <span className="text-base-content/60">Branch:</span>
-                      <span className="ml-1.5 font-mono text-base-content">{session.gitBranch}</span>
+                      <span className="ml-1.5 font-mono text-base-content">
+                        {session.gitBranch}
+                      </span>
                     </div>
                   )}
 
@@ -426,7 +521,8 @@ export function SessionDetailHeader({
                   {session.firstCommitHash && (
                     <div>
                       <span className="text-base-content/60">Commits:</span>
-                      {session.latestCommitHash && session.latestCommitHash !== session.firstCommitHash ? (
+                      {session.latestCommitHash &&
+                      session.latestCommitHash !== session.firstCommitHash ? (
                         // Different commits - show commit range
                         <>
                           {onViewDiff ? (
@@ -436,7 +532,8 @@ export function SessionDetailHeader({
                               className="ml-1.5 font-mono text-primary hover:text-primary-focus transition-colors hover:underline"
                               title={`View changes: ${session.firstCommitHash} → ${session.latestCommitHash}`}
                             >
-                              {session.firstCommitHash.substring(0, 7)} → {session.latestCommitHash.substring(0, 7)}
+                              {session.firstCommitHash.substring(0, 7)} →{' '}
+                              {session.latestCommitHash.substring(0, 7)}
                             </button>
                           ) : gitHubDiffUrl ? (
                             // Server: link to GitHub diff
@@ -447,12 +544,17 @@ export function SessionDetailHeader({
                               className="ml-1.5 font-mono text-primary hover:text-primary-focus transition-colors hover:underline"
                               title={`View diff: ${session.firstCommitHash} → ${session.latestCommitHash}`}
                             >
-                              {session.firstCommitHash.substring(0, 7)} → {session.latestCommitHash.substring(0, 7)}
+                              {session.firstCommitHash.substring(0, 7)} →{' '}
+                              {session.latestCommitHash.substring(0, 7)}
                             </a>
                           ) : (
                             // No action available: plain text
-                            <span className="ml-1.5 font-mono text-base-content" title={`${session.firstCommitHash} → ${session.latestCommitHash}`}>
-                              {session.firstCommitHash.substring(0, 7)} → {session.latestCommitHash.substring(0, 7)}
+                            <span
+                              className="ml-1.5 font-mono text-base-content"
+                              title={`${session.firstCommitHash} → ${session.latestCommitHash}`}
+                            >
+                              {session.firstCommitHash.substring(0, 7)} →{' '}
+                              {session.latestCommitHash.substring(0, 7)}
                             </span>
                           )}
                         </>
@@ -466,12 +568,17 @@ export function SessionDetailHeader({
                               className="ml-1.5 font-mono text-primary hover:text-primary-focus transition-colors hover:underline"
                               title={`View unstaged changes from ${session.firstCommitHash}`}
                             >
-                              {session.firstCommitHash.substring(0, 7)} → <span className="text-warning">UNSTAGED</span>
+                              {session.firstCommitHash.substring(0, 7)} →{' '}
+                              <span className="text-warning">UNSTAGED</span>
                             </button>
                           ) : (
                             // Plain text (server or no action)
-                            <span className="ml-1.5 font-mono text-base-content" title={`Unstaged changes from ${session.firstCommitHash}`}>
-                              {session.firstCommitHash.substring(0, 7)} → <span className="text-warning">UNSTAGED</span>
+                            <span
+                              className="ml-1.5 font-mono text-base-content"
+                              title={`Unstaged changes from ${session.firstCommitHash}`}
+                            >
+                              {session.firstCommitHash.substring(0, 7)} →{' '}
+                              <span className="text-warning">UNSTAGED</span>
                             </span>
                           )}
                         </>
@@ -486,8 +593,18 @@ export function SessionDetailHeader({
             {workingDirectory && (
               <div className="stat bg-base-200 rounded-lg p-2.5">
                 <div className="stat-title text-xs flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                    />
                   </svg>
                   Working Directory
                 </div>

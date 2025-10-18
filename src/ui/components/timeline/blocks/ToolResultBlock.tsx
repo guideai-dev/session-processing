@@ -112,10 +112,7 @@ function highlightClaudeMd(text: string) {
       {lines.map((line, i) => {
         if (line.includes('CLAUDE.md')) {
           return (
-            <div
-              key={i}
-              className="bg-warning/10 border-l-2 border-warning pl-2 py-0.5"
-            >
+            <div key={i} className="bg-warning/10 border-l-2 border-warning pl-2 py-0.5">
               {highlightClaudeMdInLine(line)}
             </div>
           )

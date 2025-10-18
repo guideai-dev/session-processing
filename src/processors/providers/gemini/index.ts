@@ -10,7 +10,8 @@ import { GeminiErrorProcessor } from './metrics/error.js'
 
 export class GeminiProcessor extends BaseProviderProcessor {
   readonly providerName = 'gemini-code'
-  readonly description = 'Processes Gemini Code session logs with thinking analysis and cache metrics'
+  readonly description =
+    'Processes Gemini Code session logs with thinking analysis and cache metrics'
 
   private parser = new GeminiParser()
   private metricProcessors: BaseMetricProcessor[]
@@ -24,7 +25,7 @@ export class GeminiProcessor extends BaseProviderProcessor {
       new GeminiEngagementProcessor(),
       new GeminiQualityProcessor(),
       new GeminiUsageProcessor(),
-      new GeminiErrorProcessor()
+      new GeminiErrorProcessor(),
     ]
   }
 
@@ -78,7 +79,7 @@ export class GeminiProcessor extends BaseProviderProcessor {
       metricProcessors: this.metricProcessors.map(processor => ({
         name: processor.name,
         metricType: processor.metricType,
-        description: processor.description
+        description: processor.description,
       })),
       version: '1.0.0',
       features: [
@@ -86,8 +87,8 @@ export class GeminiProcessor extends BaseProviderProcessor {
         'Cache efficiency metrics',
         'Token usage tracking',
         'Response time analysis',
-        'Quality assessment with thinking depth'
-      ]
+        'Quality assessment with thinking depth',
+      ],
     }
   }
 
@@ -115,14 +116,13 @@ export class GeminiProcessor extends BaseProviderProcessor {
       }
 
       // Validate at least one message has required fields
-      const validMessage = json.messages.some((m: any) =>
-        m.id && m.timestamp && m.type && m.content
+      const validMessage = json.messages.some(
+        (m: any) => m.id && m.timestamp && m.type && m.content
       )
 
       if (!validMessage) {
         throw new Error('No valid messages found with required fields')
       }
-
     } catch (error) {
       if (error instanceof Error) {
         throw new Error(`Invalid Gemini session format: ${error.message}`)
@@ -180,5 +180,5 @@ export {
   GeminiQualityProcessor,
   GeminiUsageProcessor,
   GeminiErrorProcessor,
-  GeminiParser
+  GeminiParser,
 }

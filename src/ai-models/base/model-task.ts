@@ -2,7 +2,7 @@ import type {
   ModelTaskConfig,
   ModelTaskDefinition,
   ModelTaskContext,
-  ModelTaskResult
+  ModelTaskResult,
 } from './types.js'
 
 /**
@@ -49,7 +49,7 @@ export abstract class BaseModelTask {
       taskType: this.taskType,
       name: this.name,
       description: this.description,
-      config: this.getConfig()
+      config: this.getConfig(),
     }
   }
 }

@@ -126,7 +126,7 @@ export class GenericMessageProcessor extends BaseMessageProcessor {
   private humanizeType(type: string): string {
     return type
       .split(/[-_]/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ')
   }
 

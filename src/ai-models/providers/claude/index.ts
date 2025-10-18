@@ -3,7 +3,7 @@ import type {
   ModelAdapterConfig,
   ModelTaskContext,
   ModelTaskResult,
-  ModelHealthCheck
+  ModelHealthCheck,
 } from '../../base/types.js'
 import type { BaseModelTask } from '../../base/model-task.js'
 import { ClaudeAPIClient } from './client.js'
@@ -27,7 +27,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
       model: config.model || 'claude-3-5-sonnet-20241022',
       maxTokens: config.maxTokens || 4096,
       temperature: config.temperature ?? 1.0,
-      timeout: config.timeout
+      timeout: config.timeout,
     })
   }
 
@@ -48,10 +48,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
   /**
    * Execute a task using Claude
    */
-  async executeTask(
-    task: BaseModelTask,
-    context: ModelTaskContext
-  ): Promise<ModelTaskResult> {
+  async executeTask(task: BaseModelTask, context: ModelTaskContext): Promise<ModelTaskResult> {
     const startTime = Date.now()
 
     try {
@@ -77,7 +74,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
         const result = await this.client.promptJSON(prompt, {
           model: this.config.model,
           maxTokens: this.config.maxTokens,
-          temperature: this.config.temperature
+          temperature: this.config.temperature,
         })
         rawOutput = result.data
         tokensUsed = result.usage.input_tokens + result.usage.output_tokens
@@ -85,7 +82,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
         const result = await this.client.prompt(prompt, {
           model: this.config.model,
           maxTokens: this.config.maxTokens,
-          temperature: this.config.temperature
+          temperature: this.config.temperature,
         })
         rawOutput = result.text
         tokensUsed = result.usage.input_tokens + result.usage.output_tokens
@@ -105,8 +102,8 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
           modelUsed: this.config.model || 'claude-3-5-sonnet-20241022',
           tokensUsed,
           processingTime,
-          cost
-        }
+          cost,
+        },
       }
     } catch (error) {
       const processingTime = Date.now() - startTime
@@ -120,8 +117,8 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
         metadata: {
           modelUsed: this.config.model || 'claude-3-5-sonnet-20241022',
           processingTime,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       }
     }
   }
@@ -134,7 +131,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
     if (!this.validateConfig()) {
       return {
         healthy: false,
-        error: 'Invalid configuration'
+        error: 'Invalid configuration',
       }
     }
 
@@ -145,7 +142,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
     } catch (error) {
       return {
         healthy: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }

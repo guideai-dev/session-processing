@@ -24,7 +24,7 @@ export class CodexProcessor extends BaseProviderProcessor {
       new CodexEngagementProcessor(),
       new CodexQualityProcessor(),
       new CodexUsageProcessor(),
-      new CodexErrorProcessor()
+      new CodexErrorProcessor(),
     ]
   }
 
@@ -54,9 +54,9 @@ export class CodexProcessor extends BaseProviderProcessor {
             parsedLine.type &&
             parsedLine.payload &&
             (parsedLine.type === 'session_meta' ||
-             parsedLine.type === 'response_item' ||
-             parsedLine.type === 'event_msg' ||
-             parsedLine.type === 'turn_context')
+              parsedLine.type === 'response_item' ||
+              parsedLine.type === 'event_msg' ||
+              parsedLine.type === 'turn_context')
 
           if (hasCodexFields) {
             return true
@@ -83,9 +83,9 @@ export class CodexProcessor extends BaseProviderProcessor {
       metricProcessors: this.metricProcessors.map(processor => ({
         name: processor.name,
         metricType: processor.metricType,
-        description: processor.description
+        description: processor.description,
       })),
-      version: '1.0.0'
+      version: '1.0.0',
     }
   }
 
@@ -118,7 +118,6 @@ export class CodexProcessor extends BaseProviderProcessor {
             }
           }
         }
-
       } catch (parseError) {
         // Skip lines that aren't valid JSON
         continue
@@ -176,5 +175,5 @@ export {
   CodexQualityProcessor,
   CodexUsageProcessor,
   CodexErrorProcessor,
-  CodexParser
+  CodexParser,
 }

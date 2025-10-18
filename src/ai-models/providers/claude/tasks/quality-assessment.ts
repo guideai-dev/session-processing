@@ -48,16 +48,16 @@ Respond with a JSON object containing:
             score: { type: 'number', minimum: 0, maximum: 100 },
             reasoning: { type: 'string' },
             strengths: { type: 'array', items: { type: 'string' } },
-            improvements: { type: 'array', items: { type: 'string' } }
+            improvements: { type: 'array', items: { type: 'string' } },
           },
-          required: ['score', 'reasoning']
-        }
+          required: ['score', 'reasoning'],
+        },
       },
       recordingStrategy: {
         updateAgentSession: ['aiModelQualityScore', 'aiModelMetadata'],
         createMetrics: true,
-        metricType: 'ai_model'
-      }
+        metricType: 'ai_model',
+      },
     }
   }
 
@@ -102,26 +102,24 @@ Respond with a JSON object containing:
     const toolCount = new Set(toolNames).size
 
     // Estimate errors from content
-    const errorCount = session.messages
-      .filter(msg => {
-        let contentStr = ''
-        if (typeof msg.content === 'string') {
-          contentStr = msg.content.toLowerCase()
-        } else if (msg.content?.text) {
-          // Parser wraps content in { text, toolUses, toolResults, structured }
-          contentStr = msg.content.text.toLowerCase()
-        } else {
-          contentStr = JSON.stringify(msg.content).toLowerCase()
-        }
-        return contentStr.includes('error') ||
-               contentStr.includes('failed') ||
-               contentStr.includes('exception')
-      })
-      .length
+    const errorCount = session.messages.filter(msg => {
+      let contentStr = ''
+      if (typeof msg.content === 'string') {
+        contentStr = msg.content.toLowerCase()
+      } else if (msg.content?.text) {
+        // Parser wraps content in { text, toolUses, toolResults, structured }
+        contentStr = msg.content.text.toLowerCase()
+      } else {
+        contentStr = JSON.stringify(msg.content).toLowerCase()
+      }
+      return (
+        contentStr.includes('error') ||
+        contentStr.includes('failed') ||
+        contentStr.includes('exception')
+      )
+    }).length
 
-    const durationMinutes = session.duration
-      ? Math.round(session.duration / 60000)
-      : 0
+    const durationMinutes = session.duration ? Math.round(session.duration / 60000) : 0
 
     return {
       userName,
@@ -130,7 +128,7 @@ Respond with a JSON object containing:
       messageCount: session.messages.length,
       interruptionCount,
       toolCount,
-      errorCount
+      errorCount,
     }
   }
 
@@ -153,7 +151,7 @@ Respond with a JSON object containing:
       score: output.score,
       reasoning: output.reasoning || '',
       strengths: Array.isArray(output.strengths) ? output.strengths : [],
-      improvements: Array.isArray(output.improvements) ? output.improvements : []
+      improvements: Array.isArray(output.improvements) ? output.improvements : [],
     }
   }
 }

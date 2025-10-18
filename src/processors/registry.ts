@@ -43,7 +43,9 @@ export class ProcessorRegistry {
     }
 
     if (this.processors.has(processor.providerName)) {
-      console.warn(`Processor for provider '${processor.providerName}' is already registered. Overwriting.`)
+      console.warn(
+        `Processor for provider '${processor.providerName}' is already registered. Overwriting.`
+      )
     }
 
     this.processors.set(processor.providerName, processor)
@@ -87,8 +89,8 @@ export class ProcessorRegistry {
         metricProcessors: processor.getMetricProcessors().map(mp => ({
           name: mp.name,
           metricType: mp.metricType,
-          description: mp.description
-        }))
+          description: mp.description,
+        })),
       }
     }
 
@@ -130,7 +132,7 @@ export class ProcessorRegistry {
 
     const processorContext = {
       ...context,
-      provider: processor.providerName
+      provider: processor.providerName,
     }
 
     return await processor.processMetrics(content, processorContext)
@@ -151,7 +153,7 @@ export class ProcessorRegistry {
 
     return {
       isValid: missingProcessors.length === 0,
-      missingProcessors
+      missingProcessors,
     }
   }
 
@@ -168,7 +170,7 @@ export class ProcessorRegistry {
           uuid: 'test',
           timestamp: new Date().toISOString(),
           type: 'user',
-          message: { role: 'user', content: 'test' }
+          message: { role: 'user', content: 'test' },
         })
 
         const canProcess = processor.canProcess(testContent)
@@ -180,7 +182,7 @@ export class ProcessorRegistry {
       } catch (error) {
         results[providerName] = {
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         }
       }
     }
@@ -214,7 +216,7 @@ export class ProcessorRegistry {
       totalProcessors: this.processors.size,
       registeredProviders,
       totalMetricProcessors,
-      processorsByMetricType
+      processorsByMetricType,
     }
   }
 

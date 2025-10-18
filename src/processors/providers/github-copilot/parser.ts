@@ -91,13 +91,15 @@ export class GitHubCopilotParser {
                 timestamp,
                 content: {
                   text: entry.text,
-                  structured: [{
-                    type: 'text',
-                    text: entry.text
-                  }],
+                  structured: [
+                    {
+                      type: 'text',
+                      text: entry.text,
+                    },
+                  ],
                   toolUses: [],
-                  toolResults: []
-                }
+                  toolResults: [],
+                },
               }
             }
             break
@@ -111,13 +113,15 @@ export class GitHubCopilotParser {
                 timestamp,
                 content: {
                   text: entry.text,
-                  structured: [{
-                    type: 'text',
-                    text: entry.text
-                  }],
+                  structured: [
+                    {
+                      type: 'text',
+                      text: entry.text,
+                    },
+                  ],
                   toolUses: [],
-                  toolResults: []
-                }
+                  toolResults: [],
+                },
               }
             }
             break
@@ -129,7 +133,7 @@ export class GitHubCopilotParser {
                 type: 'tool_use' as const,
                 id: entry.callId,
                 name: entry.name,
-                input: entry.arguments || {}
+                input: entry.arguments || {},
               }
 
               message = {
@@ -140,12 +144,12 @@ export class GitHubCopilotParser {
                   text: entry.intentionSummary || `Using ${entry.toolTitle || entry.name}`,
                   structured: [toolUse],
                   toolUses: [toolUse],
-                  toolResults: []
+                  toolResults: [],
                 },
                 metadata: {
                   toolTitle: entry.toolTitle,
-                  intentionSummary: entry.intentionSummary
-                }
+                  intentionSummary: entry.intentionSummary,
+                },
               }
             }
             break
@@ -156,7 +160,7 @@ export class GitHubCopilotParser {
               const toolResult = {
                 type: 'tool_result' as const,
                 tool_use_id: entry.callId,
-                content: entry.result.log || entry.result
+                content: entry.result.log || entry.result,
               }
 
               message = {
@@ -167,12 +171,12 @@ export class GitHubCopilotParser {
                   text: undefined,
                   structured: [toolResult],
                   toolUses: [],
-                  toolResults: [toolResult]
+                  toolResults: [toolResult],
                 },
                 metadata: {
                   toolName: entry.name,
-                  resultType: entry.result.type
-                }
+                  resultType: entry.result.type,
+                },
               }
             }
             break
@@ -186,16 +190,18 @@ export class GitHubCopilotParser {
                 timestamp,
                 content: {
                   text: entry.text,
-                  structured: [{
-                    type: 'text',
-                    text: entry.text
-                  }],
+                  structured: [
+                    {
+                      type: 'text',
+                      text: entry.text,
+                    },
+                  ],
                   toolUses: [],
-                  toolResults: []
+                  toolResults: [],
                 },
                 metadata: {
-                  isInfo: true
-                }
+                  isInfo: true,
+                },
               }
             }
             break
@@ -221,13 +227,19 @@ export class GitHubCopilotParser {
       endTime: endTime || new Date(),
       duration: durationMs,
       metadata: {
-        messageCount: messages.length
-      }
+        messageCount: messages.length,
+      },
     }
   }
 
-  calculateResponseTimes(session: ParsedSession): Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> {
-    const responseTimes: Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> = []
+  calculateResponseTimes(
+    session: ParsedSession
+  ): Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> {
+    const responseTimes: Array<{
+      userMessage: ParsedMessage
+      assistantMessage: ParsedMessage
+      responseTime: number
+    }> = []
 
     for (let i = 0; i < session.messages.length - 1; i++) {
       const current = session.messages[i]
@@ -238,7 +250,7 @@ export class GitHubCopilotParser {
         responseTimes.push({
           userMessage: current,
           assistantMessage: next,
-          responseTime
+          responseTime,
         })
       }
     }
@@ -287,9 +299,11 @@ export class GitHubCopilotParser {
 
   private isInterruptionMessage(message: ParsedMessage): boolean {
     const content = this.extractTextContent(message)
-    return content.includes('[Request interrupted by user for tool use]') ||
-           content.includes('[Request interrupted by user]') ||
-           content.includes('Request interrupted by user')
+    return (
+      content.includes('[Request interrupted by user for tool use]') ||
+      content.includes('[Request interrupted by user]') ||
+      content.includes('Request interrupted by user')
+    )
   }
 
   private extractTextContent(message: ParsedMessage): string {

@@ -95,7 +95,7 @@ export abstract class BaseMessageProcessor {
             !usedIds.has(m.id) &&
             m.originalMessage.type === 'tool_result' &&
             (m.originalMessage.linkedTo === toolUseId ||
-              this.extractToolResultId(m.originalMessage) === toolUseId),
+              this.extractToolResultId(m.originalMessage) === toolUseId)
         )
 
         if (resultIndex !== -1) {
@@ -117,10 +117,7 @@ export abstract class BaseMessageProcessor {
   /**
    * Create a tool group from tool use and result messages
    */
-  protected createToolGroup(
-    toolUse: TimelineMessage,
-    toolResult: TimelineMessage,
-  ): TimelineGroup {
+  protected createToolGroup(toolUse: TimelineMessage, toolResult: TimelineMessage): TimelineGroup {
     return {
       id: `group-${toolUse.id}`,
       displayType: 'group',
@@ -273,10 +270,14 @@ export abstract class BaseMessageProcessor {
     const input = content?.input || content
 
     return [
-      createContentBlock('tool_use', { name: toolName, input }, {
-        toolName: toolName || undefined,
-        collapsed: true,
-      }),
+      createContentBlock(
+        'tool_use',
+        { name: toolName, input },
+        {
+          toolName: toolName || undefined,
+          collapsed: true,
+        }
+      ),
     ]
   }
 
@@ -299,8 +300,9 @@ export abstract class BaseMessageProcessor {
    * Extract content blocks for command messages
    */
   protected getCommandBlocks(message: BaseSessionMessage): ContentBlock[] {
-    const text = this.extractTextFromParts(message.content) ||
-                 (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
+    const text =
+      this.extractTextFromParts(message.content) ||
+      (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
 
     return [
       createContentBlock('code', text, {
@@ -313,9 +315,10 @@ export abstract class BaseMessageProcessor {
    * Extract content blocks for command output messages
    */
   protected getCommandOutputBlocks(message: BaseSessionMessage): ContentBlock[] {
-    const text = typeof message.content === 'string'
-      ? message.content
-      : message.content?.text || JSON.stringify(message.content)
+    const text =
+      typeof message.content === 'string'
+        ? message.content
+        : message.content?.text || JSON.stringify(message.content)
 
     return [
       createContentBlock('code', text, {
@@ -328,12 +331,11 @@ export abstract class BaseMessageProcessor {
    * Extract content blocks for interruption messages
    */
   protected getInterruptionBlocks(message: BaseSessionMessage): ContentBlock[] {
-    const text = this.extractTextFromParts(message.content) ||
-                 (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
+    const text =
+      this.extractTextFromParts(message.content) ||
+      (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
 
-    return [
-      createContentBlock('text', text),
-    ]
+    return [createContentBlock('text', text)]
   }
 
   /**
@@ -354,7 +356,7 @@ export abstract class BaseMessageProcessor {
             blocks.push(
               createContentBlock('image', imageData.data, {
                 format: imageData.type,
-              }),
+              })
             )
           }
         }
@@ -378,9 +380,7 @@ export abstract class BaseMessageProcessor {
    * Extract content blocks for generic/unknown message types
    */
   protected getGenericBlocks(message: BaseSessionMessage): ContentBlock[] {
-    return [
-      createContentBlock('json', message.content, { collapsed: true }),
-    ]
+    return [createContentBlock('json', message.content, { collapsed: true })]
   }
 
   /**
@@ -396,10 +396,7 @@ export abstract class BaseMessageProcessor {
   protected extractToolUseId(message: BaseSessionMessage): string | null {
     // Try multiple locations where tool use ID might be
     return (
-      message.content?.id ||
-      message.metadata?.toolUseId ||
-      message.id.split('-tool-')[1] ||
-      null
+      message.content?.id || message.metadata?.toolUseId || message.id.split('-tool-')[1] || null
     )
   }
 

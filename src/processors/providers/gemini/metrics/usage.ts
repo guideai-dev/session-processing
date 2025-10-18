@@ -5,12 +5,12 @@ import { GeminiParser } from '../parser.js'
 export class GeminiUsageProcessor extends BaseMetricProcessor {
   readonly name = 'gemini-usage'
   readonly metricType = 'usage'
-  readonly description = 'Analyzes token usage patterns including cache efficiency and thinking overhead'
+  readonly description =
+    'Analyzes token usage patterns including cache efficiency and thinking overhead'
 
   private parser = new GeminiParser()
 
   async process(session: ParsedSession): Promise<SessionMetricsData> {
-
     const tokenStats = this.parser.calculateTotalTokens(session)
     const thinkingAnalysis = this.parser.analyzeThinking(session)
 
@@ -19,37 +19,36 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
     const assistantMessages = session.messages.filter(m => m.type === 'assistant')
     const userMessages = session.messages.filter(m => m.type === 'user')
 
-    const avgInputTokens = messagesWithTokens.length > 0
-      ? tokenStats.totalInput / messagesWithTokens.length
-      : 0
+    const avgInputTokens =
+      messagesWithTokens.length > 0 ? tokenStats.totalInput / messagesWithTokens.length : 0
 
-    const avgOutputTokens = messagesWithTokens.length > 0
-      ? tokenStats.totalOutput / messagesWithTokens.length
-      : 0
+    const avgOutputTokens =
+      messagesWithTokens.length > 0 ? tokenStats.totalOutput / messagesWithTokens.length : 0
 
-    const avgCachedTokens = messagesWithTokens.length > 0
-      ? tokenStats.totalCached / messagesWithTokens.length
-      : 0
+    const avgCachedTokens =
+      messagesWithTokens.length > 0 ? tokenStats.totalCached / messagesWithTokens.length : 0
 
-    const avgThinkingTokens = messagesWithTokens.length > 0
-      ? tokenStats.totalThoughts / messagesWithTokens.length
-      : 0
+    const avgThinkingTokens =
+      messagesWithTokens.length > 0 ? tokenStats.totalThoughts / messagesWithTokens.length : 0
 
     // Calculate cache efficiency score (0-100)
     const cacheEfficiencyScore = Math.min(100, tokenStats.cacheHitRate * 100)
 
     // Calculate thinking efficiency (lower overhead is better)
-    const thinkingEfficiencyScore = tokenStats.thinkingOverhead > 0
-      ? Math.max(0, 100 - (tokenStats.thinkingOverhead * 100))
-      : 100
+    const thinkingEfficiencyScore =
+      tokenStats.thinkingOverhead > 0 ? Math.max(0, 100 - tokenStats.thinkingOverhead * 100) : 100
 
     // Overall token efficiency (combination of cache usage and low thinking overhead)
-    const overallEfficiency = (cacheEfficiencyScore * 0.6 + thinkingEfficiencyScore * 0.4)
+    const overallEfficiency = cacheEfficiencyScore * 0.6 + thinkingEfficiencyScore * 0.4
 
     // Extract tools from Gemini format
     const tools = this.extractTools(session)
-    const readOps = tools.filter(t => ['read', 'search', 'list'].some(op => t.name.toLowerCase().includes(op))).length
-    const writeOps = tools.filter(t => ['write', 'edit', 'create', 'update', 'delete'].some(op => t.name.toLowerCase().includes(op))).length
+    const readOps = tools.filter(t =>
+      ['read', 'search', 'list'].some(op => t.name.toLowerCase().includes(op))
+    ).length
+    const writeOps = tools.filter(t =>
+      ['write', 'edit', 'create', 'update', 'delete'].some(op => t.name.toLowerCase().includes(op))
+    ).length
 
     // Calculate read/write ratio (Gemini equivalent)
     const readWriteRatio = writeOps > 0 ? Number((readOps / writeOps).toFixed(2)) : readOps
@@ -85,15 +84,15 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
         avg_input_tokens: avgInputTokens,
         avg_output_tokens: avgOutputTokens,
         cache_efficiency_score: cacheEfficiencyScore,
-        overall_token_efficiency: overallEfficiency
-      }
+        overall_token_efficiency: overallEfficiency,
+      },
     }
 
     return metrics
   }
 
-  private extractTools(session: ParsedSession): Array<{ name: string, timestamp: Date }> {
-    const tools: Array<{ name: string, timestamp: Date }> = []
+  private extractTools(session: ParsedSession): Array<{ name: string; timestamp: Date }> {
+    const tools: Array<{ name: string; timestamp: Date }> = []
 
     for (const message of session.messages) {
       // Extract from metadata.tools (Gemini format)
@@ -128,7 +127,7 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
       const codeSnippets = this.countCodeSnippets(content)
       const fileReferences = this.countFileReferences(content)
 
-      const messageScore = technicalTerms + (codeSnippets * 2) + fileReferences
+      const messageScore = technicalTerms + codeSnippets * 2 + fileReferences
       totalScore += messageScore
     }
 
@@ -138,9 +137,27 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
 
   private countTechnicalTerms(content: string): number {
     const technicalKeywords = [
-      'function', 'variable', 'class', 'method', 'api', 'database', 'query',
-      'component', 'interface', 'type', 'import', 'export', 'async', 'await',
-      'typescript', 'javascript', 'react', 'node', 'npm', 'pnpm', 'package'
+      'function',
+      'variable',
+      'class',
+      'method',
+      'api',
+      'database',
+      'query',
+      'component',
+      'interface',
+      'type',
+      'import',
+      'export',
+      'async',
+      'await',
+      'typescript',
+      'javascript',
+      'react',
+      'node',
+      'npm',
+      'pnpm',
+      'package',
     ]
 
     const contentLower = content.toLowerCase()
@@ -167,25 +184,28 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
     const tips: string[] = []
 
     if (readWriteRatio > 5) {
-      tips.push("High Read/Write ratio - consider providing specific file paths upfront")
+      tips.push('High Read/Write ratio - consider providing specific file paths upfront')
     }
 
     if (readWriteRatio <= 2) {
-      tips.push("Excellent efficiency! Model found and modified files quickly")
+      tips.push('Excellent efficiency! Model found and modified files quickly')
     }
 
     if (inputClarityScore < 20) {
-      tips.push("Low input clarity - try including more technical details and code examples")
+      tips.push('Low input clarity - try including more technical details and code examples')
     }
 
     if (inputClarityScore > 50) {
-      tips.push("Great technical communication! Clear inputs lead to better results")
+      tips.push('Great technical communication! Clear inputs lead to better results')
     }
 
     return tips
   }
 
-  private calculateLinesRead(tools: Array<{ name: string, timestamp: Date }>, session: ParsedSession): number {
+  private calculateLinesRead(
+    tools: Array<{ name: string; timestamp: Date }>,
+    session: ParsedSession
+  ): number {
     let total = 0
 
     // For Gemini, tool results may be in message metadata

@@ -25,7 +25,10 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
    */
   protected normalizeMessage(message: BaseSessionMessage) {
     // Handle file-history-snapshot messages
-    if ((message as any).type === 'file-history-snapshot' || message.content?.type === 'file-history-snapshot') {
+    if (
+      (message as any).type === 'file-history-snapshot' ||
+      message.content?.type === 'file-history-snapshot'
+    ) {
       return {
         ...super.normalizeMessage(message),
         type: 'meta' as const,
@@ -84,7 +87,10 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     }
 
     // Handle file-history-snapshot
-    if ((message as any).type === 'file-history-snapshot' || message.content?.type === 'file-history-snapshot') {
+    if (
+      (message as any).type === 'file-history-snapshot' ||
+      message.content?.type === 'file-history-snapshot'
+    ) {
       return createDisplayMetadata({
         icon: 'FILE',
         IconComponent: DocumentIcon,
@@ -137,7 +143,10 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
    */
   protected getContentBlocks(message: BaseSessionMessage): ContentBlock[] {
     // Handle file-history-snapshot
-    if ((message as any).type === 'file-history-snapshot' || message.content?.type === 'file-history-snapshot') {
+    if (
+      (message as any).type === 'file-history-snapshot' ||
+      message.content?.type === 'file-history-snapshot'
+    ) {
       return this.getFileHistoryBlocks(message)
     }
 
@@ -175,14 +184,10 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
         else if (item.type === 'thinking') {
           if (item.thinking) {
             // Plain thinking text
-            blocks.push(
-              createContentBlock('text', `_Reasoning: ${item.thinking}_`)
-            )
+            blocks.push(createContentBlock('text', `_Reasoning: ${item.thinking}_`))
           } else if (item.signature) {
             // Encrypted thinking - just show indicator
-            blocks.push(
-              createContentBlock('text', '_[Encrypted reasoning - not displayed]_')
-            )
+            blocks.push(createContentBlock('text', '_[Encrypted reasoning - not displayed]_'))
           }
         }
 
@@ -262,7 +267,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     const contentArray = this.extractClaudeContentArray(message)
     if (!contentArray) return false
 
-    return contentArray.some((item) => item.type === 'thinking')
+    return contentArray.some(item => item.type === 'thinking')
   }
 
   /**
@@ -283,9 +288,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
       }
 
       if (fileHistory.length > 10) {
-        blocks.push(
-          createContentBlock('text', `... and ${fileHistory.length - 10} more files`)
-        )
+        blocks.push(createContentBlock('text', `... and ${fileHistory.length - 10} more files`))
       }
     } else {
       // Show as JSON if structure is unexpected
@@ -324,7 +327,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     // Check content array for tool_use
     const contentArray = this.extractClaudeContentArray(message)
     if (contentArray) {
-      const toolUse = contentArray.find((item) => item.type === 'tool_use')
+      const toolUse = contentArray.find(item => item.type === 'tool_use')
       if (toolUse?.name) {
         return toolUse.name
       }
@@ -340,7 +343,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     // Check content array for tool_use
     const contentArray = this.extractClaudeContentArray(message)
     if (contentArray) {
-      const toolUse = contentArray.find((item) => item.type === 'tool_use')
+      const toolUse = contentArray.find(item => item.type === 'tool_use')
       if (toolUse?.id) {
         return toolUse.id
       }
@@ -356,7 +359,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     // Check content array for tool_result
     const contentArray = this.extractClaudeContentArray(message)
     if (contentArray) {
-      const toolResult = contentArray.find((item) => item.type === 'tool_result')
+      const toolResult = contentArray.find(item => item.type === 'tool_result')
       if (toolResult?.tool_use_id) {
         return toolResult.tool_use_id
       }

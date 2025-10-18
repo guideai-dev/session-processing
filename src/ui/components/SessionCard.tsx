@@ -13,7 +13,13 @@
  * - Provider icon rendering
  */
 
-import { ChartBarIcon, XCircleIcon, CloudArrowUpIcon, ExclamationTriangleIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import {
+  ChartBarIcon,
+  XCircleIcon,
+  CloudArrowUpIcon,
+  ExclamationTriangleIcon,
+  SparklesIcon,
+} from '@heroicons/react/24/outline'
 import { RatingBadge } from './RatingBadge.js'
 import type { SessionRating } from '../../utils/rating.js'
 
@@ -88,7 +94,7 @@ function SessionCard({
     if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -125,7 +131,10 @@ function SessionCard({
     // If no latest commit or same as first, show "UNSTAGED" pattern
     if (!latestCommit || firstCommit === latestCommit) {
       return (
-        <span className="font-mono text-xs" title={`Unstaged changes from ${session.firstCommitHash}`}>
+        <span
+          className="font-mono text-xs"
+          title={`Unstaged changes from ${session.firstCommitHash}`}
+        >
           {firstCommit} → <span className="text-warning">UNSTAGED</span>
         </span>
       )
@@ -133,7 +142,10 @@ function SessionCard({
 
     // Show commit range
     return (
-      <span className="font-mono text-xs" title={`Changes from ${session.firstCommitHash} to ${session.latestCommitHash}`}>
+      <span
+        className="font-mono text-xs"
+        title={`Changes from ${session.firstCommitHash} to ${session.latestCommitHash}`}
+      >
         {firstCommit} → {latestCommit}
       </span>
     )
@@ -203,7 +215,7 @@ function SessionCard({
         color: 'text-success',
         bgColor: 'bg-success/20',
         label: 'Metrics Only - No transcript file to process',
-        clickable: false
+        clickable: false,
       }
     }
 
@@ -214,7 +226,7 @@ function SessionCard({
           color: 'text-base-content/30',
           bgColor: 'bg-base-200',
           label: 'Pending AI Processing',
-          clickable: true
+          clickable: true,
         }
       case 'processing':
         return {
@@ -222,7 +234,7 @@ function SessionCard({
           color: 'text-info',
           bgColor: 'bg-info/20',
           label: 'AI Processing...',
-          clickable: false
+          clickable: false,
         }
       case 'completed':
         return {
@@ -230,7 +242,7 @@ function SessionCard({
           color: 'text-success',
           bgColor: 'bg-success/20',
           label: 'AI Processed',
-          clickable: true
+          clickable: true,
         }
       case 'failed':
         return {
@@ -238,7 +250,7 @@ function SessionCard({
           color: 'text-error',
           bgColor: 'bg-error/20',
           label: 'AI Processing Failed',
-          clickable: true
+          clickable: true,
         }
       default:
         return {
@@ -246,7 +258,7 @@ function SessionCard({
           color: 'text-base-content/30',
           bgColor: 'bg-base-200',
           label: 'Pending AI Processing',
-          clickable: true
+          clickable: true,
         }
     }
   }
@@ -259,7 +271,7 @@ function SessionCard({
           color: 'text-success',
           bgColor: 'bg-success/10',
           label: 'Assessment Complete',
-          clickable: false
+          clickable: false,
         }
       case 'in_progress':
         return {
@@ -267,7 +279,7 @@ function SessionCard({
           color: 'text-info',
           bgColor: 'bg-info/10',
           label: 'Assessment In Progress',
-          clickable: true
+          clickable: true,
         }
       case 'not_started':
       default:
@@ -276,7 +288,7 @@ function SessionCard({
           color: 'text-base-content/40',
           bgColor: 'bg-base-200',
           label: 'Assess Session',
-          clickable: true
+          clickable: true,
         }
     }
   }
@@ -289,7 +301,7 @@ function SessionCard({
         color: 'text-error',
         bgColor: 'bg-error/20',
         label: 'Sync Failed - Click to view error',
-        clickable: true
+        clickable: true,
       }
     } else if (session.syncedToServer) {
       return {
@@ -297,7 +309,7 @@ function SessionCard({
         color: 'text-success',
         bgColor: 'bg-success/20',
         label: 'Synced to server',
-        clickable: false
+        clickable: false,
       }
     } else {
       return {
@@ -305,7 +317,7 @@ function SessionCard({
         color: 'text-base-content/30',
         bgColor: 'bg-base-200',
         label: 'Click to sync to server',
-        clickable: true
+        clickable: true,
       }
     }
   }
@@ -357,9 +369,7 @@ function SessionCard({
               </span>
             )}
             {session.username && session.username.trim() !== '' && (
-              <div className="badge badge-ghost badge-sm">
-                @{session.username}
-              </div>
+              <div className="badge badge-ghost badge-sm">@{session.username}</div>
             )}
           </div>
 
@@ -380,11 +390,15 @@ function SessionCard({
             {session.aiModelQualityScore !== null && session.aiModelQualityScore !== undefined && (
               <div className="flex items-center gap-1">
                 <span className="hidden md:inline">Quality:</span>
-                <span className={`font-medium ${
-                  session.aiModelQualityScore >= 80 ? 'text-success' :
-                  session.aiModelQualityScore >= 60 ? 'text-warning' :
-                  'text-error'
-                }`}>
+                <span
+                  className={`font-medium ${
+                    session.aiModelQualityScore >= 80
+                      ? 'text-success'
+                      : session.aiModelQualityScore >= 60
+                        ? 'text-warning'
+                        : 'text-error'
+                  }`}
+                >
                   {session.aiModelQualityScore}%
                 </span>
               </div>
@@ -406,9 +420,7 @@ function SessionCard({
               <span>→</span>
               <span>{formatTime(session.sessionEndTime)}</span>
             </div>
-            <div className="font-medium">
-              {formatShortDate(session.sessionStartTime)}
-            </div>
+            <div className="font-medium">{formatShortDate(session.sessionStartTime)}</div>
           </div>
         </div>
 
@@ -417,26 +429,25 @@ function SessionCard({
           {/* Processing Status Indicator */}
           <div
             className={`flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md ${processingInfo.bgColor} ${
-              processingInfo.clickable && !actuallyProcessing ? 'cursor-pointer hover:scale-110' : 'cursor-default'
+              processingInfo.clickable && !actuallyProcessing
+                ? 'cursor-pointer hover:scale-110'
+                : 'cursor-default'
             } transition-all tooltip tooltip-left`}
             data-tip={actuallyProcessing ? 'Processing...' : processingInfo.label}
-            onClick={processingInfo.clickable && !actuallyProcessing ? handleProcessClick : undefined}
+            onClick={
+              processingInfo.clickable && !actuallyProcessing ? handleProcessClick : undefined
+            }
           >
             {actuallyProcessing ? (
               <span className="loading loading-spinner loading-xs text-info"></span>
             ) : (
-              <span className={processingInfo.color}>
-                {processingInfo.icon}
-              </span>
+              <span className={processingInfo.color}>{processingInfo.icon}</span>
             )}
           </div>
 
           {/* Rating Badge - Quick rating for the session (compact icon-only) */}
           {onRateSession && (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center justify-center"
-            >
+            <div onClick={e => e.stopPropagation()} className="flex items-center justify-center">
               <RatingBadge
                 rating={(session.assessmentRating as SessionRating) || null}
                 onRate={handleRate}
@@ -456,9 +467,7 @@ function SessionCard({
               data-tip={syncInfo.label}
               onClick={syncInfo.clickable ? handleSyncClick : undefined}
             >
-              <span className={syncInfo.color}>
-                {syncInfo.icon}
-              </span>
+              <span className={syncInfo.color}>{syncInfo.icon}</span>
             </div>
           )}
         </div>
@@ -466,9 +475,7 @@ function SessionCard({
 
       {/* AI Summary - Second row, if it exists */}
       {session.aiModelSummary && (
-        <div className="text-xs text-base-content/60 pl-8 md:pl-12">
-          {session.aiModelSummary}
-        </div>
+        <div className="text-xs text-base-content/60 pl-8 md:pl-12">{session.aiModelSummary}</div>
       )}
     </>
   )
@@ -476,7 +483,11 @@ function SessionCard({
   return (
     <div
       className={`relative flex flex-col gap-3 p-3 bg-base-100 border rounded transition-all ${
-        isSelected ? 'border-primary bg-primary/5' : isActive ? 'border-2 border-success shadow-lg shadow-success/30' : 'border-base-300 hover:shadow-md hover:border-primary/50'
+        isSelected
+          ? 'border-primary bg-primary/5'
+          : isActive
+            ? 'border-2 border-success shadow-lg shadow-success/30'
+            : 'border-base-300 hover:shadow-md hover:border-primary/50'
       } ${onViewSession ? 'cursor-pointer' : ''}`}
       onClick={onViewSession ? handleCardClick : undefined}
     >

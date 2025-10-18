@@ -28,7 +28,7 @@ export class OpenCodeProcessor extends BaseProviderProcessor {
       new OpenCodeEngagementProcessor(),
       new OpenCodeQualityProcessor(),
       new OpenCodeUsageProcessor(),
-      new OpenCodeErrorProcessor()
+      new OpenCodeErrorProcessor(),
     ]
   }
 
@@ -57,9 +57,9 @@ export class OpenCodeProcessor extends BaseProviderProcessor {
             parsedLine.type &&
             parsedLine.message &&
             (parsedLine.type === 'user' ||
-             parsedLine.type === 'assistant' ||
-             parsedLine.type === 'tool_use' ||
-             parsedLine.type === 'tool_result')
+              parsedLine.type === 'assistant' ||
+              parsedLine.type === 'tool_use' ||
+              parsedLine.type === 'tool_result')
 
           if (hasOpenCodeFields) {
             return true
@@ -85,9 +85,9 @@ export class OpenCodeProcessor extends BaseProviderProcessor {
       metricProcessors: this.metricProcessors.map(processor => ({
         name: processor.name,
         metricType: processor.metricType,
-        description: processor.description
+        description: processor.description,
       })),
-      version: '1.0.0'
+      version: '1.0.0',
     }
   }
 }
@@ -99,5 +99,5 @@ export {
   OpenCodeQualityProcessor,
   OpenCodeUsageProcessor,
   OpenCodeErrorProcessor,
-  OpenCodeParser
+  OpenCodeParser,
 }

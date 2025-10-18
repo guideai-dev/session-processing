@@ -16,15 +16,16 @@ export class CodexPerformanceProcessor extends BaseMetricProcessor {
     if (messages.length === 0) {
       return {
         response_latency_ms: 0,
-        task_completion_time_ms: 0
+        task_completion_time_ms: 0,
       }
     }
 
     // Calculate response latency (average time between user message and assistant response)
     const responseTimes = this.parser.calculateResponseTimes(session)
-    const averageResponseTime = responseTimes.length > 0
-      ? responseTimes.reduce((sum, rt) => sum + rt.responseTime, 0) / responseTimes.length
-      : 0
+    const averageResponseTime =
+      responseTimes.length > 0
+        ? responseTimes.reduce((sum, rt) => sum + rt.responseTime, 0) / responseTimes.length
+        : 0
 
     // Calculate task completion time (total session duration)
     const taskCompletionTime = session.duration
@@ -36,22 +37,24 @@ export class CodexPerformanceProcessor extends BaseMetricProcessor {
       // Additional context for improvement guidance
       metadata: {
         total_responses: responseTimes.length,
-        improvement_tips: this.generateImprovementTips(averageResponseTime, taskCompletionTime)
-      }
+        improvement_tips: this.generateImprovementTips(averageResponseTime, taskCompletionTime),
+      },
     }
   }
 
   private generateImprovementTips(responseLatency: number, completionTime: number): string[] {
     const tips: string[] = []
 
-    if (responseLatency > 10000) { // > 10 seconds
-      tips.push("Consider breaking complex requests into smaller, more specific tasks")
-      tips.push("Provide more context upfront to reduce AI thinking time")
+    if (responseLatency > 10000) {
+      // > 10 seconds
+      tips.push('Consider breaking complex requests into smaller, more specific tasks')
+      tips.push('Provide more context upfront to reduce AI thinking time')
     }
 
-    if (completionTime > 1800000) { // > 30 minutes
-      tips.push("Try to be more specific in your initial request to reduce back-and-forth")
-      tips.push("Consider providing code examples or file paths to speed up the process")
+    if (completionTime > 1800000) {
+      // > 30 minutes
+      tips.push('Try to be more specific in your initial request to reduce back-and-forth')
+      tips.push('Consider providing code examples or file paths to speed up the process')
     }
 
     return tips

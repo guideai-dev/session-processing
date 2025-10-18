@@ -12,5 +12,5 @@ export {
   ClaudeEngagementProcessor,
   ClaudeQualityProcessor,
   ClaudeUsageProcessor,
-  ClaudeErrorProcessor
+  ClaudeErrorProcessor,
 } from './providers/claude-code/index.js'

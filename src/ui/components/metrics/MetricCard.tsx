@@ -48,7 +48,7 @@ export function MetricCard({
   suffix,
   type = 'number',
   tooltip,
-  size = 'md'
+  size = 'md',
 }: MetricCardProps) {
   const formatValue = () => {
     if (value === null || value === undefined) return 'N/A'
@@ -91,13 +91,13 @@ export function MetricCard({
   const cardSizeClasses = {
     sm: 'p-3',
     md: 'p-4',
-    lg: 'p-6'
+    lg: 'p-6',
   }
 
   const textSizeClasses = {
     sm: { value: 'text-lg', label: 'text-xs' },
     md: { value: 'text-xl', label: 'text-sm' },
-    lg: { value: 'text-2xl', label: 'text-base' }
+    lg: { value: 'text-2xl', label: 'text-base' },
   }
 
   return (

@@ -4,7 +4,14 @@
 
 import { useState, useEffect } from 'react'
 
-export type DateFilterOption = 'all' | 'last24hrs' | 'today' | 'yesterday' | 'this-week' | 'last-week' | 'range'
+export type DateFilterOption =
+  | 'all'
+  | 'last24hrs'
+  | 'today'
+  | 'yesterday'
+  | 'this-week'
+  | 'last-week'
+  | 'range'
 
 export interface DateRange {
   from: string
@@ -79,17 +86,25 @@ function DateFilter({ value, onChange }: DateFilterProps) {
     }
   }
 
-  const options: DateFilterOption[] = ['all', 'last24hrs', 'today', 'yesterday', 'this-week', 'last-week', 'range']
+  const options: DateFilterOption[] = [
+    'all',
+    'last24hrs',
+    'today',
+    'yesterday',
+    'this-week',
+    'last-week',
+    'range',
+  ]
 
   return (
     <div className="space-y-2">
       {/* Date Filter Select */}
       <select
         value={value.option}
-        onChange={(e) => handleOptionChange(e.target.value as DateFilterOption)}
+        onChange={e => handleOptionChange(e.target.value as DateFilterOption)}
         className="select select-sm select-bordered w-full"
       >
-        {options.map((option) => (
+        {options.map(option => (
           <option key={option} value={option}>
             {getOptionLabel(option)}
           </option>
@@ -102,7 +117,7 @@ function DateFilter({ value, onChange }: DateFilterProps) {
           <input
             type="date"
             value={fromDate}
-            onChange={(e) => {
+            onChange={e => {
               setFromDate(e.target.value)
               handleRangeChange(e.target.value, toDate)
             }}
@@ -113,7 +128,7 @@ function DateFilter({ value, onChange }: DateFilterProps) {
           <input
             type="date"
             value={toDate}
-            onChange={(e) => {
+            onChange={e => {
               setToDate(e.target.value)
               handleRangeChange(fromDate, e.target.value)
             }}

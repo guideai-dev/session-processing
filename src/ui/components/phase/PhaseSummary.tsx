@@ -7,9 +7,5 @@ interface PhaseSummaryProps {
 }
 
 export function PhaseSummary({ summary }: PhaseSummaryProps) {
-  return (
-    <div className="text-sm text-base-content/80 leading-relaxed">
-      {summary}
-    </div>
-  )
+  return <div className="text-sm text-base-content/80 leading-relaxed">{summary}</div>
 }

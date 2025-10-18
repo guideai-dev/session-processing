@@ -10,7 +10,13 @@ interface PhaseStatsProps {
   timestamp?: string
 }
 
-export function PhaseStats({ startStep, endStep, stepCount, durationMs, timestamp }: PhaseStatsProps) {
+export function PhaseStats({
+  startStep,
+  endStep,
+  stepCount,
+  durationMs,
+  timestamp,
+}: PhaseStatsProps) {
   const formatDuration = (ms: number): string => {
     const seconds = Math.floor(ms / 1000)
     const minutes = Math.floor(seconds / 60)
@@ -29,7 +35,7 @@ export function PhaseStats({ startStep, endStep, stepCount, durationMs, timestam
     return new Date(ts).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     })
   }
 
@@ -37,7 +43,9 @@ export function PhaseStats({ startStep, endStep, stepCount, durationMs, timestam
     <div className="flex flex-wrap gap-3 text-xs text-base-content/70 mb-2">
       <div className="flex items-center gap-1.5">
         <span className="font-medium">Steps:</span>
-        <span>{startStep}-{endStep}</span>
+        <span>
+          {startStep}-{endStep}
+        </span>
         <span className="text-base-content/50">({stepCount} messages)</span>
       </div>
       <div className="flex items-center gap-1.5">

@@ -68,7 +68,10 @@ export class GeminiParser {
    * Parse JSONL format (one message per line with gemini_raw field)
    */
   private parseJSONL(jsonlContent: string): ParsedSession {
-    const lines = jsonlContent.trim().split('\n').filter(line => line.trim())
+    const lines = jsonlContent
+      .trim()
+      .split('\n')
+      .filter(line => line.trim())
 
     if (lines.length === 0) {
       throw new Error('Empty JSONL content')
@@ -149,8 +152,8 @@ export class GeminiParser {
         projectHash: projectHash || 'unknown',
         hasThoughts: messages.some(m => m.metadata?.thoughts !== undefined),
         hasCachedTokens: messages.some(m => m.metadata?.tokens?.cached > 0),
-        hasTools: messages.some(m => m.metadata?.tools !== undefined)
-      }
+        hasTools: messages.some(m => m.metadata?.tools !== undefined),
+      },
     }
   }
 
@@ -223,8 +226,8 @@ export class GeminiParser {
         projectHash: rawSession.projectHash,
         hasThoughts: messages.some(m => m.metadata?.thoughts !== undefined),
         hasCachedTokens: messages.some(m => m.metadata?.tokens?.cached > 0),
-        hasTools: messages.some(m => m.metadata?.tools !== undefined)
-      }
+        hasTools: messages.some(m => m.metadata?.tools !== undefined),
+      },
     }
   }
 
@@ -232,7 +235,11 @@ export class GeminiParser {
     const timestamp = new Date(rawMessage.timestamp)
 
     // Check if this is a user message with [Function Response:]
-    if (rawMessage.type === 'user' && rawMessage.content && rawMessage.content.startsWith('[Function Response:')) {
+    if (
+      rawMessage.type === 'user' &&
+      rawMessage.content &&
+      rawMessage.content.startsWith('[Function Response:')
+    ) {
       // Extract tool name from [Function Response: tool_name]
       const toolNameMatch = rawMessage.content.match(/\[Function Response: ([^\]]+)\]/)
       const toolName = toolNameMatch ? toolNameMatch[1] : 'unknown'
@@ -248,12 +255,12 @@ export class GeminiParser {
           type: 'tool_use',
           content: {
             text: `Tool: ${toolName}`,
-            structured: { type: 'tool_use', name: toolName, input: {} }
+            structured: { type: 'tool_use', name: toolName, input: {} },
           },
           metadata: {
             role: 'tool_use',
             toolName,
-          }
+          },
         },
         // Tool result (explicit response)
         {
@@ -262,14 +269,14 @@ export class GeminiParser {
           type: 'tool_result',
           content: {
             text: rawMessage.content,
-            structured: rawMessage
+            structured: rawMessage,
           },
           metadata: {
             role: 'tool_result',
             toolName,
-            linkedTo: toolUseId
-          }
-        }
+            linkedTo: toolUseId,
+          },
+        },
       ]
     }
 
@@ -286,7 +293,7 @@ export class GeminiParser {
     // Build content object
     const content = {
       text: rawMessage.content,
-      structured: rawMessage
+      structured: rawMessage,
     }
 
     // Build metadata
@@ -295,7 +302,7 @@ export class GeminiParser {
       model: rawMessage.model,
       hasThoughts: rawMessage.thoughts !== undefined && rawMessage.thoughts.length > 0,
       hasTokens: rawMessage.tokens !== undefined,
-      hasTools: rawMessage.tools !== undefined && rawMessage.tools.length > 0
+      hasTools: rawMessage.tools !== undefined && rawMessage.tools.length > 0,
     }
 
     // Add thoughts if present
@@ -312,7 +319,8 @@ export class GeminiParser {
 
       // Calculate cache efficiency
       if (rawMessage.tokens.input + rawMessage.tokens.cached > 0) {
-        metadata.cacheHitRate = rawMessage.tokens.cached / (rawMessage.tokens.input + rawMessage.tokens.cached)
+        metadata.cacheHitRate =
+          rawMessage.tokens.cached / (rawMessage.tokens.input + rawMessage.tokens.cached)
       }
 
       // Calculate thinking overhead
@@ -333,7 +341,7 @@ export class GeminiParser {
       timestamp,
       type: messageType,
       content,
-      metadata
+      metadata,
     }
   }
 
@@ -384,13 +392,9 @@ export class GeminiParser {
       }
     }
 
-    const cacheHitRate = totalInput + totalCached > 0
-      ? totalCached / (totalInput + totalCached)
-      : 0
+    const cacheHitRate = totalInput + totalCached > 0 ? totalCached / (totalInput + totalCached) : 0
 
-    const thinkingOverhead = totalOutput > 0
-      ? totalThoughts / totalOutput
-      : 0
+    const thinkingOverhead = totalOutput > 0 ? totalThoughts / totalOutput : 0
 
     return {
       totalInput,
@@ -400,7 +404,7 @@ export class GeminiParser {
       totalTool,
       total,
       cacheHitRate,
-      thinkingOverhead
+      thinkingOverhead,
     }
   }
 
@@ -427,7 +431,7 @@ export class GeminiParser {
         responseTimes.push({
           userMessage: current,
           assistantMessage: next,
-          responseTime
+          responseTime,
         })
       }
     }
@@ -467,7 +471,8 @@ export class GeminiParser {
       avgThoughtsPerMessage: assistantMessages > 0 ? totalThoughts / assistantMessages : 0,
       maxThinkingDepth,
       thinkingMessages,
-      thinkingMessagePercentage: assistantMessages > 0 ? (thinkingMessages / assistantMessages) * 100 : 0
+      thinkingMessagePercentage:
+        assistantMessages > 0 ? (thinkingMessages / assistantMessages) * 100 : 0,
     }
   }
 }

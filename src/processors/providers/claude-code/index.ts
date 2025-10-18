@@ -1,4 +1,8 @@
-import { BaseProviderProcessor, BaseMetricProcessor, GitDiffMetricProcessor } from '../../base/index.js'
+import {
+  BaseProviderProcessor,
+  BaseMetricProcessor,
+  GitDiffMetricProcessor,
+} from '../../base/index.js'
 import { ClaudeCodeParser } from './parser.js'
 
 // Import simplified metric processors
@@ -26,7 +30,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
       new ClaudeEngagementProcessor(),
       new ClaudeQualityProcessor(),
       new ClaudeUsageProcessor(),
-      new ClaudeErrorProcessor()
+      new ClaudeErrorProcessor(),
     ]
   }
 
@@ -49,7 +53,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
     if (context.gitDiffData) {
       session.metadata = {
         ...session.metadata,
-        gitDiff: context.gitDiffData
+        gitDiff: context.gitDiffData,
       }
     }
 
@@ -68,7 +72,10 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
 
     // Run git diff processor LAST with existing metrics
     try {
-      const gitDiffMetrics = await this.gitDiffProcessor.processWithExistingMetrics(session, existingMetrics)
+      const gitDiffMetrics = await this.gitDiffProcessor.processWithExistingMetrics(
+        session,
+        existingMetrics
+      )
       // Only add if there's actual git data (total files > 0)
       if (gitDiffMetrics && gitDiffMetrics.git_total_files_changed > 0) {
         results.push({
@@ -79,8 +86,8 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
             processor: 'git-diff',
             processingTime: 0,
             messageCount: session.messages.length,
-            sessionDuration: session.duration
-          }
+            sessionDuration: session.duration,
+          },
         })
       }
     } catch (error) {
@@ -134,9 +141,9 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
       metricProcessors: this.metricProcessors.map(processor => ({
         name: processor.name,
         metricType: processor.metricType,
-        description: processor.description
+        description: processor.description,
       })),
-      version: '1.0.0'
+      version: '1.0.0',
     }
   }
 
@@ -176,7 +183,6 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
             }
           }
         }
-
       } catch (parseError) {
         // Skip lines that aren't valid JSON (though this should be rare after earlier validation)
         continue
@@ -234,5 +240,5 @@ export {
   ClaudeQualityProcessor,
   ClaudeUsageProcessor,
   ClaudeErrorProcessor,
-  ClaudeCodeParser
+  ClaudeCodeParser,
 }

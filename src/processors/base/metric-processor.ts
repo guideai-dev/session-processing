@@ -58,19 +58,24 @@ export abstract class BaseMetricProcessor {
           processor: this.name,
           processingTime,
           messageCount: session.messages.length,
-          sessionDuration: session.duration
-        }
+          sessionDuration: session.duration,
+        },
       }
     } catch (error) {
       const processingTime = Date.now() - startTime
-      throw new Error(`${this.name} processor failed: ${error instanceof Error ? error.message : 'Unknown error'} (processing time: ${processingTime}ms)`)
+      throw new Error(
+        `${this.name} processor failed: ${error instanceof Error ? error.message : 'Unknown error'} (processing time: ${processingTime}ms)`
+      )
     }
   }
 
   /**
    * Helper method to find messages by type
    */
-  protected findMessagesByType(session: ParsedSession, type: string | string[]): ParsedSession['messages'] {
+  protected findMessagesByType(
+    session: ParsedSession,
+    type: string | string[]
+  ): ParsedSession['messages'] {
     const types = Array.isArray(type) ? type : [type]
     return session.messages.filter(msg => types.includes(msg.type))
   }

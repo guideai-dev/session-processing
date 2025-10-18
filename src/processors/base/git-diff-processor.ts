@@ -30,7 +30,10 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
    * @param session - Parsed session with optional git diff data
    * @param existingMetrics - Previously calculated metrics (for ratios)
    */
-  async processWithExistingMetrics(session: ParsedSession, existingMetrics?: any): Promise<GitDiffMetrics> {
+  async processWithExistingMetrics(
+    session: ParsedSession,
+    existingMetrics?: any
+  ): Promise<GitDiffMetrics> {
     // Check if git diff data is available (desktop only)
     const gitDiff = session.metadata?.gitDiff
     if (!gitDiff || !gitDiff.files) {
@@ -43,15 +46,21 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
         git_net_lines_changed: 0,
         metadata: {
           calculation_type: 'unstaged',
-          improvement_tips: []
-        }
+          improvement_tips: [],
+        },
       }
     }
 
     // Calculate core diff metrics (provider-agnostic)
     const totalFiles = gitDiff.files.length
-    const linesAdded = gitDiff.files.reduce((sum: number, f: any) => sum + (f.stats?.additions || 0), 0)
-    const linesRemoved = gitDiff.files.reduce((sum: number, f: any) => sum + (f.stats?.deletions || 0), 0)
+    const linesAdded = gitDiff.files.reduce(
+      (sum: number, f: any) => sum + (f.stats?.additions || 0),
+      0
+    )
+    const linesRemoved = gitDiff.files.reduce(
+      (sum: number, f: any) => sum + (f.stats?.deletions || 0),
+      0
+    )
     const linesModified = linesAdded + linesRemoved
     const netLines = linesAdded - linesRemoved
 
@@ -63,21 +72,15 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
     const toolCount = this.getTotalToolCount(session)
 
     // Calculate efficiency ratios
-    const linesReadPerChanged = linesModified > 0
-      ? parseFloat((totalLinesRead / linesModified).toFixed(2))
-      : 0
+    const linesReadPerChanged =
+      linesModified > 0 ? parseFloat((totalLinesRead / linesModified).toFixed(2)) : 0
 
-    const readsPerFile = totalFiles > 0
-      ? parseFloat((readOperations / totalFiles).toFixed(2))
-      : 0
+    const readsPerFile = totalFiles > 0 ? parseFloat((readOperations / totalFiles).toFixed(2)) : 0
 
-    const linesPerMinute = session.duration > 0
-      ? parseFloat((linesModified / (session.duration / 60000)).toFixed(2))
-      : 0
+    const linesPerMinute =
+      session.duration > 0 ? parseFloat((linesModified / (session.duration / 60000)).toFixed(2)) : 0
 
-    const linesPerTool = toolCount > 0
-      ? parseFloat((linesModified / toolCount).toFixed(2))
-      : 0
+    const linesPerTool = toolCount > 0 ? parseFloat((linesModified / toolCount).toFixed(2)) : 0
 
     return {
       git_total_files_changed: totalFiles,
@@ -94,8 +97,8 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
         calculation_type: gitDiff.isUnstaged ? 'unstaged' : 'committed',
         first_commit: session.metadata?.firstCommitHash,
         latest_commit: session.metadata?.latestCommitHash,
-        improvement_tips: this.generateTips(linesReadPerChanged, readsPerFile, linesPerTool)
-      }
+        improvement_tips: this.generateTips(linesReadPerChanged, readsPerFile, linesPerTool),
+      },
     }
   }
 
@@ -103,9 +106,9 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
    * Count total tool uses across any provider (provider-agnostic)
    */
   private getTotalToolCount(session: ParsedSession): number {
-    return session.messages.filter(m =>
-      m.metadata?.hasToolUses || (m.metadata?.toolCount && m.metadata.toolCount > 0)
-    ).reduce((sum, m) => sum + (m.metadata?.toolCount || 0), 0)
+    return session.messages
+      .filter(m => m.metadata?.hasToolUses || (m.metadata?.toolCount && m.metadata.toolCount > 0))
+      .reduce((sum, m) => sum + (m.metadata?.toolCount || 0), 0)
   }
 
   /**
@@ -120,21 +123,27 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
 
     // Lines read per changed analysis
     if (linesReadPerChanged > 10) {
-      tips.push("High read-to-change ratio - AI read lots of code for few changes. Be more specific about file locations.")
+      tips.push(
+        'High read-to-change ratio - AI read lots of code for few changes. Be more specific about file locations.'
+      )
     } else if (linesReadPerChanged > 0 && linesReadPerChanged < 5) {
-      tips.push("Excellent navigation efficiency! AI found and modified code quickly.")
+      tips.push('Excellent navigation efficiency! AI found and modified code quickly.')
     }
 
     // Reads per file analysis
     if (readsPerFile > 3) {
-      tips.push("Multiple reads per file - AI struggled to find right code. Include function/class names.")
+      tips.push(
+        'Multiple reads per file - AI struggled to find right code. Include function/class names.'
+      )
     }
 
     // Lines per tool analysis
     if (linesPerTool > 0 && linesPerTool < 1) {
-      tips.push("Low lines per tool - many tools for small changes. Consider consolidating requests.")
+      tips.push(
+        'Low lines per tool - many tools for small changes. Consider consolidating requests.'
+      )
     } else if (linesPerTool > 5) {
-      tips.push("Great tool efficiency - significant changes with minimal tool use.")
+      tips.push('Great tool efficiency - significant changes with minimal tool use.')
     }
 
     return tips

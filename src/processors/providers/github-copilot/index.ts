@@ -24,7 +24,7 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
       new CopilotEngagementProcessor(),
       new CopilotQualityProcessor(),
       new CopilotUsageProcessor(),
-      new CopilotErrorProcessor()
+      new CopilotErrorProcessor(),
     ]
   }
 
@@ -54,10 +54,10 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
             parsedLine.timestamp &&
             parsedLine.type &&
             (parsedLine.type === 'user' ||
-             parsedLine.type === 'copilot' ||
-             parsedLine.type === 'tool_call_requested' ||
-             parsedLine.type === 'tool_call_completed' ||
-             parsedLine.type === 'info')
+              parsedLine.type === 'copilot' ||
+              parsedLine.type === 'tool_call_requested' ||
+              parsedLine.type === 'tool_call_completed' ||
+              parsedLine.type === 'info')
 
           if (hasCopilotFields) {
             return true
@@ -84,9 +84,9 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
       metricProcessors: this.metricProcessors.map(processor => ({
         name: processor.name,
         metricType: processor.metricType,
-        description: processor.description
+        description: processor.description,
       })),
-      version: '1.0.0'
+      version: '1.0.0',
     }
   }
 
@@ -111,7 +111,13 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
         // Check if this looks like a GitHub Copilot message
         // Valid types: user, copilot, tool_call_requested, tool_call_completed, info
         if (message.timestamp && message.type) {
-          const validTypes = ['user', 'copilot', 'tool_call_requested', 'tool_call_completed', 'info']
+          const validTypes = [
+            'user',
+            'copilot',
+            'tool_call_requested',
+            'tool_call_completed',
+            'info',
+          ]
           if (validTypes.includes(message.type)) {
             // Validate timestamp format
             const timestamp = new Date(message.timestamp)
@@ -123,7 +129,6 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
             }
           }
         }
-
       } catch (parseError) {
         // Skip lines that aren't valid JSON
         continue
@@ -181,5 +186,5 @@ export {
   CopilotQualityProcessor,
   CopilotUsageProcessor,
   CopilotErrorProcessor,
-  GitHubCopilotParser
+  GitHubCopilotParser,
 }

@@ -16,7 +16,7 @@ export interface RatingBadgeProps {
   onRate?: (rating: SessionRating) => void
   disabled?: boolean
   size?: 'sm' | 'md' | 'lg'
-  compact?: boolean  // Icon-only mode, no badge background
+  compact?: boolean // Icon-only mode, no badge background
   className?: string
 }
 
@@ -26,7 +26,7 @@ export function RatingBadge({
   disabled = false,
   size = 'md',
   compact = false,
-  className = ''
+  className = '',
 }: RatingBadgeProps) {
   const [showPopover, setShowPopover] = useState(false)
   const badgeRef = useRef<HTMLDivElement>(null)

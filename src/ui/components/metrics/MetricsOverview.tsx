@@ -5,8 +5,8 @@
  * instead of fetching via hooks. The parent component should handle data fetching.
  */
 
-import { MetricCard } from "./MetricCard.js";
-import { MetricSection } from "./MetricSection.js";
+import { MetricCard } from './MetricCard.js'
+import { MetricSection } from './MetricSection.js'
 
 // Type definition for session metrics UI data
 export interface SessionMetricsUI {
@@ -97,18 +97,13 @@ export function MetricsOverview({
           <p className="mt-4 text-base-content/70">Loading metrics...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (error) {
     return (
       <div className="alert alert-error">
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -118,7 +113,7 @@ export function MetricsOverview({
         </svg>
         <span>Failed to load metrics: {error.message}</span>
       </div>
-    );
+    )
   }
 
   if (!metrics) {
@@ -146,7 +141,7 @@ export function MetricsOverview({
         <p className="text-base-content/70 mb-6">
           {isMetricsOnly
             ? 'This session does not have a transcript file. Metrics cannot be generated for metrics-only sessions.'
-            : 'This session hasn\'t been processed yet. Process it to generate comprehensive metrics.'}
+            : "This session hasn't been processed yet. Process it to generate comprehensive metrics."}
         </p>
         {(onProcessSession || onCancelProcessing) && (
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -175,10 +170,7 @@ export function MetricsOverview({
               </>
             ) : (
               onProcessSession && (
-                <button
-                  onClick={onProcessSession}
-                  className="btn btn-primary"
-                >
+                <button onClick={onProcessSession} className="btn btn-primary">
                   Process Session
                 </button>
               )
@@ -186,7 +178,7 @@ export function MetricsOverview({
           </div>
         )}
       </div>
-    );
+    )
   }
 
   return (
@@ -200,23 +192,30 @@ export function MetricsOverview({
         >
           <div className="space-y-4">
             {/* Top Row: Score + Summary */}
-            {(aiModelQualityScore !== null && aiModelQualityScore !== undefined) || aiModelSummary ? (
+            {(aiModelQualityScore !== null && aiModelQualityScore !== undefined) ||
+            aiModelSummary ? (
               <div className="bg-base-100 border border-base-300 rounded-lg p-4">
                 <div className="flex flex-col md:flex-row gap-4">
                   {aiModelQualityScore !== null && aiModelQualityScore !== undefined && (
                     <div className="bg-base-200 rounded-lg p-4 md:w-1/4 flex-shrink-0">
                       <div className="text-xs text-base-content/60 mb-1">Quality Score</div>
-                      <div className={`text-3xl font-bold ${
-                        aiModelQualityScore >= 80 ? 'text-success' :
-                        aiModelQualityScore >= 60 ? 'text-warning' :
-                        'text-error'
-                      }`}>
+                      <div
+                        className={`text-3xl font-bold ${
+                          aiModelQualityScore >= 80
+                            ? 'text-success'
+                            : aiModelQualityScore >= 60
+                              ? 'text-warning'
+                              : 'text-error'
+                        }`}
+                      >
                         {aiModelQualityScore}%
                       </div>
                       <div className="text-xs text-base-content/60 mt-1">
-                        {aiModelQualityScore >= 80 ? 'Excellent session quality' :
-                         aiModelQualityScore >= 60 ? 'Good session quality' :
-                         'Room for improvement'}
+                        {aiModelQualityScore >= 80
+                          ? 'Excellent session quality'
+                          : aiModelQualityScore >= 60
+                            ? 'Good session quality'
+                            : 'Room for improvement'}
                       </div>
                     </div>
                   )}
@@ -234,34 +233,44 @@ export function MetricsOverview({
             {aiModelMetadata && aiModelMetadata['quality-assessment'] && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Improvements */}
-                {aiModelMetadata['quality-assessment'].improvements && aiModelMetadata['quality-assessment'].improvements.length > 0 && (
-                  <div className="bg-base-100 border border-base-300 rounded-lg p-4">
-                    <div className="text-sm font-semibold mb-3 text-base-content/80">Areas for Improvement</div>
-                    <ul className="space-y-2">
-                      {aiModelMetadata['quality-assessment'].improvements.map((item: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
-                          <span className="text-warning mt-1">•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {aiModelMetadata['quality-assessment'].improvements &&
+                  aiModelMetadata['quality-assessment'].improvements.length > 0 && (
+                    <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                      <div className="text-sm font-semibold mb-3 text-base-content/80">
+                        Areas for Improvement
+                      </div>
+                      <ul className="space-y-2">
+                        {aiModelMetadata['quality-assessment'].improvements.map(
+                          (item: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <span className="text-warning mt-1">•</span>
+                              <span>{item}</span>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
 
                 {/* Strengths */}
-                {aiModelMetadata['quality-assessment'].strengths && aiModelMetadata['quality-assessment'].strengths.length > 0 && (
-                  <div className="bg-base-100 border border-base-300 rounded-lg p-4">
-                    <div className="text-sm font-semibold mb-3 text-base-content/80">Strengths</div>
-                    <ul className="space-y-2">
-                      {aiModelMetadata['quality-assessment'].strengths.map((item: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
-                          <span className="text-success mt-1">•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {aiModelMetadata['quality-assessment'].strengths &&
+                  aiModelMetadata['quality-assessment'].strengths.length > 0 && (
+                    <div className="bg-base-100 border border-base-300 rounded-lg p-4">
+                      <div className="text-sm font-semibold mb-3 text-base-content/80">
+                        Strengths
+                      </div>
+                      <ul className="space-y-2">
+                        {aiModelMetadata['quality-assessment'].strengths.map(
+                          (item: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <span className="text-success mt-1">•</span>
+                              <span>{item}</span>
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
               </div>
             )}
 
@@ -273,64 +282,86 @@ export function MetricsOverview({
                   {aiModelMetadata['intent-extraction'].taskType && (
                     <div>
                       <div className="text-xs text-base-content/60 mb-1">Task Type</div>
-                      <div className="badge badge-primary">{aiModelMetadata['intent-extraction'].taskType.replace(/_/g, ' ')}</div>
+                      <div className="badge badge-primary">
+                        {aiModelMetadata['intent-extraction'].taskType.replace(/_/g, ' ')}
+                      </div>
                     </div>
                   )}
                   {aiModelMetadata['intent-extraction'].primaryGoal && (
                     <div>
                       <div className="text-xs text-base-content/60 mb-1">Primary Goal</div>
-                      <div className="text-sm">{aiModelMetadata['intent-extraction'].primaryGoal}</div>
-                    </div>
-                  )}
-                  {aiModelMetadata['intent-extraction'].technologies && aiModelMetadata['intent-extraction'].technologies.length > 0 && (
-                    <div>
-                      <div className="text-xs text-base-content/60 mb-1">Technologies</div>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.isArray(aiModelMetadata['intent-extraction'].technologies)
-                          ? aiModelMetadata['intent-extraction'].technologies.map((tech: string, idx: number) => (
-                              <span key={idx} className="badge badge-ghost">{tech}</span>
-                            ))
-                          : Object.entries(aiModelMetadata['intent-extraction'].technologies).map(([key, val]: [string, any]) => (
-                              <span key={key} className="badge badge-ghost">{val}</span>
-                            ))
-                        }
+                      <div className="text-sm">
+                        {aiModelMetadata['intent-extraction'].primaryGoal}
                       </div>
                     </div>
                   )}
-                  {aiModelMetadata['intent-extraction'].challenges && aiModelMetadata['intent-extraction'].challenges.length > 0 && (
-                    <div>
-                      <div className="text-xs text-base-content/60 mb-1">Challenges</div>
-                      {Array.isArray(aiModelMetadata['intent-extraction'].challenges) ? (
-                        <ul className="space-y-1">
-                          {aiModelMetadata['intent-extraction'].challenges.map((challenge: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              <span className="text-primary mt-1">•</span>
-                              <span>{challenge}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="text-sm">{aiModelMetadata['intent-extraction'].challenges}</div>
-                      )}
-                    </div>
-                  )}
-                  {aiModelMetadata['intent-extraction'].secondaryGoals && aiModelMetadata['intent-extraction'].secondaryGoals.length > 0 && (
-                    <div>
-                      <div className="text-xs text-base-content/60 mb-1">Secondary Goals</div>
-                      {Array.isArray(aiModelMetadata['intent-extraction'].secondaryGoals) ? (
-                        <ul className="space-y-1">
-                          {aiModelMetadata['intent-extraction'].secondaryGoals.map((goal: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              <span className="text-primary mt-1">•</span>
-                              <span>{goal}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="text-sm">{aiModelMetadata['intent-extraction'].secondaryGoals}</div>
-                      )}
-                    </div>
-                  )}
+                  {aiModelMetadata['intent-extraction'].technologies &&
+                    aiModelMetadata['intent-extraction'].technologies.length > 0 && (
+                      <div>
+                        <div className="text-xs text-base-content/60 mb-1">Technologies</div>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.isArray(aiModelMetadata['intent-extraction'].technologies)
+                            ? aiModelMetadata['intent-extraction'].technologies.map(
+                                (tech: string, idx: number) => (
+                                  <span key={idx} className="badge badge-ghost">
+                                    {tech}
+                                  </span>
+                                )
+                              )
+                            : Object.entries(aiModelMetadata['intent-extraction'].technologies).map(
+                                ([key, val]: [string, any]) => (
+                                  <span key={key} className="badge badge-ghost">
+                                    {val}
+                                  </span>
+                                )
+                              )}
+                        </div>
+                      </div>
+                    )}
+                  {aiModelMetadata['intent-extraction'].challenges &&
+                    aiModelMetadata['intent-extraction'].challenges.length > 0 && (
+                      <div>
+                        <div className="text-xs text-base-content/60 mb-1">Challenges</div>
+                        {Array.isArray(aiModelMetadata['intent-extraction'].challenges) ? (
+                          <ul className="space-y-1">
+                            {aiModelMetadata['intent-extraction'].challenges.map(
+                              (challenge: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-2 text-sm">
+                                  <span className="text-primary mt-1">•</span>
+                                  <span>{challenge}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        ) : (
+                          <div className="text-sm">
+                            {aiModelMetadata['intent-extraction'].challenges}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  {aiModelMetadata['intent-extraction'].secondaryGoals &&
+                    aiModelMetadata['intent-extraction'].secondaryGoals.length > 0 && (
+                      <div>
+                        <div className="text-xs text-base-content/60 mb-1">Secondary Goals</div>
+                        {Array.isArray(aiModelMetadata['intent-extraction'].secondaryGoals) ? (
+                          <ul className="space-y-1">
+                            {aiModelMetadata['intent-extraction'].secondaryGoals.map(
+                              (goal: string, idx: number) => (
+                                <li key={idx} className="flex items-start gap-2 text-sm">
+                                  <span className="text-primary mt-1">•</span>
+                                  <span>{goal}</span>
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        ) : (
+                          <div className="text-sm">
+                            {aiModelMetadata['intent-extraction'].secondaryGoals}
+                          </div>
+                        )}
+                      </div>
+                    )}
                 </div>
               </div>
             )}
@@ -343,8 +374,7 @@ export function MetricsOverview({
         <div>
           <h2 className="text-lg md:text-xl font-semibold">Session Metrics</h2>
           <p className="text-xs md:text-sm text-base-content/70">
-            Last updated:{" "}
-            {new Date(metrics.createdAt || "").toLocaleString()}
+            Last updated: {new Date(metrics.createdAt || '').toLocaleString()}
           </p>
         </div>
       </div>
@@ -360,13 +390,21 @@ export function MetricsOverview({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <MetricCard
                 label="Read/Write Ratio"
-                value={metrics.usage.readWriteRatio ? parseFloat(metrics.usage.readWriteRatio) : undefined}
+                value={
+                  metrics.usage.readWriteRatio
+                    ? parseFloat(metrics.usage.readWriteRatio)
+                    : undefined
+                }
                 suffix=":1"
                 tooltip="Reads per write (lower is better - high means AI is 'lost')"
               />
               <MetricCard
                 label="Input Clarity Score"
-                value={metrics.usage.inputClarityScore ? parseFloat(metrics.usage.inputClarityScore) : undefined}
+                value={
+                  metrics.usage.inputClarityScore
+                    ? parseFloat(metrics.usage.inputClarityScore)
+                    : undefined
+                }
                 type="percentage"
                 tooltip="Technical terms and code snippets density"
               />
@@ -374,139 +412,147 @@ export function MetricsOverview({
 
             {/* Improvement Tips */}
             {metrics.usage.improvementTips && metrics.usage.improvementTips.length > 0 && (
-                <div className="card bg-base-100 p-4">
-                  <h4 className="font-semibold mb-3">
-                    💡 Improvement Tips
-                  </h4>
-                  <ul className="text-sm space-y-1">
-                    {metrics.usage.improvementTips.map(
-                      (tip: string, index: number) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-primary mr-2">•</span>
-                          {tip}
-                        </li>
-                      ),
-                    )}
-                  </ul>
-                </div>
-              )}
+              <div className="card bg-base-100 p-4">
+                <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
+                <ul className="text-sm space-y-1">
+                  {metrics.usage.improvementTips.map((tip: string, index: number) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-primary mr-2">•</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </MetricSection>
       )}
 
       {/* Error Metrics */}
-      {metrics.error && (metrics.error.errorCount !== undefined && metrics.error.errorCount !== null) && (
-        <MetricSection
-          title="Errors & Recovery"
-          subtitle="Error tracking and recovery patterns"
-          icon="⚠️"
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              <MetricCard
-                label="Error Count"
-                value={metrics.error.errorCount}
-                tooltip="Total number of errors encountered"
-              />
-              <MetricCard
-                label="Fatal Errors"
-                value={metrics.error.fatalErrors || 0}
-                tooltip="Critical errors that stopped progress"
-              />
-              <MetricCard
-                label="Recovery Attempts"
-                value={metrics.error.recoveryAttempts || 0}
-                tooltip="Number of times AI retried after errors"
-              />
-              <MetricCard
-                label="Error Types"
-                value={metrics.error.errorTypes?.length || 0}
-                tooltip="Unique categories of errors"
-              />
-            </div>
+      {metrics.error &&
+        metrics.error.errorCount !== undefined &&
+        metrics.error.errorCount !== null && (
+          <MetricSection
+            title="Errors & Recovery"
+            subtitle="Error tracking and recovery patterns"
+            icon="⚠️"
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                <MetricCard
+                  label="Error Count"
+                  value={metrics.error.errorCount}
+                  tooltip="Total number of errors encountered"
+                />
+                <MetricCard
+                  label="Fatal Errors"
+                  value={metrics.error.fatalErrors || 0}
+                  tooltip="Critical errors that stopped progress"
+                />
+                <MetricCard
+                  label="Recovery Attempts"
+                  value={metrics.error.recoveryAttempts || 0}
+                  tooltip="Number of times AI retried after errors"
+                />
+                <MetricCard
+                  label="Error Types"
+                  value={metrics.error.errorTypes?.length || 0}
+                  tooltip="Unique categories of errors"
+                />
+              </div>
 
-            {/* Error Types List */}
-            {metrics.error.errorTypes && metrics.error.errorTypes.length > 0 && (
-              <div className="card bg-base-100 p-4">
-                <h4 className="font-semibold mb-3">Error Categories</h4>
-                <div className="flex flex-wrap gap-2">
-                  {metrics.error.errorTypes.map((errorType: string, index: number) => (
-                    <span key={index} className="badge badge-error badge-outline">
-                      {errorType.replace(/_/g, ' ')}
-                    </span>
-                  ))}
+              {/* Error Types List */}
+              {metrics.error.errorTypes && metrics.error.errorTypes.length > 0 && (
+                <div className="card bg-base-100 p-4">
+                  <h4 className="font-semibold mb-3">Error Categories</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {metrics.error.errorTypes.map((errorType: string, index: number) => (
+                      <span key={index} className="badge badge-error badge-outline">
+                        {errorType.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Last Error Message */}
-            {metrics.error.lastErrorMessage && (
-              <div className="card bg-base-100 p-4">
-                <h4 className="font-semibold mb-2 text-error">Last Error</h4>
-                <p className="text-sm font-mono bg-base-200 p-2 rounded">
-                  {metrics.error.lastErrorMessage}
-                </p>
-              </div>
-            )}
+              {/* Last Error Message */}
+              {metrics.error.lastErrorMessage && (
+                <div className="card bg-base-100 p-4">
+                  <h4 className="font-semibold mb-2 text-error">Last Error</h4>
+                  <p className="text-sm font-mono bg-base-200 p-2 rounded">
+                    {metrics.error.lastErrorMessage}
+                  </p>
+                </div>
+              )}
 
-            {/* Improvement Tips */}
-            {metrics.error.improvementTips && metrics.error.improvementTips.length > 0 && (
-              <div className="card bg-base-100 p-4">
-                <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
-                <ul className="text-sm space-y-1">
-                  {metrics.error.improvementTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </MetricSection>
-      )}
+              {/* Improvement Tips */}
+              {metrics.error.improvementTips && metrics.error.improvementTips.length > 0 && (
+                <div className="card bg-base-100 p-4">
+                  <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
+                  <ul className="text-sm space-y-1">
+                    {metrics.error.improvementTips.map((tip: string, index: number) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-primary mr-2">•</span>
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </MetricSection>
+        )}
 
       {/* Engagement Metrics */}
-      {metrics.engagement && (metrics.engagement.interruptionRate || metrics.engagement.sessionLengthMinutes) && (
-        <MetricSection
-          title="Engagement"
-          subtitle="User patience and session duration patterns"
-          icon="👥"
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-              <MetricCard
-                label="Interruption Rate"
-                value={metrics.engagement.interruptionRate ? parseFloat(metrics.engagement.interruptionRate) : undefined}
-                type="percentage"
-                tooltip="Percentage of responses interrupted by user"
-              />
-              <MetricCard
-                label="Session Length"
-                value={metrics.engagement.sessionLengthMinutes ? parseFloat(metrics.engagement.sessionLengthMinutes) : undefined}
-                suffix=" min"
-                tooltip="Active interaction time in minutes"
-              />
-            </div>
-
-            {/* Improvement Tips */}
-            {metrics.engagement.improvementTips && metrics.engagement.improvementTips.length > 0 && (
-              <div className="card bg-base-100 p-4">
-                <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
-                <ul className="text-sm space-y-1">
-                  {metrics.engagement.improvementTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
+      {metrics.engagement &&
+        (metrics.engagement.interruptionRate || metrics.engagement.sessionLengthMinutes) && (
+          <MetricSection
+            title="Engagement"
+            subtitle="User patience and session duration patterns"
+            icon="👥"
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <MetricCard
+                  label="Interruption Rate"
+                  value={
+                    metrics.engagement.interruptionRate
+                      ? parseFloat(metrics.engagement.interruptionRate)
+                      : undefined
+                  }
+                  type="percentage"
+                  tooltip="Percentage of responses interrupted by user"
+                />
+                <MetricCard
+                  label="Session Length"
+                  value={
+                    metrics.engagement.sessionLengthMinutes
+                      ? parseFloat(metrics.engagement.sessionLengthMinutes)
+                      : undefined
+                  }
+                  suffix=" min"
+                  tooltip="Active interaction time in minutes"
+                />
               </div>
-            )}
-          </div>
-        </MetricSection>
-      )}
+
+              {/* Improvement Tips */}
+              {metrics.engagement.improvementTips &&
+                metrics.engagement.improvementTips.length > 0 && (
+                  <div className="card bg-base-100 p-4">
+                    <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
+                    <ul className="text-sm space-y-1">
+                      {metrics.engagement.improvementTips.map((tip: string, index: number) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-primary mr-2">•</span>
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+            </div>
+          </MetricSection>
+        )}
 
       {/* Quality Metrics */}
       {metrics.quality && (
@@ -521,33 +567,30 @@ export function MetricsOverview({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`text-2xl ${metrics.quality.usedPlanMode ? "text-green-500" : "text-gray-400"}`}
+                    className={`text-2xl ${metrics.quality.usedPlanMode ? 'text-green-500' : 'text-gray-400'}`}
                   >
-                    {metrics.quality.usedPlanMode ? "🎯" : "⚪"}
+                    {metrics.quality.usedPlanMode ? '🎯' : '⚪'}
                   </div>
                   <div>
                     <h4 className="font-semibold text-sm">Used Plan Mode</h4>
                     <p className="text-xs text-base-content/70">
                       {metrics.quality.usedPlanMode
-                        ? "Excellent! Used proper planning discipline"
-                        : "Consider using plan mode for complex tasks"}
+                        ? 'Excellent! Used proper planning discipline'
+                        : 'Consider using plan mode for complex tasks'}
                     </p>
                   </div>
                 </div>
                 <div
-                  className={`badge ${metrics.quality.usedPlanMode ? "badge-success" : "badge-ghost"} font-medium`}
+                  className={`badge ${metrics.quality.usedPlanMode ? 'badge-success' : 'badge-ghost'} font-medium`}
                 >
-                  {metrics.quality.usedPlanMode ? "✓ Yes" : "✗ No"}
+                  {metrics.quality.usedPlanMode ? '✓ Yes' : '✗ No'}
                 </div>
               </div>
-              {metrics.quality.exitPlanModeCount &&
-                metrics.quality.exitPlanModeCount > 0 && (
-                  <div className="text-xs text-base-content/60 mt-2">
-                    Used ExitPlanMode{" "}
-                    {metrics.quality.exitPlanModeCount}{" "}
-                    time(s)
-                  </div>
-                )}
+              {metrics.quality.exitPlanModeCount && metrics.quality.exitPlanModeCount > 0 && (
+                <div className="text-xs text-base-content/60 mt-2">
+                  Used ExitPlanMode {metrics.quality.exitPlanModeCount} time(s)
+                </div>
+              )}
             </div>
 
             {/* Todo Tracking Usage */}
@@ -555,80 +598,75 @@ export function MetricsOverview({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`text-lg ${metrics.quality.usedTodoTracking ? "text-green-500" : "text-gray-400"}`}
+                    className={`text-lg ${metrics.quality.usedTodoTracking ? 'text-green-500' : 'text-gray-400'}`}
                   >
-                    {metrics.quality.usedTodoTracking ? "📋" : "⚪"}
+                    {metrics.quality.usedTodoTracking ? '📋' : '⚪'}
                   </div>
                   <div>
                     <h4 className="font-medium text-sm">Todo Tracking</h4>
                     <p className="text-xs text-base-content/70">
                       {metrics.quality.usedTodoTracking
-                        ? "Great task organization!"
-                        : "TodoWrite helps track progress"}
+                        ? 'Great task organization!'
+                        : 'TodoWrite helps track progress'}
                     </p>
                   </div>
                 </div>
                 <div
-                  className={`badge ${metrics.quality.usedTodoTracking ? "badge-success" : "badge-ghost"}`}
+                  className={`badge ${metrics.quality.usedTodoTracking ? 'badge-success' : 'badge-ghost'}`}
                 >
-                  {metrics.quality.usedTodoTracking
-                    ? "✓ Yes"
-                    : "✗ No"}
+                  {metrics.quality.usedTodoTracking ? '✓ Yes' : '✗ No'}
                 </div>
               </div>
-              {metrics.quality.todoWriteCount &&
-                metrics.quality.todoWriteCount > 0 && (
-                  <div className="text-xs text-base-content/60 mt-1">
-                    Used TodoWrite{" "}
-                    {metrics.quality.todoWriteCount}{" "}
-                    time(s)
-                  </div>
-                )}
+              {metrics.quality.todoWriteCount && metrics.quality.todoWriteCount > 0 && (
+                <div className="text-xs text-base-content/60 mt-1">
+                  Used TodoWrite {metrics.quality.todoWriteCount} time(s)
+                </div>
+              )}
             </div>
 
             {/* Over the Top Affirmations Card */}
-            {metrics.quality.overTopAffirmations !== undefined && metrics.quality.overTopAffirmations !== null && (
-              <div className="card bg-base-100 border border-base-300 p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+            {metrics.quality.overTopAffirmations !== undefined &&
+              metrics.quality.overTopAffirmations !== null && (
+                <div className="card bg-base-100 border border-base-300 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`text-lg ${metrics.quality.overTopAffirmations > 0 ? 'text-yellow-500' : 'text-green-500'}`}
+                      >
+                        {metrics.quality.overTopAffirmations > 0 ? '🎭' : '✅'}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm">Over-the-Top Affirmations</h4>
+                        <p className="text-xs text-base-content/70">
+                          {metrics.quality.overTopAffirmations === 0
+                            ? 'Professional tone maintained'
+                            : `${metrics.quality.overTopAffirmations} excessive affirmations detected`}
+                        </p>
+                      </div>
+                    </div>
                     <div
-                      className={`text-lg ${metrics.quality.overTopAffirmations > 0 ? "text-yellow-500" : "text-green-500"}`}
+                      className={`badge ${metrics.quality.overTopAffirmations === 0 ? 'badge-success' : 'badge-warning'}`}
                     >
-                      {metrics.quality.overTopAffirmations > 0
-                        ? "🎭"
-                        : "✅"}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm">
-                        Over-the-Top Affirmations
-                      </h4>
-                      <p className="text-xs text-base-content/70">
-                        {metrics.quality.overTopAffirmations === 0
-                          ? "Professional tone maintained"
-                          : `${metrics.quality.overTopAffirmations} excessive affirmations detected`}
-                      </p>
+                      {metrics.quality.overTopAffirmations}
                     </div>
                   </div>
-                  <div
-                    className={`badge ${metrics.quality.overTopAffirmations === 0 ? "badge-success" : "badge-warning"}`}
-                  >
-                    {metrics.quality.overTopAffirmations}
-                  </div>
+                  {metrics.quality.overTopAffirmationsPhrases &&
+                    metrics.quality.overTopAffirmationsPhrases.length > 0 && (
+                      <div className="text-xs text-base-content/60 mt-1">
+                        Phrases: {metrics.quality.overTopAffirmationsPhrases.join(', ')}
+                      </div>
+                    )}
                 </div>
-                {metrics.quality.overTopAffirmationsPhrases &&
-                  metrics.quality.overTopAffirmationsPhrases.length > 0 && (
-                    <div className="text-xs text-base-content/60 mt-1">
-                      Phrases:{" "}
-                      {metrics.quality.overTopAffirmationsPhrases.join(", ")}
-                    </div>
-                  )}
-              </div>
-            )}
+              )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
               <MetricCard
                 label="Task Success Rate"
-                value={metrics.quality.taskSuccessRate ? parseFloat(metrics.quality.taskSuccessRate) : undefined}
+                value={
+                  metrics.quality.taskSuccessRate
+                    ? parseFloat(metrics.quality.taskSuccessRate)
+                    : undefined
+                }
                 type="percentage"
                 tooltip="Percentage of operations that succeeded"
               />
@@ -639,7 +677,11 @@ export function MetricsOverview({
               />
               <MetricCard
                 label="Process Quality Score"
-                value={metrics.quality.processQualityScore ? parseFloat(metrics.quality.processQualityScore) : undefined}
+                value={
+                  metrics.quality.processQualityScore
+                    ? parseFloat(metrics.quality.processQualityScore)
+                    : undefined
+                }
                 type="percentage"
                 tooltip="Score for good AI usage practices (plan mode gives 30pts, todo tracking gives 20pts)"
               />
@@ -669,122 +711,150 @@ export function MetricsOverview({
       )}
 
       {/* Performance Metrics */}
-      {metrics.performance && (metrics.performance.responseLatencyMs || metrics.performance.taskCompletionTimeMs) && (
-        <MetricSection
-          title="Performance"
-          subtitle="AI response speed and task completion efficiency"
-          icon="⚡"
-        >
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-              <MetricCard
-                label="Response Latency"
-                value={metrics.performance.responseLatencyMs ? parseFloat(metrics.performance.responseLatencyMs) : undefined}
-                type="duration"
-                tooltip="Average time to respond to user messages"
-              />
-              <MetricCard
-                label="Task Completion Time"
-                value={metrics.performance.taskCompletionTimeMs ? parseFloat(metrics.performance.taskCompletionTimeMs) : undefined}
-                type="duration"
-                tooltip="Total time to complete user's goal"
-              />
-            </div>
-
-            {/* Improvement Tips */}
-            {metrics.performance.improvementTips && metrics.performance.improvementTips.length > 0 && (
-              <div className="card bg-base-100 p-4">
-                <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
-                <ul className="text-sm space-y-1">
-                  {metrics.performance.improvementTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
+      {metrics.performance &&
+        (metrics.performance.responseLatencyMs || metrics.performance.taskCompletionTimeMs) && (
+          <MetricSection
+            title="Performance"
+            subtitle="AI response speed and task completion efficiency"
+            icon="⚡"
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <MetricCard
+                  label="Response Latency"
+                  value={
+                    metrics.performance.responseLatencyMs
+                      ? parseFloat(metrics.performance.responseLatencyMs)
+                      : undefined
+                  }
+                  type="duration"
+                  tooltip="Average time to respond to user messages"
+                />
+                <MetricCard
+                  label="Task Completion Time"
+                  value={
+                    metrics.performance.taskCompletionTimeMs
+                      ? parseFloat(metrics.performance.taskCompletionTimeMs)
+                      : undefined
+                  }
+                  type="duration"
+                  tooltip="Total time to complete user's goal"
+                />
               </div>
-            )}
-          </div>
-        </MetricSection>
-      )}
+
+              {/* Improvement Tips */}
+              {metrics.performance.improvementTips &&
+                metrics.performance.improvementTips.length > 0 && (
+                  <div className="card bg-base-100 p-4">
+                    <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
+                    <ul className="text-sm space-y-1">
+                      {metrics.performance.improvementTips.map((tip: string, index: number) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-primary mr-2">•</span>
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+            </div>
+          </MetricSection>
+        )}
 
       {/* Git Diff Metrics - Desktop Only */}
-      {metrics.gitDiff && (metrics.gitDiff.totalFiles !== undefined && metrics.gitDiff.totalFiles !== null && metrics.gitDiff.totalFiles > 0) && (
-        <MetricSection
-          title="Code Changes"
-          subtitle="Git diff analysis and navigation efficiency"
-          icon="📊"
-        >
-          <div className="space-y-4">
-            {/* Core Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <MetricCard
-                label="Files Changed"
-                value={metrics.gitDiff.totalFiles}
-                tooltip="Total number of files modified or added"
-              />
-              <MetricCard
-                label="Lines Added"
-                value={metrics.gitDiff.linesAdded || 0}
-                tooltip="Total lines added across all files"
-              />
-              <MetricCard
-                label="Lines Removed"
-                value={metrics.gitDiff.linesRemoved || 0}
-                tooltip="Total lines deleted across all files"
-              />
-              <MetricCard
-                label="Net Change"
-                value={metrics.gitDiff.netLines || 0}
-                tooltip="Lines added minus lines removed (growth or reduction)"
-              />
-            </div>
-
-            <div className="divider text-sm">Navigation Efficiency</div>
-
-            {/* Efficiency Ratios */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <MetricCard
-                label="Lines Read / Changed"
-                value={metrics.gitDiff.linesReadPerChanged ? parseFloat(metrics.gitDiff.linesReadPerChanged) : undefined}
-                suffix=":1"
-                tooltip="Lines read per line changed - lower is better (efficient navigation)"
-              />
-              <MetricCard
-                label="Reads / File"
-                value={metrics.gitDiff.readsPerFile ? parseFloat(metrics.gitDiff.readsPerFile) : undefined}
-                tooltip="Read operations per file changed - lower is better"
-              />
-              <MetricCard
-                label="Lines/Min"
-                value={metrics.gitDiff.linesPerMinute ? parseFloat(metrics.gitDiff.linesPerMinute) : undefined}
-                tooltip="Code velocity - lines changed per minute"
-              />
-              <MetricCard
-                label="Lines/Tool"
-                value={metrics.gitDiff.linesPerTool ? parseFloat(metrics.gitDiff.linesPerTool) : undefined}
-                tooltip="Lines changed per tool use - higher is better"
-              />
-            </div>
-
-            {/* Improvement Tips */}
-            {metrics.gitDiff.improvementTips && metrics.gitDiff.improvementTips.length > 0 && (
-              <div className="card bg-base-100 p-4">
-                <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
-                <ul className="text-sm space-y-1">
-                  {metrics.gitDiff.improvementTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
+      {metrics.gitDiff &&
+        metrics.gitDiff.totalFiles !== undefined && metrics.gitDiff.totalFiles !== null &&
+        metrics.gitDiff.totalFiles > 0 && (
+          <MetricSection
+            title="Code Changes"
+            subtitle="Git diff analysis and navigation efficiency"
+            icon="📊"
+          >
+            <div className="space-y-4">
+              {/* Core Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <MetricCard
+                  label="Files Changed"
+                  value={metrics.gitDiff.totalFiles}
+                  tooltip="Total number of files modified or added"
+                />
+                <MetricCard
+                  label="Lines Added"
+                  value={metrics.gitDiff.linesAdded || 0}
+                  tooltip="Total lines added across all files"
+                />
+                <MetricCard
+                  label="Lines Removed"
+                  value={metrics.gitDiff.linesRemoved || 0}
+                  tooltip="Total lines deleted across all files"
+                />
+                <MetricCard
+                  label="Net Change"
+                  value={metrics.gitDiff.netLines || 0}
+                  tooltip="Lines added minus lines removed (growth or reduction)"
+                />
               </div>
-            )}
-          </div>
-        </MetricSection>
-      )}
+
+              <div className="divider text-sm">Navigation Efficiency</div>
+
+              {/* Efficiency Ratios */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <MetricCard
+                  label="Lines Read / Changed"
+                  value={
+                    metrics.gitDiff.linesReadPerChanged
+                      ? parseFloat(metrics.gitDiff.linesReadPerChanged)
+                      : undefined
+                  }
+                  suffix=":1"
+                  tooltip="Lines read per line changed - lower is better (efficient navigation)"
+                />
+                <MetricCard
+                  label="Reads / File"
+                  value={
+                    metrics.gitDiff.readsPerFile
+                      ? parseFloat(metrics.gitDiff.readsPerFile)
+                      : undefined
+                  }
+                  tooltip="Read operations per file changed - lower is better"
+                />
+                <MetricCard
+                  label="Lines/Min"
+                  value={
+                    metrics.gitDiff.linesPerMinute
+                      ? parseFloat(metrics.gitDiff.linesPerMinute)
+                      : undefined
+                  }
+                  tooltip="Code velocity - lines changed per minute"
+                />
+                <MetricCard
+                  label="Lines/Tool"
+                  value={
+                    metrics.gitDiff.linesPerTool
+                      ? parseFloat(metrics.gitDiff.linesPerTool)
+                      : undefined
+                  }
+                  tooltip="Lines changed per tool use - higher is better"
+                />
+              </div>
+
+              {/* Improvement Tips */}
+              {metrics.gitDiff.improvementTips && metrics.gitDiff.improvementTips.length > 0 && (
+                <div className="card bg-base-100 p-4">
+                  <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
+                  <ul className="text-sm space-y-1">
+                    {metrics.gitDiff.improvementTips.map((tip: string, index: number) => (
+                      <li key={index} className="flex items-start">
+                        <span className="text-primary mr-2">•</span>
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </MetricSection>
+        )}
     </div>
-  );
+  )
 }

@@ -64,7 +64,13 @@ export {
   ProgressBar,
   VersionSelector,
 } from './assessment/index.js'
-export type { AssessmentModalProps, QuestionCardProps, LikertScaleProps, TextResponseProps, ProgressBarProps } from './assessment/index.js'
+export type {
+  AssessmentModalProps,
+  QuestionCardProps,
+  LikertScaleProps,
+  TextResponseProps,
+  ProgressBarProps,
+} from './assessment/index.js'
 
 /**
  * Note about SessionList:

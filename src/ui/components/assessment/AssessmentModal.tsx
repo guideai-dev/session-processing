@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon, CheckIcon } from '@heroicons/react/24/outline'
+import {
+  XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CheckIcon,
+} from '@heroicons/react/24/outline'
 import type { AssessmentModalProps } from './types'
 import type { AssessmentAnswer, AssessmentResponse, AssessmentVersion } from '@guideai-dev/types'
 import { QuestionCard } from './QuestionCard'
@@ -63,7 +68,10 @@ export function AssessmentModal({
 
     const handleKeyPress = (e: KeyboardEvent) => {
       // Ignore arrow keys if user is typing in a text field
-      if (e.target instanceof HTMLTextAreaElement && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      if (
+        e.target instanceof HTMLTextAreaElement &&
+        (e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+      ) {
         return
       }
 
@@ -84,22 +92,25 @@ export function AssessmentModal({
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [isOpen, canGoNext, isLastQuestion, currentIndex, onClose])
 
-  const handleAnswer = useCallback((answer: AssessmentAnswer) => {
-    setResponses((prev) => ({
-      ...prev,
-      [currentQuestion.id]: answer,
-    }))
-  }, [currentQuestion])
+  const handleAnswer = useCallback(
+    (answer: AssessmentAnswer) => {
+      setResponses(prev => ({
+        ...prev,
+        [currentQuestion.id]: answer,
+      }))
+    },
+    [currentQuestion]
+  )
 
   const handleNext = () => {
     if (currentIndex < filteredQuestions.length - 1) {
-      setCurrentIndex((prev) => prev + 1)
+      setCurrentIndex(prev => prev + 1)
     }
   }
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1)
+      setCurrentIndex(prev => prev - 1)
     }
   }
 
@@ -107,11 +118,13 @@ export function AssessmentModal({
     setIsSubmitting(true)
 
     try {
-      const responseArray: AssessmentResponse[] = Object.entries(responses).map(([questionId, answer]) => ({
-        questionId,
-        answer,
-        timestamp: new Date().toISOString(),
-      }))
+      const responseArray: AssessmentResponse[] = Object.entries(responses).map(
+        ([questionId, answer]) => ({
+          questionId,
+          answer,
+          timestamp: new Date().toISOString(),
+        })
+      )
 
       // Calculate duration in seconds
       const durationSeconds = startTime ? Math.round((Date.now() - startTime) / 1000) : undefined
@@ -158,9 +171,7 @@ export function AssessmentModal({
               <CheckIcon className="w-10 h-10 text-success" />
             </div>
             <h3 className="text-2xl font-bold">Thank You!</h3>
-            <p className="text-base-content/70">
-              Your feedback has been submitted successfully.
-            </p>
+            <p className="text-base-content/70">Your feedback has been submitted successfully.</p>
           </div>
         </div>
         <div className="modal-backdrop bg-black/50" />
@@ -176,11 +187,7 @@ export function AssessmentModal({
           {/* Header */}
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <h2 className="text-lg md:text-xl font-bold">Session Assessment</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-sm btn-circle btn-ghost"
-            >
+            <button type="button" onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
@@ -201,17 +208,17 @@ export function AssessmentModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-lg md:text-xl font-bold">Session Assessment</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn-sm btn-circle btn-ghost"
-          >
+          <button type="button" onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
         {/* Progress */}
-        <ProgressBar current={currentIndex + 1} total={filteredQuestions.length} className="mb-6 md:mb-8" />
+        <ProgressBar
+          current={currentIndex + 1}
+          total={filteredQuestions.length}
+          className="mb-6 md:mb-8"
+        />
 
         {/* Question */}
         {currentQuestion && (
@@ -238,8 +245,14 @@ export function AssessmentModal({
 
           <div className="hidden md:block text-center text-xs text-base-content/50 space-y-1 order-1 md:order-2">
             <div>
-              <kbd className="kbd kbd-xs">←</kbd> Previous • <kbd className="kbd kbd-xs">→</kbd> Next
-              {currentQuestion?.type !== 'text' && <span> • <kbd className="kbd kbd-xs">Esc</kbd> to close</span>}
+              <kbd className="kbd kbd-xs">←</kbd> Previous • <kbd className="kbd kbd-xs">→</kbd>{' '}
+              Next
+              {currentQuestion?.type !== 'text' && (
+                <span>
+                  {' '}
+                  • <kbd className="kbd kbd-xs">Esc</kbd> to close
+                </span>
+              )}
             </div>
             {currentQuestion?.type.startsWith('likert') && (
               <div className="text-base-content/40">Use number keys to select • Auto-advances</div>

@@ -74,12 +74,8 @@ export function SystemReminderBlock({
           ) : (
             <DocumentTextIcon className={`w-4 h-4 ${iconColor}`} />
           )}
-          <span className={`text-xs font-semibold ${iconColor} uppercase`}>
-            {getTitle()}
-          </span>
-          {hasClaudeMd && (
-            <span className={`badge ${badgeColor} badge-xs`}>CLAUDE.md</span>
-          )}
+          <span className={`text-xs font-semibold ${iconColor} uppercase`}>{getTitle()}</span>
+          {hasClaudeMd && <span className={`badge ${badgeColor} badge-xs`}>CLAUDE.md</span>}
         </div>
         <button
           onClick={() => setExpanded(!expanded)}
@@ -90,11 +86,7 @@ export function SystemReminderBlock({
       </div>
 
       {/* Collapsed summary */}
-      {!expanded && (
-        <div className="text-xs text-base-content/60 font-mono">
-          {getSummary()}
-        </div>
-      )}
+      {!expanded && <div className="text-xs text-base-content/60 font-mono">{getSummary()}</div>}
 
       {/* Expanded content */}
       {expanded && (
@@ -102,9 +94,7 @@ export function SystemReminderBlock({
           {/* Show CLAUDE.md paths if present */}
           {claudeMdPaths.length > 0 && (
             <div className="text-xs bg-base-200 p-2 rounded border border-warning/20">
-              <div className="font-semibold mb-1 text-warning">
-                📄 Project Instructions:
-              </div>
+              <div className="font-semibold mb-1 text-warning">📄 Project Instructions:</div>
               {claudeMdPaths.map((path, i) => (
                 <div key={i} className="font-mono text-xs text-secondary pl-4">
                   {path}

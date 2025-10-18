@@ -21,9 +21,7 @@ export function MessageHeader({ displayMetadata }: MessageHeaderProps) {
         </span>
       )}
       <span className="font-medium text-sm text-base-content">{title}</span>
-      {badge && (
-        <span className={`badge badge-xs ${badge.color}`}>{badge.text}</span>
-      )}
+      {badge && <span className={`badge badge-xs ${badge.color}`}>{badge.text}</span>}
     </div>
   )
 }

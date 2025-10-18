@@ -111,8 +111,8 @@ export class ClaudeCodeParser {
       duration,
       metadata: {
         messageCount: messages.length,
-        lineCount: lines.length
-      }
+        lineCount: lines.length,
+      },
     }
   }
 
@@ -157,7 +157,7 @@ export class ClaudeCodeParser {
         text: textParts.join('\n'),
         toolUses,
         toolResults,
-        structured: messageContent
+        structured: messageContent,
       }
     } else {
       content = messageContent
@@ -178,9 +178,9 @@ export class ClaudeCodeParser {
         toolCount: toolUses.length,
         resultCount: toolResults.length,
         subtype: rawMessage.subtype,
-        level: rawMessage.level
+        level: rawMessage.level,
       },
-      parentId: rawMessage.parentUuid
+      parentId: rawMessage.parentUuid,
     }
   }
 
@@ -243,7 +243,11 @@ export class ClaudeCodeParser {
       const next = session.messages[i + 1]
 
       // Look for assistant messages followed by user messages (not interruptions)
-      if (current.type === 'assistant' && next.type === 'user' && !this.isInterruptionMessage(next)) {
+      if (
+        current.type === 'assistant' &&
+        next.type === 'user' &&
+        !this.isInterruptionMessage(next)
+      ) {
         // This indicates the agent stopped and waited for user input
         stops.push(current)
       }
@@ -257,9 +261,11 @@ export class ClaudeCodeParser {
    */
   private isInterruptionMessage(message: ParsedMessage): boolean {
     const content = this.extractTextContent(message)
-    return content.includes('[Request interrupted by user for tool use]') ||
-           content.includes('[Request interrupted by user]') ||
-           content.includes('Request interrupted by user')
+    return (
+      content.includes('[Request interrupted by user for tool use]') ||
+      content.includes('[Request interrupted by user]') ||
+      content.includes('Request interrupted by user')
+    )
   }
 
   /**
@@ -290,8 +296,14 @@ export class ClaudeCodeParser {
   /**
    * Calculate response times between user inputs and assistant responses
    */
-  calculateResponseTimes(session: ParsedSession): Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> {
-    const responseTimes: Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> = []
+  calculateResponseTimes(
+    session: ParsedSession
+  ): Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> {
+    const responseTimes: Array<{
+      userMessage: ParsedMessage
+      assistantMessage: ParsedMessage
+      responseTime: number
+    }> = []
 
     for (let i = 0; i < session.messages.length - 1; i++) {
       const current = session.messages[i]
@@ -302,7 +314,7 @@ export class ClaudeCodeParser {
         responseTimes.push({
           userMessage: current,
           assistantMessage: next,
-          responseTime
+          responseTime,
         })
       }
     }

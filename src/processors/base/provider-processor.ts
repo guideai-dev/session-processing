@@ -46,8 +46,10 @@ export abstract class BaseProviderProcessor {
     const session = this.parseSession(jsonlContent)
     const processors = this.getMetricProcessors()
 
-    console.log(`Processing session ${context.sessionId} with ${processors.length} metric processors (SEQUENTIAL):`,
-      processors.map(p => `${p.name} (${p.metricType})`).join(', '))
+    console.log(
+      `Processing session ${context.sessionId} with ${processors.length} metric processors (SEQUENTIAL):`,
+      processors.map(p => `${p.name} (${p.metricType})`).join(', ')
+    )
 
     // Run all processors sequentially to ensure each completes before the next
     const successfulResults: ProcessorResult[] = []
@@ -57,7 +59,9 @@ export abstract class BaseProviderProcessor {
         console.log(`→ Starting processor ${processor.name} (${processor.metricType})`)
 
         if (!processor.canProcess(session)) {
-          console.warn(`  ⊘ Processor ${processor.name} cannot process session ${session.sessionId}`)
+          console.warn(
+            `  ⊘ Processor ${processor.name} cannot process session ${session.sessionId}`
+          )
           continue
         }
 
@@ -69,9 +73,13 @@ export abstract class BaseProviderProcessor {
         }
 
         const metricCount = Object.keys(result.metrics).length
-        const nonNullMetrics = Object.entries(result.metrics).filter(([k, v]) => v !== null && v !== undefined).length
+        const nonNullMetrics = Object.entries(result.metrics).filter(
+          ([k, v]) => v !== null && v !== undefined
+        ).length
 
-        console.log(`  ✓ Processor ${processor.name} completed: ${nonNullMetrics}/${metricCount} non-null metrics`)
+        console.log(
+          `  ✓ Processor ${processor.name} completed: ${nonNullMetrics}/${metricCount} non-null metrics`
+        )
         console.log(`    Metrics: ${JSON.stringify(result.metrics)}`)
 
         successfulResults.push(result)
@@ -81,7 +89,9 @@ export abstract class BaseProviderProcessor {
       }
     }
 
-    console.log(`✓ Completed ${successfulResults.length}/${processors.length} processors successfully`)
+    console.log(
+      `✓ Completed ${successfulResults.length}/${processors.length} processors successfully`
+    )
 
     if (successfulResults.length === 0) {
       console.error(`⚠ WARNING: NO processors succeeded for session ${context.sessionId}!`)

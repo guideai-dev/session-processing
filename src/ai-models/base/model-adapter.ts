@@ -4,7 +4,7 @@ import type {
   ModelTaskContext,
   ModelTaskResult,
   ModelAdapterConfig,
-  ModelHealthCheck
+  ModelHealthCheck,
 } from './types.js'
 import type { BaseModelTask } from './model-task.js'
 
@@ -25,10 +25,7 @@ export abstract class BaseModelAdapter {
   /**
    * Execute a task with the AI model
    */
-  abstract executeTask(
-    task: BaseModelTask,
-    context: ModelTaskContext
-  ): Promise<ModelTaskResult>
+  abstract executeTask(task: BaseModelTask, context: ModelTaskContext): Promise<ModelTaskResult>
 
   /**
    * Get all available tasks for this adapter
@@ -56,20 +53,20 @@ export abstract class BaseModelAdapter {
       if (!this.validateConfig()) {
         return {
           healthy: false,
-          error: 'Invalid configuration'
+          error: 'Invalid configuration',
         }
       }
 
       // Subclasses should override to perform actual health check
       return {
         healthy: true,
-        latency: Date.now() - startTime
+        latency: Date.now() - startTime,
       }
     } catch (error) {
       return {
         healthy: false,
         latency: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -82,7 +79,7 @@ export abstract class BaseModelAdapter {
       name: this.name,
       description: this.description,
       model: this.config.model,
-      availableTasks: this.getAvailableTasks().map(task => task.getDefinition())
+      availableTasks: this.getAvailableTasks().map(task => task.getDefinition()),
     }
   }
 

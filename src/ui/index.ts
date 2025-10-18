@@ -15,13 +15,13 @@ export type {
   ProcessedTimeline,
   ContentBlockType,
   TimelineDisplayType,
-  MessageRole
+  MessageRole,
 } from './utils/timelineTypes.js'
 export {
   isTimelineGroup,
   isTimelineMessage,
   createDisplayMetadata,
-  createContentBlock
+  createContentBlock,
 } from './utils/timelineTypes.js'
 
 // Export message processors

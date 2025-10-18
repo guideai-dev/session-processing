@@ -32,11 +32,16 @@ export function parseSystemReminder(content: string): ParsedSystemReminder | nul
   // Extract paths to CLAUDE.md files
   const pathMatches = reminderContent.match(/Contents of ([^:\n]+CLAUDE\.md[^\n]*)/gi) || []
   const claudeMdPaths = pathMatches.map(m =>
-    m.replace(/Contents of\s+/i, '').replace(/\s*\(.*?\)/, '').trim()
+    m
+      .replace(/Contents of\s+/i, '')
+      .replace(/\s*\(.*?\)/, '')
+      .trim()
   )
 
   // Extract actual CLAUDE.md content if present (starts with "# claudeMd")
-  const claudeMdContentMatch = reminderContent.match(/# claudeMd[\s\S]*?(?=(\n\n<\/system-reminder>|$))/i)
+  const claudeMdContentMatch = reminderContent.match(
+    /# claudeMd[\s\S]*?(?=(\n\n<\/system-reminder>|$))/i
+  )
   const claudeMdContent = claudeMdContentMatch?.[0]
 
   // Determine reminder type

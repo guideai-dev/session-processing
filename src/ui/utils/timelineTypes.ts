@@ -11,7 +11,14 @@ import { BaseSessionMessage } from './sessionTypes.js'
 /**
  * Content block types that can appear in a timeline message
  */
-export type ContentBlockType = 'text' | 'code' | 'image' | 'json' | 'tool_use' | 'tool_result' | 'thinking'
+export type ContentBlockType =
+  | 'text'
+  | 'code'
+  | 'image'
+  | 'json'
+  | 'tool_use'
+  | 'tool_result'
+  | 'thinking'
 
 /**
  * Display type for timeline messages
@@ -112,9 +119,7 @@ export function isTimelineMessage(item: TimelineItem): item is TimelineMessage {
 /**
  * Helper function to create display metadata with defaults
  */
-export function createDisplayMetadata(
-  partial: Partial<DisplayMetadata>,
-): DisplayMetadata {
+export function createDisplayMetadata(partial: Partial<DisplayMetadata>): DisplayMetadata {
   return {
     icon: partial.icon || 'MSG',
     IconComponent: partial.IconComponent,
@@ -131,7 +136,7 @@ export function createDisplayMetadata(
 export function createContentBlock(
   type: ContentBlockType,
   content: any,
-  metadata?: ContentBlock['metadata'],
+  metadata?: ContentBlock['metadata']
 ): ContentBlock {
   return {
     type,

@@ -1,14 +1,14 @@
 /**
  * Example: Session Phase Analysis
- * 
+ *
  * This example demonstrates how to use the SessionPhaseAnalysisTask
  * to analyze AI coding sessions and break them into meaningful phases.
  */
 
-import { 
-  ClaudeModelAdapter, 
+import {
+  ClaudeModelAdapter,
   SessionPhaseAnalysisTask,
-  type SessionPhaseAnalysis 
+  type SessionPhaseAnalysis,
 } from '@guideai-dev/session-processing/ai-models'
 import type { ParsedSession } from '@guideai-dev/session-processing/processors'
 
@@ -26,7 +26,7 @@ async function analyzeSessionPhases(
     apiKey,
     model: 'claude-3-5-sonnet-20241022',
     maxTokens: 4096,
-    temperature: 1.0
+    temperature: 1.0,
   })
 
   // Create and register the phase analysis task
@@ -40,7 +40,7 @@ async function analyzeSessionPhases(
     userId: 'example-user',
     provider: parsedSession.provider,
     session: parsedSession,
-    user: userInfo
+    user: userInfo,
   }
 
   // Execute the task
@@ -49,13 +49,13 @@ async function analyzeSessionPhases(
 
   if (result.success) {
     const phaseAnalysis = result.output as SessionPhaseAnalysis
-    
+
     console.log('\n✅ Phase Analysis Complete!')
     console.log(`Model: ${result.metadata.modelUsed}`)
     console.log(`Tokens Used: ${result.metadata.tokensUsed}`)
     console.log(`Processing Time: ${result.metadata.processingTime}ms`)
     console.log(`Cost: $${result.metadata.cost?.toFixed(4)}`)
-    
+
     return phaseAnalysis
   } else {
     console.error('❌ Phase analysis failed:', result.metadata.error)
@@ -79,7 +79,7 @@ function displayPhaseAnalysis(analysis: SessionPhaseAnalysis): void {
   analysis.phases.forEach((phase, index) => {
     const duration = Math.round(phase.durationMs / 1000)
     const emoji = getPhaseEmoji(phase.phaseType)
-    
+
     console.log(`\n${index + 1}. ${emoji} ${formatPhaseType(phase.phaseType)}`)
     console.log(`   Steps: ${phase.startStep}-${phase.endStep} (${phase.stepCount} messages)`)
     console.log(`   Duration: ${duration}s`)
@@ -101,16 +101,16 @@ async function storePhaseAnalysis(
   // Example for SQLite (desktop app)
   // In real code, use your database client
   console.log('\n💾 Storing phase analysis...')
-  
+
   const sql = `
     UPDATE agent_sessions 
     SET ai_model_phase_analysis = ?
     WHERE id = ?
   `
-  
+
   console.log('SQL:', sql)
   console.log('Data:', JSON.stringify(analysis, null, 2))
-  
+
   // await db.execute(sql, [JSON.stringify(analysis), sessionId])
   console.log('✅ Stored successfully!')
 }
@@ -126,9 +126,9 @@ function findPhasesOfType(
   return analysis.phases.filter(phase => phase.phaseType === phaseType)
 }
 
-function getLongestPhase(analysis: SessionPhaseAnalysis): typeof analysis.phases[0] | null {
+function getLongestPhase(analysis: SessionPhaseAnalysis): (typeof analysis.phases)[0] | null {
   if (analysis.phases.length === 0) return null
-  return analysis.phases.reduce((longest, current) => 
+  return analysis.phases.reduce((longest, current) =>
     current.durationMs > longest.durationMs ? current : longest
   )
 }
@@ -149,10 +149,10 @@ function visualizeTimeline(analysis: SessionPhaseAnalysis): void {
     const barWidth = Math.max(1, Math.round((percentage / 100) * maxWidth))
     const bar = '█'.repeat(barWidth)
     const emoji = getPhaseEmoji(phase.phaseType)
-    
+
     console.log(
       `${emoji} ${formatPhaseType(phase.phaseType).padEnd(20)} ` +
-      `${bar} ${percentage.toFixed(1)}%`
+        `${bar} ${percentage.toFixed(1)}%`
     )
   })
 }
@@ -181,17 +181,17 @@ function compareSessionPatterns(
  */
 function getPhaseEmoji(phaseType: string): string {
   const emojiMap: Record<string, string> = {
-    'initial_specification': '📝',
-    'analysis_planning': '🔍',
-    'plan_modification': '✏️',
-    'plan_agreement': '🤝',
-    'execution': '⚡',
-    'interruption': '🛑',
-    'task_assignment': '📋',
-    'completion': '✅',
-    'correction': '🔧',
-    'final_completion': '🎉',
-    'other': '❓'
+    initial_specification: '📝',
+    analysis_planning: '🔍',
+    plan_modification: '✏️',
+    plan_agreement: '🤝',
+    execution: '⚡',
+    interruption: '🛑',
+    task_assignment: '📋',
+    completion: '✅',
+    correction: '🔧',
+    final_completion: '🎉',
+    other: '❓',
   }
   return emojiMap[phaseType] || '●'
 }
@@ -220,28 +220,28 @@ async function completeWorkflow() {
         id: '1',
         timestamp: new Date('2024-01-15T10:00:00Z'),
         type: 'user',
-        content: 'I want to add a session phase analysis feature to track coding session stages.'
+        content: 'I want to add a session phase analysis feature to track coding session stages.',
       },
       {
         id: '2',
         timestamp: new Date('2024-01-15T10:02:00Z'),
         type: 'assistant',
-        content: { 
+        content: {
           text: 'Let me analyze the requirements and create a plan...',
-          toolUses: [{ name: 'str_replace_editor', id: 'tool1' }]
-        }
+          toolUses: [{ name: 'str_replace_editor', id: 'tool1' }],
+        },
       },
       // ... more messages
     ],
     startTime: new Date('2024-01-15T10:00:00Z'),
     endTime: new Date('2024-01-15T10:30:00Z'),
-    duration: 1800000 // 30 minutes
+    duration: 1800000, // 30 minutes
   }
 
   const userInfo = {
     name: 'John Doe',
     username: 'johndoe',
-    email: 'john@example.com'
+    email: 'john@example.com',
   }
 
   // Get API key from environment
@@ -270,13 +270,12 @@ async function completeWorkflow() {
     if (longestPhase) {
       console.log(
         `\n⏱️  Longest phase: ${formatPhaseType(longestPhase.phaseType)} ` +
-        `(${Math.round(longestPhase.durationMs / 1000)}s)`
+          `(${Math.round(longestPhase.durationMs / 1000)}s)`
       )
     }
 
     // Step 5: Store the analysis
     await storePhaseAnalysis(mockSession.sessionId, analysis)
-
   } catch (error) {
     console.error('❌ Error:', error)
   }
@@ -292,7 +291,7 @@ export {
   visualizeTimeline,
   compareSessionPatterns,
   formatPhaseType,
-  getPhaseEmoji
+  getPhaseEmoji,
 }
 
 // Run the complete workflow if executed directly

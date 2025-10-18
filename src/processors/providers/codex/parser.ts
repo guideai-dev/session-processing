@@ -123,12 +123,16 @@ export class CodexParser {
       duration,
       metadata: {
         messageCount: messages.length,
-        lineCount: lines.length
-      }
+        lineCount: lines.length,
+      },
     }
   }
 
-  private parseResponseItem(entry: CodexEntry, timestamp: Date, index: number): ParsedMessage | null {
+  private parseResponseItem(
+    entry: CodexEntry,
+    timestamp: Date,
+    index: number
+  ): ParsedMessage | null {
     const payload = entry.payload as CodexResponseItem
 
     // Handle different payload types
@@ -147,7 +151,11 @@ export class CodexParser {
     }
   }
 
-  private parseMessage(payload: CodexResponseItem, timestamp: Date, index: number): ParsedMessage | null {
+  private parseMessage(
+    payload: CodexResponseItem,
+    timestamp: Date,
+    index: number
+  ): ParsedMessage | null {
     if (!payload.role) return null
 
     let messageType: ParsedMessage['type']
@@ -179,15 +187,19 @@ export class CodexParser {
         text,
         structured: payload.content || [],
         toolUses: [],
-        toolResults: []
+        toolResults: [],
       },
       metadata: {
-        role: payload.role
-      }
+        role: payload.role,
+      },
     }
   }
 
-  private parseFunctionCall(payload: CodexResponseItem, timestamp: Date, index: number): ParsedMessage | null {
+  private parseFunctionCall(
+    payload: CodexResponseItem,
+    timestamp: Date,
+    index: number
+  ): ParsedMessage | null {
     if (!payload.name || !payload.call_id) return null
 
     // Parse arguments from JSON string
@@ -204,7 +216,7 @@ export class CodexParser {
       type: 'tool_use',
       id: payload.call_id,
       name: payload.name,
-      input: parsedArgs
+      input: parsedArgs,
     }
 
     return {
@@ -215,18 +227,22 @@ export class CodexParser {
         text: `Using ${payload.name}`,
         structured: [toolUse],
         toolUses: [toolUse],
-        toolResults: []
+        toolResults: [],
       },
       metadata: {
         toolName: payload.name,
         hasToolUses: true,
         toolCount: 1,
-        resultCount: 0
-      }
+        resultCount: 0,
+      },
     }
   }
 
-  private parseFunctionCallOutput(payload: CodexResponseItem, timestamp: Date, index: number): ParsedMessage | null {
+  private parseFunctionCallOutput(
+    payload: CodexResponseItem,
+    timestamp: Date,
+    index: number
+  ): ParsedMessage | null {
     if (!payload.call_id) return null
 
     // Parse output - it might be JSON string or already parsed
@@ -242,7 +258,7 @@ export class CodexParser {
     const toolResult: ToolResultContent = {
       type: 'tool_result',
       tool_use_id: payload.call_id,
-      content: outputContent
+      content: outputContent,
     }
 
     return {
@@ -253,13 +269,13 @@ export class CodexParser {
         text: undefined,
         structured: [toolResult],
         toolUses: [],
-        toolResults: [toolResult]
+        toolResults: [toolResult],
       },
       metadata: {
         hasToolResults: true,
         toolCount: 0,
-        resultCount: 1
-      }
+        resultCount: 1,
+      },
     }
   }
 
@@ -322,7 +338,11 @@ export class CodexParser {
       const next = session.messages[i + 1]
 
       // Look for assistant messages followed by user messages (not interruptions)
-      if (current.type === 'assistant' && next.type === 'user' && !this.isInterruptionMessage(next)) {
+      if (
+        current.type === 'assistant' &&
+        next.type === 'user' &&
+        !this.isInterruptionMessage(next)
+      ) {
         // This indicates the agent stopped and waited for user input
         stops.push(current)
       }
@@ -336,9 +356,11 @@ export class CodexParser {
    */
   private isInterruptionMessage(message: ParsedMessage): boolean {
     const content = this.extractTextContent(message)
-    return content.includes('[Request interrupted by user for tool use]') ||
-           content.includes('[Request interrupted by user]') ||
-           content.includes('Request interrupted by user')
+    return (
+      content.includes('[Request interrupted by user for tool use]') ||
+      content.includes('[Request interrupted by user]') ||
+      content.includes('Request interrupted by user')
+    )
   }
 
   /**
@@ -369,8 +391,14 @@ export class CodexParser {
   /**
    * Calculate response times between user inputs and assistant responses
    */
-  calculateResponseTimes(session: ParsedSession): Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> {
-    const responseTimes: Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> = []
+  calculateResponseTimes(
+    session: ParsedSession
+  ): Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> {
+    const responseTimes: Array<{
+      userMessage: ParsedMessage
+      assistantMessage: ParsedMessage
+      responseTime: number
+    }> = []
 
     for (let i = 0; i < session.messages.length - 1; i++) {
       const current = session.messages[i]
@@ -381,7 +409,7 @@ export class CodexParser {
         responseTimes.push({
           userMessage: current,
           assistantMessage: next,
-          responseTime
+          responseTime,
         })
       }
     }

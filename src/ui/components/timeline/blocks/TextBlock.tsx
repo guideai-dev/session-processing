@@ -24,14 +24,14 @@ function looksLikeMarkdown(text: string): boolean {
 
   // Check for common markdown patterns
   const patterns = [
-    /\*\*[^*]+\*\*/,           // Bold **text**
-    /\*[^*]+\*/,               // Italic *text*
-    /`[^`]+`/,                 // Inline code `code`
-    /^#{1,6}\s/m,              // Headers # Header
-    /^\s*[-*+]\s/m,            // Unordered lists
-    /^\s*\d+\.\s/m,            // Ordered lists
-    /\[[^\]]+\]\([^)]+\)/,     // Links [text](url)
-    /```/,                     // Code blocks
+    /\*\*[^*]+\*\*/, // Bold **text**
+    /\*[^*]+\*/, // Italic *text*
+    /`[^`]+`/, // Inline code `code`
+    /^#{1,6}\s/m, // Headers # Header
+    /^\s*[-*+]\s/m, // Unordered lists
+    /^\s*\d+\.\s/m, // Ordered lists
+    /\[[^\]]+\]\([^)]+\)/, // Links [text](url)
+    /```/, // Code blocks
   ]
 
   return patterns.some(pattern => pattern.test(text))
@@ -69,9 +69,10 @@ export function TextBlock({ content }: TextBlockProps) {
   const [depsChecked, setDepsChecked] = useState(false)
 
   // Detect current theme for syntax highlighting
-  const theme = typeof document !== 'undefined'
-    ? (document.documentElement.dataset.theme || 'guideai-dark')
-    : 'guideai-dark'
+  const theme =
+    typeof document !== 'undefined'
+      ? document.documentElement.dataset.theme || 'guideai-dark'
+      : 'guideai-dark'
   const isDark = theme.includes('dark')
 
   const isMarkdown = looksLikeMarkdown(content)
@@ -164,14 +165,16 @@ export function TextBlock({ content }: TextBlockProps) {
 
             // Lists
             ul: ({ children }: any) => (
-              <ul className="list-disc list-inside text-sm text-base-content mb-2 space-y-1">{children}</ul>
+              <ul className="list-disc list-inside text-sm text-base-content mb-2 space-y-1">
+                {children}
+              </ul>
             ),
             ol: ({ children }: any) => (
-              <ol className="list-decimal list-inside text-sm text-base-content mb-2 space-y-1">{children}</ol>
+              <ol className="list-decimal list-inside text-sm text-base-content mb-2 space-y-1">
+                {children}
+              </ol>
             ),
-            li: ({ children }: any) => (
-              <li className="text-sm text-base-content">{children}</li>
-            ),
+            li: ({ children }: any) => <li className="text-sm text-base-content">{children}</li>,
 
             // Inline code
             code: ({ inline, className, children, ...props }: any) => {
@@ -201,7 +204,10 @@ export function TextBlock({ content }: TextBlockProps) {
 
               // Inline code
               return (
-                <code className="bg-base-200 text-primary px-1.5 py-0.5 rounded text-xs font-mono" {...props}>
+                <code
+                  className="bg-base-200 text-primary px-1.5 py-0.5 rounded text-xs font-mono"
+                  {...props}
+                >
                   {children}
                 </code>
               )
@@ -235,9 +241,7 @@ export function TextBlock({ content }: TextBlockProps) {
             ),
 
             // Emphasis/Italic
-            em: ({ children }: any) => (
-              <em className="italic text-base-content">{children}</em>
-            ),
+            em: ({ children }: any) => <em className="italic text-base-content">{children}</em>,
           }}
         >
           {content}

@@ -41,8 +41,8 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
         write_operations: writeCount,
         total_user_messages: userMessages.length,
         total_lines_read: totalLinesRead, // For git diff ratios
-        improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore)
-      }
+        improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore),
+      },
     }
   }
 
@@ -67,7 +67,7 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
       const fileReferences = this.countFileReferences(content)
 
       // Score based on technical content density
-      const messageScore = technicalTerms + (codeSnippets * 2) + fileReferences
+      const messageScore = technicalTerms + codeSnippets * 2 + fileReferences
       totalScore += messageScore
     }
 
@@ -78,11 +78,41 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
 
   private countTechnicalTerms(content: string): number {
     const technicalKeywords = [
-      'function', 'variable', 'class', 'method', 'api', 'database', 'query',
-      'component', 'interface', 'type', 'import', 'export', 'async', 'await',
-      'typescript', 'javascript', 'react', 'node', 'npm', 'pnpm', 'package',
-      'schema', 'table', 'column', 'index', 'migration', 'build', 'test',
-      'lint', 'format', 'deploy', 'server', 'client', 'frontend', 'backend'
+      'function',
+      'variable',
+      'class',
+      'method',
+      'api',
+      'database',
+      'query',
+      'component',
+      'interface',
+      'type',
+      'import',
+      'export',
+      'async',
+      'await',
+      'typescript',
+      'javascript',
+      'react',
+      'node',
+      'npm',
+      'pnpm',
+      'package',
+      'schema',
+      'table',
+      'column',
+      'index',
+      'migration',
+      'build',
+      'test',
+      'lint',
+      'format',
+      'deploy',
+      'server',
+      'client',
+      'frontend',
+      'backend',
     ]
 
     const contentLower = content.toLowerCase()
@@ -112,20 +142,20 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
 
     if (readWriteRatio > 5) {
       tips.push("High Read/Write ratio suggests AI is 'lost' - provide specific file paths upfront")
-      tips.push("Include relevant code context in your requests to reduce searching")
+      tips.push('Include relevant code context in your requests to reduce searching')
     }
 
     if (readWriteRatio <= 2) {
-      tips.push("Excellent efficiency! AI found and modified files quickly")
+      tips.push('Excellent efficiency! AI found and modified files quickly')
     }
 
     if (inputClarityScore < 20) {
-      tips.push("Low input clarity - try including more technical details and code examples")
-      tips.push("Specify exact file paths and function names for better results")
+      tips.push('Low input clarity - try including more technical details and code examples')
+      tips.push('Specify exact file paths and function names for better results')
     }
 
     if (inputClarityScore > 50) {
-      tips.push("Great technical communication! Clear, specific inputs lead to better results")
+      tips.push('Great technical communication! Clear, specific inputs lead to better results')
     }
 
     return tips
@@ -148,7 +178,8 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
 
       // Count actual lines in the result content for read operations
       if (['read_file', 'view_file', 'search_files', 'list_directory'].includes(tool.name)) {
-        const content = typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
+        const content =
+          typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
         const lines = content.split('\n').filter((l: string) => l.trim()).length
         total += lines
       }

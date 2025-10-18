@@ -4,7 +4,7 @@ export * from './base/index.js'
 // Export providers
 export {
   ClaudeModelAdapter,
-  GeminiModelAdapter
+  GeminiModelAdapter,
 } from './providers/index.js'
 
 // Export tasks
@@ -12,5 +12,5 @@ export {
   SessionSummaryTask,
   QualityAssessmentTask,
   IntentExtractionTask,
-  SessionPhaseAnalysisTask
+  SessionPhaseAnalysisTask,
 } from './providers/index.js'
