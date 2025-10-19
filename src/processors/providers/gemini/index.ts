@@ -40,35 +40,36 @@ export class GeminiProcessor extends BaseProviderProcessor {
 
   canProcess(content: string): boolean {
     try {
-      // A Gemini session is a single JSON object, not JSONL
-      if (content.includes('\n')) {
-        console.log('Gemini canProcess: rejecting content with newlines');
+      // Gemini sessions are JSONL format (like Claude Code)
+      if (!content.includes('\n')) {
         return false
       }
 
-      const data = JSON.parse(content)
-      console.log('Gemini canProcess: parsed data', !!data);
-
-      // Check for top-level fields
-      if (!data.sessionId || !data.projectHash || !data.messages) {
-        console.log(
-          'Gemini canProcess: missing top-level fields',
-          !!data.sessionId,
-          !!data.projectHash,
-          !!data.messages
-        );
+      const lines = content.split('\n').filter(line => line.trim())
+      if (lines.length === 0) {
         return false
       }
 
-      // Check for Gemini-specific fields within messages
-      const hasGeminiFields = data.messages.some(
-        (m: any) => m.thoughts || m.tokens
-      )
-      console.log('Gemini canProcess: hasGeminiFields', hasGeminiFields);
+      // Check for Gemini-specific fields in any line
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line)
 
-      return hasGeminiFields
+          // Look for Gemini-specific markers
+          if (data.type === 'gemini' ||
+              data.gemini_thoughts ||
+              data.gemini_tokens ||
+              data.gemini_model) {
+            return true
+          }
+        } catch {
+          // Skip invalid JSON lines
+          continue
+        }
+      }
+
+      return false
     } catch (error) {
-      console.error('Gemini canProcess: error', error);
       return false
     }
   }
@@ -97,56 +98,60 @@ export class GeminiProcessor extends BaseProviderProcessor {
   }
 
   /**
-   * Override parent validation to handle JSON format
+   * Override parent validation to handle JSONL format
    */
   protected validateJsonContent(content: string): void {
     if (!content || content.trim().length === 0) {
       throw new Error('Content is empty')
     }
 
-    try {
-      const json = JSON.parse(content)
+    // Gemini uses JSONL format like Claude Code
+    const lines = content.split('\n').filter(line => line.trim())
 
-      if (!json.sessionId) {
-        throw new Error('Missing sessionId field')
-      }
+    if (lines.length === 0) {
+      throw new Error('No valid JSONL lines found')
+    }
 
-      if (!json.projectHash) {
-        throw new Error('Missing projectHash field')
-      }
+    let hasValidMessage = false
+    let hasGeminiFields = false
+    let sessionId = ''
 
-      if (!json.messages || !Array.isArray(json.messages)) {
-        throw new Error('Missing or invalid messages array')
-      }
+    for (let i = 0; i < lines.length; i++) {
+      try {
+        const data = JSON.parse(lines[i])
 
-      if (json.messages.length === 0) {
-        throw new Error('No messages found in session')
-      }
+        // Track session ID
+        if (data.sessionId && !sessionId) {
+          sessionId = data.sessionId
+        }
 
-      // Validate at least one message has required fields
-      const validMessage = json.messages.some(
-        (m: any) => m.id && m.timestamp && m.type && m.content
-      )
+        // Check for valid message structure
+        if (data.uuid && data.timestamp && data.type) {
+          hasValidMessage = true
+        }
 
-      if (!validMessage) {
-        throw new Error('No valid messages found with required fields')
+        // Check for Gemini-specific fields
+        if (data.type === 'gemini' ||
+            data.gemini_thoughts ||
+            data.gemini_tokens ||
+            data.gemini_model) {
+          hasGeminiFields = true
+        }
+      } catch (error) {
+        throw new Error(`Invalid JSON on line ${i + 1}`)
       }
+    }
 
-      const hasGeminiFields = json.messages.some(
-        (m: any) => m.thoughts || m.tokens
-      )
+    if (!sessionId) {
+      throw new Error('No sessionId found in JSONL content')
+    }
 
-      if (!hasGeminiFields) {
-        throw new Error('No Gemini-specific fields found in messages')
-      }
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new Error('Invalid JSON format')
-      }
-      if (error instanceof Error) {
-        throw new Error(`Invalid Gemini session format: ${error.message}`)
-      }
-      throw new Error('Invalid Gemini session format')
+    if (!hasValidMessage) {
+      throw new Error('No valid messages found with required fields')
+    }
+
+    if (!hasGeminiFields) {
+      throw new Error('No Gemini-specific fields found in messages')
     }
   }
 }

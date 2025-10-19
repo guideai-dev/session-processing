@@ -76,6 +76,12 @@ export class GeminiParser extends ClaudeCodeParser {
       const metadata = geminiMetadata.get(message.id)
 
       if (metadata) {
+        // Convert 'system' type to 'assistant' for Gemini messages
+        // (ClaudeCodeParser doesn't recognize 'gemini' type and defaults to 'system')
+        if (message.type === 'system') {
+          message.type = 'assistant'
+        }
+
         // Add thoughts
         if (metadata.thoughts) {
           message.metadata = {

@@ -61,7 +61,6 @@ export class GitHubCopilotParser {
 
         // Validate timestamp is valid
         if (isNaN(timestamp.getTime())) {
-          console.warn(`Skipping line ${i + 1}: invalid timestamp ${entry.timestamp}`)
           continue
         }
 
@@ -211,7 +210,6 @@ export class GitHubCopilotParser {
           messages.push(message)
         }
       } catch (error) {
-        console.warn(`Failed to parse line ${i + 1}:`, error)
         continue
       }
     }

@@ -46,52 +46,26 @@ export abstract class BaseProviderProcessor {
     const session = this.parseSession(jsonlContent)
     const processors = this.getMetricProcessors()
 
-    console.log(
-      `Processing session ${context.sessionId} with ${processors.length} metric processors (SEQUENTIAL):`,
-      processors.map(p => `${p.name} (${p.metricType})`).join(', ')
-    )
-
     // Run all processors sequentially to ensure each completes before the next
     const successfulResults: ProcessorResult[] = []
 
     for (const processor of processors) {
       try {
-        console.log(`→ Starting processor ${processor.name} (${processor.metricType})`)
-
         if (!processor.canProcess(session)) {
-          console.warn(
-            `  ⊘ Processor ${processor.name} cannot process session ${session.sessionId}`
-          )
           continue
         }
 
         const result = await processor.processToResult(session)
 
         if (!result || !result.metrics) {
-          console.warn(`  ⚠ Processor ${processor.name} returned empty/null result`)
           continue
         }
 
-        const metricCount = Object.keys(result.metrics).length
-        const nonNullMetrics = Object.entries(result.metrics).filter(
-          ([k, v]) => v !== null && v !== undefined
-        ).length
-
-        console.log(
-          `  ✓ Processor ${processor.name} completed: ${nonNullMetrics}/${metricCount} non-null metrics`
-        )
-        console.log(`    Metrics: ${JSON.stringify(result.metrics)}`)
-
         successfulResults.push(result)
       } catch (error) {
-        console.error(`  ✗ Processor ${processor.name} FAILED with error:`, error)
-        console.error(`    Error details:`, error instanceof Error ? error.stack : error)
+        // Silently continue on processor errors
       }
     }
-
-    console.log(
-      `✓ Completed ${successfulResults.length}/${processors.length} processors successfully`
-    )
 
     if (successfulResults.length === 0) {
       console.error(`⚠ WARNING: NO processors succeeded for session ${context.sessionId}!`)
@@ -134,12 +108,10 @@ export abstract class BaseProviderProcessor {
     try {
       const date = new Date(timestampStr)
       if (isNaN(date.getTime())) {
-        console.warn(`Invalid timestamp: ${timestampStr}`)
         return null
       }
       return date
     } catch (error) {
-      console.warn(`Failed to parse timestamp: ${timestampStr}`, error)
       return null
     }
   }

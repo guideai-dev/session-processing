@@ -143,8 +143,6 @@ describe('OpenCodeProcessor', () => {
 
       // Verify we have real values, not just 0
       expect(perfMetrics?.metrics.task_completion_time_ms).toBeGreaterThan(0)
-
-      console.log('Performance metrics:', perfMetrics?.metrics)
     })
 
     it('should calculate engagement metrics with real values', async () => {
@@ -163,8 +161,6 @@ describe('OpenCodeProcessor', () => {
 
       // Verify session length is calculated
       expect(engagementMetrics?.metrics.session_length_minutes).toBeGreaterThanOrEqual(0)
-
-      console.log('Engagement metrics:', engagementMetrics?.metrics)
     })
 
     it('should calculate quality metrics with real values', async () => {
@@ -187,7 +183,6 @@ describe('OpenCodeProcessor', () => {
       expect(qualityMetrics?.metrics.iteration_count).toBeGreaterThanOrEqual(0)
       expect(qualityMetrics?.metrics.process_quality_score).toBeGreaterThanOrEqual(0)
 
-      console.log('Quality metrics:', qualityMetrics?.metrics)
     })
 
     it('should calculate usage metrics with real values', async () => {
@@ -208,8 +203,6 @@ describe('OpenCodeProcessor', () => {
       expect(usageMetrics?.metrics.read_write_ratio).toBeGreaterThanOrEqual(0)
       expect(usageMetrics?.metrics.input_clarity_score).toBeGreaterThanOrEqual(0)
       expect(usageMetrics?.metrics.input_clarity_score).toBeLessThanOrEqual(100)
-
-      console.log('Usage metrics:', usageMetrics?.metrics)
     })
 
     it('should calculate error metrics', async () => {
@@ -232,7 +225,6 @@ describe('OpenCodeProcessor', () => {
       expect(errorMetrics?.metrics.error_count).toBeGreaterThanOrEqual(0)
       expect(Array.isArray(errorMetrics?.metrics.error_types)).toBe(true)
 
-      console.log('Error metrics:', errorMetrics?.metrics)
     })
   })
 

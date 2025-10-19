@@ -57,7 +57,6 @@ export class ProcessorRegistry {
   getProcessor(providerName: string): BaseProviderProcessor | null {
     const processor = this.processors.get(providerName)
     if (!processor) {
-      console.warn(`No processor found for provider: ${providerName}`)
       return null
     }
     return processor
@@ -105,16 +104,13 @@ export class ProcessorRegistry {
     for (const [providerName, processor] of this.processors) {
       try {
         if (processor.canProcess(content)) {
-          console.log(`Auto-detected provider: ${providerName}`)
           return processor
         }
       } catch (error) {
-        console.warn(`Error checking processor ${providerName}:`, error)
         continue
       }
     }
 
-    console.warn('No processor could handle the provided content')
     return null
   }
 
@@ -226,7 +222,6 @@ export class ProcessorRegistry {
   unregister(providerName: string): boolean {
     if (this.processors.has(providerName)) {
       this.processors.delete(providerName)
-      console.log(`Unregistered processor for provider: ${providerName}`)
       return true
     }
     return false
@@ -237,7 +232,6 @@ export class ProcessorRegistry {
    */
   clear(): void {
     this.processors.clear()
-    console.log('Cleared all processors from registry')
   }
 
   /**
@@ -246,7 +240,6 @@ export class ProcessorRegistry {
   reset(): void {
     this.clear()
     this.registerDefaultProcessors()
-    console.log('Reset registry to default processors')
   }
 }
 

@@ -125,9 +125,8 @@ describe('BaseProviderProcessor', () => {
 			expect(results[0].metricType).toBe('performance')
 		})
 
-		it('should log processing start for each processor', async () => {
+		it('should return successful results with metrics', async () => {
 			const processor = new TestProviderProcessor()
-			const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 			const context: ProcessorContext = {
 				sessionId: 'test-123',
 				provider: 'test-provider',
@@ -135,27 +134,10 @@ describe('BaseProviderProcessor', () => {
 				userId: 'test-user',
 			}
 
-			await processor.processMetrics(VALID_JSONL_CONTENT, context)
+			const results = await processor.processMetrics(VALID_JSONL_CONTENT, context)
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('→ Starting processor'))
-			consoleSpy.mockRestore()
-		})
-
-		it('should log successful completion with metrics', async () => {
-			const processor = new TestProviderProcessor()
-			const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-			const context: ProcessorContext = {
-				sessionId: 'test-123',
-				provider: 'test-provider',
-				tenantId: 'test-tenant',
-				userId: 'test-user',
-			}
-
-			await processor.processMetrics(VALID_JSONL_CONTENT, context)
-
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('✓ Processor'))
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Metrics:'))
-			consoleSpy.mockRestore()
+			expect(results.length).toBeGreaterThan(0)
+			expect(results[0].metrics).toBeDefined()
 		})
 
 		it('should handle processor errors gracefully', async () => {
@@ -166,7 +148,6 @@ describe('BaseProviderProcessor', () => {
 			}
 
 			const processor = new MetricErrorProcessor()
-			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 			const context: ProcessorContext = {
 				sessionId: 'test-123',
 				provider: 'test-provider',
@@ -177,11 +158,6 @@ describe('BaseProviderProcessor', () => {
 			const results = await processor.processMetrics(VALID_JSONL_CONTENT, context)
 
 			expect(results.length).toBe(0)
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('✗ Processor'),
-				expect.any(Error)
-			)
-			consoleSpy.mockRestore()
 		})
 
 		it('should skip processors that cannot process session', async () => {
@@ -205,8 +181,6 @@ describe('BaseProviderProcessor', () => {
 			const results = await processor.processMetrics(VALID_JSONL_CONTENT, context)
 
 			expect(results.length).toBe(0)
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('⊘ Processor'))
-			consoleSpy.mockRestore()
 		})
 
 		it('should warn when processor returns null/empty result', async () => {
@@ -219,7 +193,6 @@ describe('BaseProviderProcessor', () => {
 			}
 
 			const processor = new NullResultProcessor()
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 			const context: ProcessorContext = {
 				sessionId: 'test-123',
 				provider: 'test-provider',
@@ -227,10 +200,9 @@ describe('BaseProviderProcessor', () => {
 				userId: 'test-user',
 			}
 
-			await processor.processMetrics(VALID_JSONL_CONTENT, context)
+			const results = await processor.processMetrics(VALID_JSONL_CONTENT, context)
 
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('⚠ Processor'))
-			consoleSpy.mockRestore()
+			expect(results.length).toBe(0)
 		})
 
 		it('should warn when no processors succeed', async () => {
@@ -302,13 +274,10 @@ describe('BaseProviderProcessor', () => {
 			}
 
 			const processor = new HelperTestProcessor()
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
 			const date = processor.testParseTimestamp('invalid-date')
 
 			expect(date).toBeNull()
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid timestamp'))
-			consoleSpy.mockRestore()
 		})
 
 		it('should return null for undefined timestamp', () => {

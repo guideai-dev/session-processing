@@ -137,12 +137,9 @@ describe('ProcessorRegistry', () => {
 		})
 
 		it('should return null for non-existent processor', () => {
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 			const retrieved = registry.getProcessor('non-existent')
 
 			expect(retrieved).toBeNull()
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('No processor found for provider'))
-			consoleSpy.mockRestore()
 		})
 
 		it('should check if processor exists', () => {
@@ -179,9 +176,6 @@ describe('ProcessorRegistry', () => {
 			const detected = registry.detectProcessor('invalid content')
 
 			expect(detected).toBeNull()
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('No processor could handle the provided content')
-			)
 			consoleSpy.mockRestore()
 		})
 
@@ -192,15 +186,9 @@ describe('ProcessorRegistry', () => {
 			}
 			registry.register(processor)
 
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 			const detected = registry.detectProcessor('test content')
 
 			expect(detected).toBeNull()
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('Error checking processor'),
-				expect.any(Error)
-			)
-			consoleSpy.mockRestore()
 		})
 
 		it('should process content with auto-detection', async () => {
@@ -362,15 +350,10 @@ describe('ProcessorRegistry', () => {
 			const processor = new MockProviderProcessor()
 			registry.register(processor)
 
-			const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 			const result = registry.unregister('mock-provider')
 
 			expect(result).toBe(true)
 			expect(registry.hasProcessor('mock-provider')).toBe(false)
-			expect(consoleSpy).toHaveBeenCalledWith(
-				expect.stringContaining('Unregistered processor for provider')
-			)
-			consoleSpy.mockRestore()
 		})
 
 		it('should return false when unregistering non-existent processor', () => {
@@ -382,27 +365,21 @@ describe('ProcessorRegistry', () => {
 			const processor = new MockProviderProcessor()
 			registry.register(processor)
 
-			const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 			registry.clear()
 
 			expect(registry.getRegisteredProviders()).toHaveLength(0)
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Cleared all processors'))
-			consoleSpy.mockRestore()
 		})
 
 		it('should reset to default processors', () => {
 			registry.clear()
 			expect(registry.getRegisteredProviders()).toHaveLength(0)
 
-			const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 			registry.reset()
 
 			const providers = registry.getRegisteredProviders()
 			expect(providers).toContain('claude-code')
 			expect(providers).toContain('github-copilot')
 			expect(providers).toContain('codex')
-			expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Reset registry to default'))
-			consoleSpy.mockRestore()
 		})
 	})
 })

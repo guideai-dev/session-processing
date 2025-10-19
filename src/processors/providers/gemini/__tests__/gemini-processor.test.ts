@@ -10,19 +10,14 @@ describe('GeminiProcessor', () => {
   const processor = new GeminiProcessor()
 
   describe('canProcess', () => {
-    test('should accept valid Gemini session JSON', () => {
-      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.json')
+    test('should accept valid Gemini session JSONL', () => {
+      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.jsonl')
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       expect(processor.canProcess(content)).toBe(true)
     })
 
-    test('should reject JSONL format', () => {
-      const jsonl = '{"uuid":"123","type":"user"}\n{"uuid":"456","type":"assistant"}'
-      expect(processor.canProcess(jsonl)).toBe(false)
-    })
-
-    test('should reject JSON without Gemini-specific fields', () => {
+    test('should reject single-line JSON', () => {
       const json = JSON.stringify({
         sessionId: '123',
         messages: [{ id: '1', type: 'user', content: 'test' }]
@@ -30,38 +25,30 @@ describe('GeminiProcessor', () => {
       expect(processor.canProcess(json)).toBe(false)
     })
 
-    test('should accept JSON with projectHash and thoughts', () => {
-      const json = JSON.stringify({
-        sessionId: '123',
-        projectHash: 'abc123',
-        messages: [{
-          id: '1',
-          type: 'gemini',
-          content: 'test',
-          thoughts: [{ subject: 'test', description: 'test', timestamp: '2025-01-01T00:00:00Z' }]
-        }]
-      })
-      expect(processor.canProcess(json)).toBe(true)
+    test('should reject JSONL without Gemini-specific fields', () => {
+      const jsonl = '{"uuid":"123","type":"user","sessionId":"abc"}\n{"uuid":"456","type":"assistant","sessionId":"abc"}'
+      expect(processor.canProcess(jsonl)).toBe(false)
     })
 
-    test('should accept JSON with projectHash and cached tokens', () => {
-      const json = JSON.stringify({
-        sessionId: '123',
-        projectHash: 'abc123',
-        messages: [{
-          id: '1',
-          type: 'gemini',
-          content: 'test',
-          tokens: { input: 100, output: 50, cached: 20, thoughts: 10, tool: 0, total: 160 }
-        }]
-      })
-      expect(processor.canProcess(json)).toBe(true)
+    test('should accept JSONL with type gemini', () => {
+      const jsonl = '{"uuid":"123","type":"user","sessionId":"abc"}\n{"uuid":"456","type":"gemini","sessionId":"abc","gemini_thoughts":[]}'
+      expect(processor.canProcess(jsonl)).toBe(true)
+    })
+
+    test('should accept JSONL with gemini_thoughts field', () => {
+      const jsonl = '{"uuid":"123","type":"user","sessionId":"abc"}\n{"uuid":"456","type":"assistant","sessionId":"abc","gemini_thoughts":[{"subject":"test","description":"test","timestamp":"2025-01-01T00:00:00Z"}]}'
+      expect(processor.canProcess(jsonl)).toBe(true)
+    })
+
+    test('should accept JSONL with gemini_tokens field', () => {
+      const jsonl = '{"uuid":"123","type":"user","sessionId":"abc"}\n{"uuid":"456","type":"assistant","sessionId":"abc","gemini_tokens":{"input":100,"output":50,"cached":20,"thoughts":10,"tool":0,"total":160}}'
+      expect(processor.canProcess(jsonl)).toBe(true)
     })
   })
 
   describe('parseSession', () => {
     test('should parse valid Gemini session', () => {
-      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.json')
+      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.jsonl')
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = processor.parseSession(content)
@@ -72,33 +59,25 @@ describe('GeminiProcessor', () => {
       expect(session.startTime).toBeInstanceOf(Date)
       expect(session.endTime).toBeInstanceOf(Date)
       expect(session.duration).toBeGreaterThan(0)
-      expect(session.metadata.projectHash).toBeDefined()
     })
 
     test('should convert gemini type to assistant type', () => {
-      const json = JSON.stringify({
-        sessionId: '123',
-        projectHash: 'abc',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T00:01:00Z',
-        messages: [{
-          id: '1',
-          timestamp: '2025-01-01T00:00:00Z',
-          type: 'gemini',
-          content: 'test'
-        }]
-      })
+      const jsonl = [
+        '{"uuid":"1","timestamp":"2025-01-01T00:00:00Z","type":"user","sessionId":"123","message":{"role":"user","content":"test"}}',
+        '{"uuid":"2","timestamp":"2025-01-01T00:01:00Z","type":"gemini","sessionId":"123","message":{"role":"assistant","content":"response"},"gemini_thoughts":[]}'
+      ].join('\n')
 
-      const session = processor.parseSession(json)
-      expect(session.messages[0].type).toBe('assistant')
+      const session = processor.parseSession(jsonl)
+      const geminiMessage = session.messages.find(m => m.id === '2')
+      expect(geminiMessage?.type).toBe('assistant')
     })
 
     test('should throw on empty content', () => {
       expect(() => processor.parseSession('')).toThrow('Content is empty')
     })
 
-    test('should throw on invalid JSON', () => {
-      expect(() => processor.parseSession('not json')).toThrow('not valid JSON')
+    test('should throw on invalid JSONL', () => {
+      expect(() => processor.parseSession('not json')).toThrow('Invalid JSON on line 1')
     })
   })
 
@@ -121,18 +100,17 @@ describe('GeminiParser', () => {
 
   describe('parseSession', () => {
     test('should parse sample session correctly', () => {
-      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.json')
+      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.jsonl')
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
 
-      expect(session.sessionId).toBe('ae9730b6-1ac3-40e3-804a-69afa2d85b81')
+      expect(session.sessionId).toBe('9073b8a3-2b90-405b-b032-3719e076bf67')
       expect(session.provider).toBe('gemini-code')
-      expect(session.metadata.projectHash).toBe('7e95bdea1c91b994ca74439a92c90b82767abc9c0b8566e20ab60b2a797fc332')
     })
 
     test('should extract thoughts from messages', () => {
-      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.json')
+      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.jsonl')
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
@@ -145,7 +123,7 @@ describe('GeminiParser', () => {
     })
 
     test('should calculate total tokens', () => {
-      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.json')
+      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.jsonl')
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
@@ -162,7 +140,7 @@ describe('GeminiParser', () => {
     })
 
     test('should calculate response times', () => {
-      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.json')
+      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.jsonl')
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
@@ -177,7 +155,7 @@ describe('GeminiParser', () => {
     })
 
     test('should analyze thinking patterns', () => {
-      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.json')
+      const samplePath = path.join(__dirname, 'fixtures', 'sample-gemini-session.jsonl')
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
@@ -194,21 +172,12 @@ describe('GeminiParser', () => {
 
   describe('token metrics', () => {
     test('should calculate cache hit rate correctly', () => {
-      const json = JSON.stringify({
-        sessionId: '123',
-        projectHash: 'abc',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T00:01:00Z',
-        messages: [{
-          id: '1',
-          timestamp: '2025-01-01T00:00:00Z',
-          type: 'gemini',
-          content: 'test',
-          tokens: { input: 80, output: 50, cached: 20, thoughts: 10, tool: 0, total: 140 }
-        }]
-      })
+      const jsonl = [
+        '{"uuid":"1","timestamp":"2025-01-01T00:00:00Z","type":"user","sessionId":"123","message":{"role":"user","content":"test"}}',
+        '{"uuid":"2","timestamp":"2025-01-01T00:00:00Z","type":"gemini","sessionId":"123","message":{"role":"assistant","content":"response"},"gemini_tokens":{"input":80,"output":50,"cached":20,"thoughts":10,"tool":0,"total":140}}'
+      ].join('\n')
 
-      const session = parser.parseSession(json)
+      const session = parser.parseSession(jsonl)
       const tokens = parser.calculateTotalTokens(session)
 
       // cache hit rate = cached / (input + cached) = 20 / (80 + 20) = 0.2
@@ -216,21 +185,12 @@ describe('GeminiParser', () => {
     })
 
     test('should calculate thinking overhead correctly', () => {
-      const json = JSON.stringify({
-        sessionId: '123',
-        projectHash: 'abc',
-        startTime: '2025-01-01T00:00:00Z',
-        lastUpdated: '2025-01-01T00:01:00Z',
-        messages: [{
-          id: '1',
-          timestamp: '2025-01-01T00:00:00Z',
-          type: 'gemini',
-          content: 'test',
-          tokens: { input: 100, output: 50, cached: 20, thoughts: 10, tool: 0, total: 160 }
-        }]
-      })
+      const jsonl = [
+        '{"uuid":"1","timestamp":"2025-01-01T00:00:00Z","type":"user","sessionId":"123","message":{"role":"user","content":"test"}}',
+        '{"uuid":"2","timestamp":"2025-01-01T00:00:00Z","type":"gemini","sessionId":"123","message":{"role":"assistant","content":"response"},"gemini_tokens":{"input":100,"output":50,"cached":20,"thoughts":10,"tool":0,"total":160}}'
+      ].join('\n')
 
-      const session = parser.parseSession(json)
+      const session = parser.parseSession(jsonl)
       const tokens = parser.calculateTotalTokens(session)
 
       // thinking overhead = thoughts / output = 10 / 50 = 0.2
