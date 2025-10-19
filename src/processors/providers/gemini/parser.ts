@@ -1,39 +1,14 @@
+import { ClaudeCodeParser } from '../claude-code/parser.js'
 import type { ParsedSession, ParsedMessage } from '../../base/types.js'
 
-export interface GeminiSession {
-  sessionId: string
-  projectHash: string
-  startTime: string
-  lastUpdated: string
-  messages: GeminiMessage[]
-}
-
-export interface ToolCall {
-  name: string
-  args?: Record<string, any>
-  result?: any
-  [key: string]: any // Allow additional Gemini-specific tool fields
-}
-
-export interface GeminiMessage {
-  id: string
-  timestamp: string
-  type: 'user' | 'gemini'
-  content: string
-  thoughts?: Thought[]
-  tokens?: TokenUsage
-  model?: string
-  tools?: ToolCall[] // Tool calls made in this message
-  [key: string]: any // Allow additional fields for forward compatibility
-}
-
+// Gemini-specific types
 export interface Thought {
   subject: string
   description: string
   timestamp: string
 }
 
-export interface TokenUsage {
+export interface GeminiTokens {
   input: number
   output: number
   cached: number
@@ -42,306 +17,110 @@ export interface TokenUsage {
   total: number
 }
 
-interface JSONLLine {
-  uuid: string
-  sessionId: string
-  timestamp: string
-  provider?: string
-  projectHash?: string
-  cwd?: string
-  gemini_raw?: GeminiMessage // New format with full Gemini message
-}
+/**
+ * GeminiParser extends ClaudeCodeParser to reuse tool call parsing logic
+ * while preserving Gemini-specific features (Extended Thinking, token metrics)
+ */
+export class GeminiParser extends ClaudeCodeParser {
+  parseSession(jsonlContent: string): ParsedSession {
+    // Parse JSONL lines to extract Gemini-specific metadata first
+    const geminiMetadata = this.extractGeminiMetadata(jsonlContent)
 
-export class GeminiParser {
-  parseSession(jsonContent: string): ParsedSession {
-    // Check if content is JSONL (newline-separated) or single JSON object
-    const isJSONL = jsonContent.includes('\n')
+    // Use parent Claude parser for tool parsing (tool_use/tool_result messages)
+    const session = super.parseSession(jsonlContent)
 
-    if (isJSONL) {
-      return this.parseJSONL(jsonContent)
-    } else {
-      return this.parseJSON(jsonContent)
-    }
+    // Override provider
+    session.provider = 'gemini-code'
+
+    // Enhance messages with Gemini-specific metadata
+    this.enhanceMessagesWithGeminiData(session, geminiMetadata)
+
+    // Add session-level metadata
+    this.enhanceWithGeminiMetadata(session)
+
+    return session
   }
 
   /**
-   * Parse JSONL format (one message per line with gemini_raw field)
+   * Extract Gemini-specific metadata from JSONL before parsing
    */
-  private parseJSONL(jsonlContent: string): ParsedSession {
-    const lines = jsonlContent
-      .trim()
-      .split('\n')
-      .filter(line => line.trim())
-
-    if (lines.length === 0) {
-      throw new Error('Empty JSONL content')
-    }
-
-    const messages: ParsedMessage[] = []
-    let sessionId: string | null = null
-    let projectHash: string | null = null
-    let startTime: Date | null = null
-    let endTime: Date | null = null
+  private extractGeminiMetadata(jsonlContent: string): Map<string, any> {
+    const metadata = new Map<string, any>()
+    const lines = jsonlContent.split('\n').filter(line => line.trim())
 
     for (const line of lines) {
       try {
-        const jsonlLine: JSONLLine = JSON.parse(line)
+        const parsed = JSON.parse(line)
 
-        // Extract session metadata from first line
-        if (!sessionId) {
-          sessionId = jsonlLine.sessionId
-        }
-        if (!projectHash && jsonlLine.projectHash) {
-          projectHash = jsonlLine.projectHash
-        }
-
-        // Parse the raw Gemini message
-        if (jsonlLine.gemini_raw) {
-          const rawMessage = jsonlLine.gemini_raw
-          const timestamp = new Date(rawMessage.timestamp)
-
-          // Validate timestamp
-          if (isNaN(timestamp.getTime())) {
-            console.warn(`Skipping message with invalid timestamp: ${rawMessage.timestamp}`)
-            continue
-          }
-
-          // Track start and end times
-          if (!startTime || timestamp < startTime) {
-            startTime = timestamp
-          }
-          if (!endTime || timestamp > endTime) {
-            endTime = timestamp
-          }
-
-          // Parse message - may return multiple messages if it contains tool calls
-          const parsedMessages = this.parseMessage(rawMessage)
-          if (parsedMessages) {
-            // parseMessage now returns an array
-            if (Array.isArray(parsedMessages)) {
-              messages.push(...parsedMessages)
-            } else {
-              messages.push(parsedMessages)
-            }
-          }
+        // Store Gemini-specific fields by UUID
+        if (parsed.uuid) {
+          metadata.set(parsed.uuid, {
+            thoughts: parsed.gemini_thoughts,
+            tokens: parsed.gemini_tokens,
+            model: parsed.gemini_model,
+          })
         }
       } catch (error) {
-        console.warn(`Skipping invalid JSONL line: ${error}`)
+        // Ignore parsing errors
       }
     }
 
-    if (!sessionId) {
-      throw new Error('Could not determine session ID from JSONL')
-    }
+    return metadata
+  }
 
-    if (!startTime || !endTime) {
-      throw new Error('Could not determine session timestamps')
-    }
+  /**
+   * Enhance parsed messages with Gemini-specific metadata
+   */
+  private enhanceMessagesWithGeminiData(session: ParsedSession, geminiMetadata: Map<string, any>): void {
+    for (const message of session.messages) {
+      const metadata = geminiMetadata.get(message.id)
 
-    const duration = endTime.getTime() - startTime.getTime()
+      if (metadata) {
+        // Add thoughts
+        if (metadata.thoughts) {
+          message.metadata = {
+            ...message.metadata,
+            thoughts: metadata.thoughts,
+            thoughtCount: metadata.thoughts.length,
+            hasThoughts: true,
+          }
+        }
 
-    return {
-      sessionId,
-      provider: 'gemini-code',
-      messages,
-      startTime,
-      endTime,
-      duration,
-      metadata: {
-        messageCount: messages.length,
-        projectHash: projectHash || 'unknown',
-        hasThoughts: messages.some(m => m.metadata?.thoughts !== undefined),
-        hasCachedTokens: messages.some(m => m.metadata?.tokens?.cached > 0),
-        hasTools: messages.some(m => m.metadata?.tools !== undefined),
-      },
+        // Add tokens
+        if (metadata.tokens) {
+          const tokens = metadata.tokens
+          message.metadata = {
+            ...message.metadata,
+            tokens,
+            hasCachedTokens: tokens.cached > 0,
+            hasThinkingTokens: tokens.thoughts > 0,
+            cacheHitRate:
+              tokens.input + tokens.cached > 0 ? tokens.cached / (tokens.input + tokens.cached) : 0,
+            thinkingOverhead: tokens.output > 0 ? tokens.thoughts / tokens.output : 0,
+          }
+        }
+
+        // Add model
+        if (metadata.model) {
+          message.metadata = {
+            ...message.metadata,
+            model: metadata.model,
+          }
+        }
+      }
     }
   }
 
   /**
-   * Parse original JSON format (for backward compatibility)
+   * Add session-level Gemini metadata after parsing
    */
-  private parseJSON(jsonContent: string): ParsedSession {
-    let rawSession: GeminiSession
-
-    try {
-      rawSession = JSON.parse(jsonContent)
-    } catch (error) {
-      throw new Error(`Failed to parse Gemini session JSON: ${error}`)
-    }
-
-    if (!rawSession.sessionId || !rawSession.messages) {
-      throw new Error('Invalid Gemini session: missing sessionId or messages')
-    }
-
-    const messages: ParsedMessage[] = []
-    let startTime: Date | null = null
-    let endTime: Date | null = null
-
-    for (const rawMessage of rawSession.messages) {
-      const timestamp = new Date(rawMessage.timestamp)
-
-      // Validate timestamp
-      if (isNaN(timestamp.getTime())) {
-        console.warn(`Skipping message with invalid timestamp: ${rawMessage.timestamp}`)
-        continue
-      }
-
-      // Track start and end times
-      if (!startTime || timestamp < startTime) {
-        startTime = timestamp
-      }
-      if (!endTime || timestamp > endTime) {
-        endTime = timestamp
-      }
-
-      const parsedMessages = this.parseMessage(rawMessage)
-      if (parsedMessages) {
-        // parseMessage now returns an array or single message
-        if (Array.isArray(parsedMessages)) {
-          messages.push(...parsedMessages)
-        } else {
-          messages.push(parsedMessages)
-        }
-      }
-    }
-
-    if (!startTime) {
-      startTime = rawSession.startTime ? new Date(rawSession.startTime) : new Date()
-    }
-    if (!endTime) {
-      endTime = rawSession.lastUpdated ? new Date(rawSession.lastUpdated) : startTime
-    }
-
-    const duration = endTime.getTime() - startTime.getTime()
-
-    return {
-      sessionId: rawSession.sessionId,
-      provider: 'gemini-code',
-      messages,
-      startTime,
-      endTime,
-      duration,
-      metadata: {
-        messageCount: messages.length,
-        projectHash: rawSession.projectHash,
-        hasThoughts: messages.some(m => m.metadata?.thoughts !== undefined),
-        hasCachedTokens: messages.some(m => m.metadata?.tokens?.cached > 0),
-        hasTools: messages.some(m => m.metadata?.tools !== undefined),
-      },
-    }
-  }
-
-  private parseMessage(rawMessage: GeminiMessage): ParsedMessage[] | ParsedMessage | null {
-    const timestamp = new Date(rawMessage.timestamp)
-
-    // Check if this is a user message with [Function Response:]
-    if (
-      rawMessage.type === 'user' &&
-      rawMessage.content &&
-      rawMessage.content.startsWith('[Function Response:')
-    ) {
-      // Extract tool name from [Function Response: tool_name]
-      const toolNameMatch = rawMessage.content.match(/\[Function Response: ([^\]]+)\]/)
-      const toolName = toolNameMatch ? toolNameMatch[1] : 'unknown'
-
-      const toolUseId = `tool-${rawMessage.id}-${toolName}`
-
-      // Return BOTH tool_use and tool_result messages
-      return [
-        // Tool use (implicit request)
-        {
-          id: toolUseId,
-          timestamp,
-          type: 'tool_use',
-          content: {
-            text: `Tool: ${toolName}`,
-            structured: { type: 'tool_use', name: toolName, input: {} },
-          },
-          metadata: {
-            role: 'tool_use',
-            toolName,
-          },
-        },
-        // Tool result (explicit response)
-        {
-          id: rawMessage.id,
-          timestamp,
-          type: 'tool_result',
-          content: {
-            text: rawMessage.content,
-            structured: rawMessage,
-          },
-          metadata: {
-            role: 'tool_result',
-            toolName,
-            linkedTo: toolUseId,
-          },
-        },
-      ]
-    }
-
-    // Convert Gemini type to standard type
-    let messageType: ParsedMessage['type']
-    if (rawMessage.type === 'user') {
-      messageType = 'user'
-    } else if (rawMessage.type === 'gemini') {
-      messageType = 'assistant'
-    } else {
-      messageType = 'system'
-    }
-
-    // Build content object
-    const content = {
-      text: rawMessage.content,
-      structured: rawMessage,
-    }
-
-    // Build metadata
-    const metadata: any = {
-      role: rawMessage.type,
-      model: rawMessage.model,
-      hasThoughts: rawMessage.thoughts !== undefined && rawMessage.thoughts.length > 0,
-      hasTokens: rawMessage.tokens !== undefined,
-      hasTools: rawMessage.tools !== undefined && rawMessage.tools.length > 0,
-    }
-
-    // Add thoughts if present
-    if (rawMessage.thoughts && rawMessage.thoughts.length > 0) {
-      metadata.thoughts = rawMessage.thoughts
-      metadata.thoughtCount = rawMessage.thoughts.length
-    }
-
-    // Add token usage if present
-    if (rawMessage.tokens) {
-      metadata.tokens = rawMessage.tokens
-      metadata.hasCachedTokens = rawMessage.tokens.cached > 0
-      metadata.hasThinkingTokens = rawMessage.tokens.thoughts > 0
-
-      // Calculate cache efficiency
-      if (rawMessage.tokens.input + rawMessage.tokens.cached > 0) {
-        metadata.cacheHitRate =
-          rawMessage.tokens.cached / (rawMessage.tokens.input + rawMessage.tokens.cached)
-      }
-
-      // Calculate thinking overhead
-      if (rawMessage.tokens.output > 0) {
-        metadata.thinkingOverhead = rawMessage.tokens.thoughts / rawMessage.tokens.output
-      }
-    }
-
-    // Add tool calls if present
-    if (rawMessage.tools && rawMessage.tools.length > 0) {
-      metadata.tools = rawMessage.tools
-      metadata.toolCount = rawMessage.tools.length
-      metadata.toolNames = rawMessage.tools.map(t => t.name)
-    }
-
-    return {
-      id: rawMessage.id,
-      timestamp,
-      type: messageType,
-      content,
-      metadata,
+  private enhanceWithGeminiMetadata(session: ParsedSession): void {
+    // Add session-level Gemini-specific metadata
+    session.metadata = {
+      ...session.metadata,
+      hasThoughts: session.messages.some(m => m.metadata?.thoughts),
+      hasCachedTokens: session.messages.some(m => m.metadata?.hasCachedTokens),
+      totalThoughts: session.messages.reduce((sum, m) => sum + (m.metadata?.thoughtCount || 0), 0),
     }
   }
 
@@ -350,18 +129,16 @@ export class GeminiParser {
    */
   extractThoughts(session: ParsedSession): Thought[] {
     const allThoughts: Thought[] = []
-
     for (const message of session.messages) {
       if (message.metadata?.thoughts) {
         allThoughts.push(...message.metadata.thoughts)
       }
     }
-
     return allThoughts
   }
 
   /**
-   * Calculate total token usage across session
+   * Calculate total token usage (Gemini-specific with thinking tokens)
    */
   calculateTotalTokens(session: ParsedSession): {
     totalInput: number
@@ -392,10 +169,6 @@ export class GeminiParser {
       }
     }
 
-    const cacheHitRate = totalInput + totalCached > 0 ? totalCached / (totalInput + totalCached) : 0
-
-    const thinkingOverhead = totalOutput > 0 ? totalThoughts / totalOutput : 0
-
     return {
       totalInput,
       totalOutput,
@@ -403,40 +176,10 @@ export class GeminiParser {
       totalThoughts,
       totalTool,
       total,
-      cacheHitRate,
-      thinkingOverhead,
+      cacheHitRate:
+        totalInput + totalCached > 0 ? totalCached / (totalInput + totalCached) : 0,
+      thinkingOverhead: totalOutput > 0 ? totalThoughts / totalOutput : 0,
     }
-  }
-
-  /**
-   * Calculate response times between user inputs and gemini responses
-   */
-  calculateResponseTimes(session: ParsedSession): Array<{
-    userMessage: ParsedMessage
-    assistantMessage: ParsedMessage
-    responseTime: number
-  }> {
-    const responseTimes: Array<{
-      userMessage: ParsedMessage
-      assistantMessage: ParsedMessage
-      responseTime: number
-    }> = []
-
-    for (let i = 0; i < session.messages.length - 1; i++) {
-      const current = session.messages[i]
-      const next = session.messages[i + 1]
-
-      if (current.type === 'user' && next.type === 'assistant') {
-        const responseTime = next.timestamp.getTime() - current.timestamp.getTime()
-        responseTimes.push({
-          userMessage: current,
-          assistantMessage: next,
-          responseTime,
-        })
-      }
-    }
-
-    return responseTimes
   }
 
   /**

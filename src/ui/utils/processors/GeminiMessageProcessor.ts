@@ -70,9 +70,25 @@ export class GeminiMessageProcessor extends BaseMessageProcessor {
       }
     }
 
-    // Add regular conversation content (text, images, etc.)
-    const conversationBlocks = super.getConversationBlocks(message)
-    blocks.push(...conversationBlocks)
+    // Extract text content directly - Gemini messages have content.text or content.parts[].text
+    let textContent = ''
+
+    if (typeof message.content === 'string') {
+      textContent = message.content
+    } else if (message.content?.text) {
+      textContent = message.content.text
+    } else if (message.content?.parts && Array.isArray(message.content.parts)) {
+      // Extract text from parts array
+      const textParts = message.content.parts
+        .filter((part: any) => part.type === 'text' && part.text)
+        .map((part: any) => part.text)
+      textContent = textParts.join('\n')
+    }
+
+    // Only add text block if we have text content
+    if (textContent) {
+      blocks.push(createContentBlock('text', textContent))
+    }
 
     return blocks
   }

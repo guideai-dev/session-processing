@@ -690,85 +690,87 @@ class GeminiAdapter implements ProviderAdapter {
   name = 'gemini-code'
 
   detect(content: any): boolean {
-    // Gemini JSONL format has gemini_raw field with the full message
+    // Gemini JSONL format has provider field set to 'gemini-code'
     return !!(
       content &&
       typeof content === 'object' &&
       content.provider === 'gemini-code' &&
-      content.gemini_raw &&
-      content.sessionId
+      content.sessionId &&
+      content.timestamp
     )
   }
 
   transform(rawMessage: any): BaseSessionMessage[] {
-    // Extract the Gemini message from gemini_raw field
-    const geminiMsg = rawMessage.gemini_raw
+    // In the new format, message content is at rawMessage.message
+    // and Gemini metadata is at the top level (gemini_thoughts, gemini_tokens, gemini_model)
+    const message = rawMessage.message
+    const messageType = rawMessage.type // 'user' or 'gemini' or 'tool_use' or 'tool_result'
 
-    if (!geminiMsg) {
+    if (!message) {
       return []
     }
 
-    // Check if this is a tool result message (user message starting with [Function Response:])
-    if (
-      geminiMsg.type === 'user' &&
-      geminiMsg.content &&
-      geminiMsg.content.startsWith('[Function Response:')
-    ) {
-      // Extract tool name from [Function Response: tool_name]
-      const toolNameMatch = geminiMsg.content.match(/\[Function Response: ([^\]]+)\]/)
-      const toolName = toolNameMatch ? toolNameMatch[1] : 'unknown'
-      const toolUseId = `tool-${geminiMsg.id}-${toolName}`
-
-      // Return BOTH tool_use and tool_result messages
-      return [
-        // Tool use (implicit request)
-        {
-          id: toolUseId,
-          timestamp: geminiMsg.timestamp,
-          type: 'tool_use',
-          content: {
+    // Handle tool_use messages from the new format
+    if (messageType === 'assistant' && Array.isArray(message.content)) {
+      // Check if this is a tool use message (content has tool_use type)
+      const toolUse = message.content.find((part: any) => part.type === 'tool_use')
+      if (toolUse) {
+        return [
+          {
+            id: rawMessage.uuid,
+            timestamp: rawMessage.timestamp,
             type: 'tool_use',
-            name: toolName,
-            input: {},
+            content: toolUse,
+            metadata: {
+              sessionId: rawMessage.sessionId,
+              toolUseId: toolUse.id,
+            },
           },
-          metadata: {
-            sessionId: rawMessage.sessionId,
-            toolName,
-          },
-        },
-        // Tool result (explicit response)
-        {
-          id: geminiMsg.id,
-          timestamp: geminiMsg.timestamp,
-          type: 'tool_result',
-          content: {
-            type: 'tool_result',
-            content: geminiMsg.content,
-          },
-          metadata: {
-            sessionId: rawMessage.sessionId,
-            toolName,
-          },
-          linkedTo: toolUseId,
-        },
-      ]
+        ]
+      }
     }
 
-    const messageType = this.getMessageType(geminiMsg)
-    const processedContent = this.processContent(geminiMsg)
+    // Handle tool_result messages from the new format
+    if (messageType === 'tool_result' || (messageType === 'user' && Array.isArray(message.content))) {
+      const toolResult = Array.isArray(message.content)
+        ? message.content.find((part: any) => part.type === 'tool_result')
+        : null
 
-    // Default single message
+      if (toolResult) {
+        return [
+          {
+            id: rawMessage.uuid,
+            timestamp: rawMessage.timestamp,
+            type: 'tool_result',
+            content: toolResult,
+            metadata: {
+              sessionId: rawMessage.sessionId,
+            },
+            linkedTo: toolResult.tool_use_id,
+          },
+        ]
+      }
+    }
+
+    // Get message type from the rawMessage.type field
+    const baseType = this.getMessageType({ type: messageType })
+    const processedContent = this.processContent({
+      type: messageType,
+      content: message.content
+    })
+
+    // Default single message with Gemini-specific metadata
     return [
       {
-        id: geminiMsg.id,
-        timestamp: geminiMsg.timestamp,
-        type: messageType,
+        id: rawMessage.uuid,
+        timestamp: rawMessage.timestamp,
+        type: baseType,
         content: processedContent,
         metadata: {
           sessionId: rawMessage.sessionId,
-          model: geminiMsg.model,
-          thoughts: geminiMsg.thoughts,
-          tokens: geminiMsg.tokens,
+          model: rawMessage.gemini_model,
+          thoughts: rawMessage.gemini_thoughts,
+          tokens: rawMessage.gemini_tokens,
           cwd: rawMessage.cwd,
         },
       },

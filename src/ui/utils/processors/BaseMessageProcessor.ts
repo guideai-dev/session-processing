@@ -304,11 +304,69 @@ export abstract class BaseMessageProcessor {
       this.extractTextFromParts(message.content) ||
       (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
 
+    // Try to parse XML-like command structure
+    const parsedCommand = this.parseCommandXml(text)
+
+    if (parsedCommand) {
+      const blocks: ContentBlock[] = []
+
+      // Show command name prominently
+      blocks.push(
+        createContentBlock('text', `**Command:** \`${parsedCommand.name}\``)
+      )
+
+      // Show message if present
+      if (parsedCommand.message) {
+        blocks.push(
+          createContentBlock('text', parsedCommand.message)
+        )
+      }
+
+      // Show args if present
+      if (parsedCommand.args) {
+        blocks.push(
+          createContentBlock('code', parsedCommand.args, {
+            language: 'text',
+          })
+        )
+      }
+
+      return blocks
+    }
+
+    // Fallback to showing as code
     return [
       createContentBlock('code', text, {
         language: 'bash',
       }),
     ]
+  }
+
+  /**
+   * Parse XML-like command structure from Claude Code
+   */
+  protected parseCommandXml(text: string): { name: string; message?: string; args?: string } | null {
+    const nameMatch = text.match(/<command-name>([^<]+)<\/command-name>/)
+    const messageMatch = text.match(/<command-message>([^<]*)<\/command-message>/)
+    const argsMatch = text.match(/<command-args>([^<]*)<\/command-args>/)
+
+    if (!nameMatch) {
+      return null
+    }
+
+    const result: { name: string; message?: string; args?: string } = {
+      name: nameMatch[1].trim(),
+    }
+
+    if (messageMatch && messageMatch[1].trim()) {
+      result.message = messageMatch[1].trim()
+    }
+
+    if (argsMatch && argsMatch[1].trim()) {
+      result.args = argsMatch[1].trim()
+    }
+
+    return result
   }
 
   /**

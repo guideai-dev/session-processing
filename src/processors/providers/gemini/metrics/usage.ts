@@ -95,16 +95,19 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
     const tools: Array<{ name: string; timestamp: Date }> = []
 
     for (const message of session.messages) {
-      // Extract from metadata.tools (Gemini format)
-      if (message.metadata?.tools && Array.isArray(message.metadata.tools)) {
-        for (const tool of message.metadata.tools) {
+      // Extract from content.toolUses (new JSONL format)
+      if (message.content?.toolUses && Array.isArray(message.content.toolUses)) {
+        for (const tool of message.content.toolUses) {
           tools.push({ name: tool.name || 'unknown', timestamp: message.timestamp })
         }
       }
 
-      // Extract from tool_result messages
-      if (message.metadata?.toolName) {
-        tools.push({ name: message.metadata.toolName, timestamp: message.timestamp })
+      // Also track tool results for completeness
+      if (message.content?.toolResults && Array.isArray(message.content.toolResults)) {
+        // Tool results don't have names directly, but we can count them as operations
+        for (const result of message.content.toolResults) {
+          // Skip adding tool results to the list as they don't have tool names
+        }
       }
     }
 
@@ -208,12 +211,14 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
   ): number {
     let total = 0
 
-    // For Gemini, tool results may be in message metadata
+    // Extract from content.toolResults (new JSONL format)
     for (const message of session.messages) {
-      if (message.metadata?.toolResult) {
-        const content = message.metadata.toolResult.content || message.content
-        if (typeof content === 'string') {
-          total += content.split('\n').filter((l: string) => l.trim()).length
+      if (message.content?.toolResults && Array.isArray(message.content.toolResults)) {
+        for (const result of message.content.toolResults) {
+          const content = result.content
+          if (typeof content === 'string') {
+            total += content.split('\n').filter((l: string) => l.trim()).length
+          }
         }
       }
     }

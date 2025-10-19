@@ -40,31 +40,35 @@ export class GeminiProcessor extends BaseProviderProcessor {
 
   canProcess(content: string): boolean {
     try {
-      // Check if content is JSONL with gemini_raw fields
-      const lines = content.split('\n').filter(line => line.trim())
-      if (lines.length === 0) return false
-
-      // Look for at least one line with gemini_raw
-      for (const line of lines) {
-        try {
-          const parsed = JSON.parse(line)
-
-          // Check for gemini_raw field (Gemini JSONL format)
-          if (parsed.gemini_raw) {
-            const geminiMsg = parsed.gemini_raw
-
-            // Verify it has Gemini-specific structure
-            if (geminiMsg.type === 'gemini' || geminiMsg.type === 'user') {
-              return true
-            }
-          }
-        } catch {
-          continue
-        }
+      // A Gemini session is a single JSON object, not JSONL
+      if (content.includes('\n')) {
+        console.log('Gemini canProcess: rejecting content with newlines');
+        return false
       }
 
-      return false
-    } catch {
+      const data = JSON.parse(content)
+      console.log('Gemini canProcess: parsed data', !!data);
+
+      // Check for top-level fields
+      if (!data.sessionId || !data.projectHash || !data.messages) {
+        console.log(
+          'Gemini canProcess: missing top-level fields',
+          !!data.sessionId,
+          !!data.projectHash,
+          !!data.messages
+        );
+        return false
+      }
+
+      // Check for Gemini-specific fields within messages
+      const hasGeminiFields = data.messages.some(
+        (m: any) => m.thoughts || m.tokens
+      )
+      console.log('Gemini canProcess: hasGeminiFields', hasGeminiFields);
+
+      return hasGeminiFields
+    } catch (error) {
+      console.error('Gemini canProcess: error', error);
       return false
     }
   }
@@ -93,9 +97,13 @@ export class GeminiProcessor extends BaseProviderProcessor {
   }
 
   /**
-   * Validate Gemini specific content format
+   * Override parent validation to handle JSON format
    */
-  protected validateGeminiFormat(content: string): void {
+  protected validateJsonContent(content: string): void {
+    if (!content || content.trim().length === 0) {
+      throw new Error('Content is empty')
+    }
+
     try {
       const json = JSON.parse(content)
 
@@ -123,52 +131,22 @@ export class GeminiProcessor extends BaseProviderProcessor {
       if (!validMessage) {
         throw new Error('No valid messages found with required fields')
       }
+
+      const hasGeminiFields = json.messages.some(
+        (m: any) => m.thoughts || m.tokens
+      )
+
+      if (!hasGeminiFields) {
+        throw new Error('No Gemini-specific fields found in messages')
+      }
     } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error('Invalid JSON format')
+      }
       if (error instanceof Error) {
         throw new Error(`Invalid Gemini session format: ${error.message}`)
       }
       throw new Error('Invalid Gemini session format')
-    }
-  }
-
-  /**
-   * Override parent validation to handle JSONL format
-   */
-  protected validateJsonContent(content: string): void {
-    if (!content || content.trim().length === 0) {
-      throw new Error('Content is empty')
-    }
-
-    const lines = content.split('\n').filter(line => line.trim())
-    if (lines.length === 0) {
-      throw new Error('No valid lines found in content')
-    }
-
-    // Validate that we have at least some valid JSON lines
-    let validJsonLines = 0
-    let hasGeminiRaw = false
-
-    for (const line of lines) {
-      try {
-        const parsed = JSON.parse(line)
-        validJsonLines++
-
-        // Check for gemini_raw field (indicates Gemini JSONL format)
-        if (parsed.gemini_raw) {
-          hasGeminiRaw = true
-        }
-      } catch {
-        // Skip invalid JSON lines
-        continue
-      }
-    }
-
-    if (validJsonLines === 0) {
-      throw new Error('No valid JSON lines found in JSONL content')
-    }
-
-    if (!hasGeminiRaw) {
-      throw new Error('No gemini_raw fields found - not a Gemini JSONL file')
     }
   }
 }
