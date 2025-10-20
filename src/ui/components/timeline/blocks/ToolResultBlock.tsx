@@ -40,7 +40,7 @@ export function ToolResultBlock({
         )
       }
 
-      return <div className="whitespace-pre-wrap">{content}</div>
+      return <div className="break-words overflow-wrap-anywhere">{content}</div>
     }
 
     if (Array.isArray(content)) {
@@ -56,7 +56,7 @@ export function ToolResultBlock({
             return (
               <div key={itemKey} className="p-2 bg-base-200 rounded text-sm">
                 {typeof item === 'string' ? (
-                  <div className="whitespace-pre-wrap">{item}</div>
+                  <div className="break-words overflow-wrap-anywhere">{item}</div>
                 ) : (
                   <pre className="text-xs overflow-auto">
                     <code>{JSON.stringify(item, null, 2)}</code>

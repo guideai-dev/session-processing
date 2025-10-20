@@ -21,6 +21,8 @@ interface VirtualizedMessageListProps {
   useWindowScroll?: boolean
   customScrollParent?: HTMLElement
   onItemsRendered?: (start: number, end: number) => void
+  /** If true, items are assumed to be in reverse order (newest first) and new items prepend */
+  reverseOrder?: boolean
 }
 
 /**
@@ -33,6 +35,7 @@ interface VirtualizedMessageListProps {
  *
  * @param useWindowScroll - If true, uses the window/page scroll instead of internal scroll container
  * @param customScrollParent - Custom scroll container element (overrides useWindowScroll)
+ * @param reverseOrder - If true, uses firstItemIndex to maintain scroll position when new items prepend
  */
 export function VirtualizedMessageList({
   items,
@@ -40,6 +43,7 @@ export function VirtualizedMessageList({
   useWindowScroll = false,
   customScrollParent,
   onItemsRendered,
+  reverseOrder = false,
 }: VirtualizedMessageListProps) {
   const virtuosoRef = useRef<VirtuosoHandle>(null)
 
@@ -55,15 +59,31 @@ export function VirtualizedMessageList({
   // Determine if we're using custom scroll
   const useCustomScroll = customScrollParent !== undefined || useWindowScroll
 
+  // When items are in reverse order (newest first), use firstItemIndex to maintain
+  // scroll position when new items are prepended to the top of the list
+  // We use a large base number (100000) and subtract the item count to create
+  // a stable index that decreases as items are added
+  const firstItemIndex = reverseOrder ? 100000 - items.length : 0
+
   return (
     <Virtuoso
       ref={virtuosoRef}
-      style={useCustomScroll ? {} : { height }}
+      style={useCustomScroll ? { height: '100%' } : { height }}
       useWindowScroll={useWindowScroll}
       customScrollParent={customScrollParent}
       totalCount={items.length}
+      firstItemIndex={firstItemIndex}
       itemContent={index => {
-        const item = items[index]
+        // When using firstItemIndex, the index is offset
+        // Convert back to array index
+        const arrayIndex = index - firstItemIndex
+        const item = items[arrayIndex]
+
+        // If item doesn't exist, return empty div to avoid zero-sized element error
+        if (!item) {
+          return <div style={{ height: 1 }} />
+        }
+
         // Wrap in div with padding-bottom for consistent spacing
         return (
           <div style={{ paddingBottom: '0.5rem' }}>
@@ -77,7 +97,10 @@ export function VirtualizedMessageList({
       }}
       rangeChanged={range => {
         if (onItemsRendered && range) {
-          onItemsRendered(range.startIndex, range.endIndex)
+          // Convert virtuoso indices back to array indices
+          const startArrayIndex = range.startIndex - firstItemIndex
+          const endArrayIndex = range.endIndex - firstItemIndex
+          onItemsRendered(startArrayIndex, endArrayIndex)
         }
       }}
     />
@@ -88,7 +111,10 @@ export function VirtualizedMessageList({
  * Hook to scroll to a specific message in the virtualized list
  */
 export function useScrollToMessage(listRef: React.RefObject<VirtuosoHandle>) {
-  return (index: number, options?: { align?: 'start' | 'center' | 'end'; behavior?: 'auto' | 'smooth' }) => {
+  return (
+    index: number,
+    options?: { align?: 'start' | 'center' | 'end'; behavior?: 'auto' | 'smooth' }
+  ) => {
     if (listRef.current) {
       listRef.current.scrollToIndex({
         index,
