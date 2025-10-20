@@ -1,5 +1,5 @@
+import { CodexParser } from '../../../parsers/index.js'
 import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
-import { CodexParser } from './parser.js'
 
 import { CodexEngagementProcessor } from './metrics/engagement.js'
 import { CodexErrorProcessor } from './metrics/error.js'
@@ -28,9 +28,9 @@ export class CodexProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string, provider: string) {
+  parseSession(jsonlContent: string, _provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent, provider)
+    return this.parser.parseSession(jsonlContent)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {

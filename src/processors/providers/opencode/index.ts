@@ -1,5 +1,5 @@
+import { OpenCodeParser } from '../../../parsers/index.js'
 import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
-import { OpenCodeParser } from './parser.js'
 
 import { OpenCodeEngagementProcessor } from './metrics/engagement.js'
 import { OpenCodeErrorProcessor } from './metrics/error.js'
@@ -32,9 +32,9 @@ export class OpenCodeProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string, provider: string) {
+  parseSession(jsonlContent: string, _provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent, provider)
+    return this.parser.parseSession(jsonlContent)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {

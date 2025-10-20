@@ -2,14 +2,12 @@ import type { EngagementMetrics } from '@guideai-dev/types'
 import { isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { GitHubCopilotParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class CopilotEngagementProcessor extends BaseMetricProcessor {
   readonly name = 'engagement'
   readonly metricType = 'engagement' as const
   readonly description = 'Measures interruption rate and session length for user engagement'
-
-  private parser = new GitHubCopilotParser()
 
   async process(session: ParsedSession): Promise<EngagementMetrics> {
     const userMessages = session.messages.filter(m => m.type === 'user')
@@ -24,7 +22,7 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
 
     // Calculate interruption rate (key metric for user patience)
     // Count both parser-detected interruptions and info message cancellations
-    const interruptions = this.parser.findInterruptions(session)
+    const interruptions = helpers.findInterruptions(session)
     const cancellations = this.detectCancellations(session)
     const totalInterruptions = interruptions.length + cancellations
 

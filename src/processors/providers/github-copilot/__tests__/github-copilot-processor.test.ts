@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { GitHubCopilotProcessor, GitHubCopilotParser } from '../index.js'
+import { GitHubCopilotProcessor } from '../index.js'
+import { CopilotParser } from '../../../../parsers/index.js'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -63,8 +64,8 @@ describe('GitHubCopilotProcessor', () => {
       const processor = new GitHubCopilotProcessor()
       const session = processor.parseSession(SAMPLE_COPILOT_SESSION)
 
-      const userMessages = session.messages.filter(m => m.type === 'user')
-      const copilotMessages = session.messages.filter(m => m.type === 'assistant')
+      const userMessages = session.messages.filter(m => m.type === 'user_input')
+      const copilotMessages = session.messages.filter(m => m.type === 'assistant_response')
 
       expect(userMessages.length).toBeGreaterThan(0)
       expect(copilotMessages.length).toBeGreaterThan(0)
@@ -73,7 +74,7 @@ describe('GitHubCopilotProcessor', () => {
     it('should parse tool uses', () => {
       const processor = new GitHubCopilotProcessor()
       const session = processor.parseSession(SAMPLE_COPILOT_SESSION)
-      const parser = new GitHubCopilotParser()
+      const parser = new CopilotParser()
 
       const toolUses = parser.extractToolUses(session)
       expect(toolUses.length).toBeGreaterThan(0)
@@ -84,10 +85,29 @@ describe('GitHubCopilotProcessor', () => {
     it('should parse tool results', () => {
       const processor = new GitHubCopilotProcessor()
       const session = processor.parseSession(SAMPLE_COPILOT_SESSION)
-      const parser = new GitHubCopilotParser()
+      const parser = new CopilotParser()
 
       const toolResults = parser.extractToolResults(session)
       expect(toolResults.length).toBeGreaterThan(0)
+    })
+
+    it('should match tool uses with tool results', () => {
+      const processor = new GitHubCopilotProcessor()
+      const session = processor.parseSession(SAMPLE_COPILOT_SESSION)
+      const parser = new CopilotParser()
+
+      const toolUses = parser.extractToolUses(session)
+      const toolResults = parser.extractToolResults(session)
+
+      // Should have matching counts (2 tool_call_requested + 2 tool_call_completed in fixture)
+      expect(toolUses.length).toBe(2)
+      expect(toolResults.length).toBe(2)
+
+      // Each tool result should reference a tool use
+      for (const result of toolResults) {
+        const matchingUse = toolUses.find(use => use.id === result.tool_use_id)
+        expect(matchingUse).toBeDefined()
+      }
     })
   })
 

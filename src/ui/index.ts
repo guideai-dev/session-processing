@@ -2,8 +2,10 @@
 export * from './components/index.js'
 
 // Export utilities
-export * from './utils/sessionParser.js'
 export * from './utils/sessionTypes.js'
+
+// Re-export parser registry for convenience (already exported from parsers/index.js)
+export { parserRegistry } from '../parsers/index.js'
 
 // Export timeline types (with aliases to avoid conflicts with component names)
 export type {

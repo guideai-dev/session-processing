@@ -5,6 +5,7 @@
  * provider-specific processors for custom behavior.
  */
 
+import { isStructuredMessageContent } from '@guideai-dev/types'
 import {
   CheckCircleIcon,
   CommandLineIcon,
@@ -197,14 +198,18 @@ export abstract class BaseMessageProcessor {
           borderColor: 'border-l-primary',
         })
 
-      case 'tool_use':
+      case 'tool_use': {
+        const toolName = this.getToolName(message) || 'Tool'
+        const intentionSummary = message.metadata?.intentionSummary
+        const title = intentionSummary || toolName
         return createDisplayMetadata({
           icon: 'TOOL',
           IconComponent: WrenchScrewdriverIcon,
           iconColor: 'text-secondary',
-          title: this.getToolName(message) || 'Tool',
+          title,
           borderColor: 'border-l-secondary',
         })
+      }
 
       case 'tool_result':
         return createDisplayMetadata({
@@ -291,6 +296,23 @@ export abstract class BaseMessageProcessor {
    */
   protected getToolUseBlocks(message: BaseSessionMessage): ContentBlock[] {
     const content = message.content
+
+    // Handle StructuredMessageContent from parsers
+    if (isStructuredMessageContent(content) && content.toolUses.length > 0) {
+      const toolUse = content.toolUses[0]
+      return [
+        createContentBlock(
+          'tool_use',
+          { name: toolUse.name, input: toolUse.input },
+          {
+            toolName: toolUse.name,
+            collapsed: true,
+          }
+        ),
+      ]
+    }
+
+    // Fallback to legacy format
     const toolName = this.getToolName(message) || 'unknown'
     const input = content?.input || content
 
@@ -310,6 +332,22 @@ export abstract class BaseMessageProcessor {
    * Extract content blocks for tool result messages
    */
   protected getToolResultBlocks(message: BaseSessionMessage): ContentBlock[] {
+    // Handle StructuredMessageContent from parsers
+    if (isStructuredMessageContent(message.content) && message.content.toolResults.length > 0) {
+      const toolResult = message.content.toolResults[0]
+      const resultContent = toolResult.content as
+        | string
+        | Array<string | Record<string, unknown>>
+        | Record<string, unknown>
+      return [
+        createContentBlock('tool_result', resultContent, {
+          toolUseId: toolResult.tool_use_id,
+          collapsed: true,
+        }),
+      ]
+    }
+
+    // Fallback to legacy format
     const content = message.content?.content || message.content
     const toolUseId = message.linkedTo || message.content?.tool_use_id
 
@@ -448,8 +486,22 @@ export abstract class BaseMessageProcessor {
     // Fallback: Try to extract text or JSON
     if (typeof message.content === 'string') {
       blocks.push(createContentBlock('text', message.content))
-    } else if (message.content?.text) {
-      blocks.push(createContentBlock('text', message.content.text))
+    } else if (
+      message.content &&
+      typeof message.content === 'object' &&
+      'text' in message.content
+    ) {
+      // StructuredMessageContent has a text field (even if empty)
+      // Only show text if it's not empty
+      if (message.content.text) {
+        blocks.push(createContentBlock('text', message.content.text))
+      }
+      // If text is empty but we have structured content, it means the content
+      // is in the parts array (which should have been handled above)
+      // Don't show as JSON if text is empty string but structured exists
+      if (!message.content.text && !message.content.structured) {
+        blocks.push(createContentBlock('json', message.content, { collapsed: true }))
+      }
     } else {
       blocks.push(createContentBlock('json', message.content, { collapsed: true }))
     }
@@ -468,6 +520,12 @@ export abstract class BaseMessageProcessor {
    * Helper: Extract tool name from message
    */
   protected getToolName(message: BaseSessionMessage): string | null {
+    // Handle StructuredMessageContent from parsers
+    if (isStructuredMessageContent(message.content) && message.content.toolUses.length > 0) {
+      return message.content.toolUses[0].name
+    }
+
+    // Fallback to legacy format
     return message.content?.name || null
   }
 
@@ -475,7 +533,12 @@ export abstract class BaseMessageProcessor {
    * Helper: Extract tool use ID from message
    */
   protected extractToolUseId(message: BaseSessionMessage): string | null {
-    // Try multiple locations where tool use ID might be
+    // Handle StructuredMessageContent from parsers
+    if (isStructuredMessageContent(message.content) && message.content.toolUses.length > 0) {
+      return message.content.toolUses[0].id
+    }
+
+    // Try multiple locations where tool use ID might be (legacy format)
     return (
       message.content?.id || message.metadata?.toolUseId || message.id.split('-tool-')[1] || null
     )
@@ -485,6 +548,12 @@ export abstract class BaseMessageProcessor {
    * Helper: Extract tool result ID (the tool use ID it refers to)
    */
   protected extractToolResultId(message: BaseSessionMessage): string | null {
+    // Handle StructuredMessageContent from parsers
+    if (isStructuredMessageContent(message.content) && message.content.toolResults.length > 0) {
+      return message.content.toolResults[0].tool_use_id
+    }
+
+    // Try multiple locations where tool result ID might be (legacy format)
     return message.linkedTo || message.content?.tool_use_id || null
   }
 
@@ -512,11 +581,24 @@ export abstract class BaseMessageProcessor {
       return content.parts
     }
 
+    // Check for StructuredMessageContent with structured array
+    if (
+      content &&
+      typeof content === 'object' &&
+      'structured' in content &&
+      Array.isArray(content.structured)
+    ) {
+      return content.structured
+    }
+
     if (typeof content === 'string') {
       try {
         const parsed = JSON.parse(content)
         if (parsed?.parts && Array.isArray(parsed.parts)) {
           return parsed.parts
+        }
+        if (parsed?.structured && Array.isArray(parsed.structured)) {
+          return parsed.structured
         }
       } catch {
         // Not JSON

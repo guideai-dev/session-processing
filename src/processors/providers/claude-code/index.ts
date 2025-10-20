@@ -1,10 +1,10 @@
 import type { ProcessorContext, ProcessorResult } from '@guideai-dev/types'
+import { ClaudeCodeParser } from '../../../parsers/index.js'
 import {
   type BaseMetricProcessor,
   BaseProviderProcessor,
   GitDiffMetricProcessor,
 } from '../../base/index.js'
-import { ClaudeCodeParser } from './parser.js'
 
 import { ClaudeEngagementProcessor } from './metrics/engagement.js'
 import { ClaudeErrorProcessor } from './metrics/error.js'
@@ -35,9 +35,9 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string, provider: string) {
+  parseSession(jsonlContent: string, _provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent, provider)
+    return this.parser.parseSession(jsonlContent)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -235,5 +235,4 @@ export {
   ClaudeQualityProcessor,
   ClaudeUsageProcessor,
   ClaudeErrorProcessor,
-  ClaudeCodeParser,
 }

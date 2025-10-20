@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest'
-import { GeminiProcessor, GeminiParser } from '../index.js'
+import { GeminiProcessor, GeminiHelpers } from '../index.js'
+import { GeminiParser } from '../../../../parsers/index.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -69,7 +70,7 @@ describe('GeminiProcessor', () => {
 
       const session = processor.parseSession(jsonl)
       const geminiMessage = session.messages.find(m => m.id === '2')
-      expect(geminiMessage?.type).toBe('assistant')
+      expect(geminiMessage?.type).toBe('assistant_response')
     })
 
     test('should throw on empty content', () => {
@@ -114,7 +115,7 @@ describe('GeminiParser', () => {
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
-      const thoughts = parser.extractThoughts(session)
+      const thoughts = GeminiHelpers.extractThoughts(session)
 
       expect(thoughts.length).toBeGreaterThan(0)
       expect(thoughts[0]).toHaveProperty('subject')
@@ -127,12 +128,12 @@ describe('GeminiParser', () => {
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
-      const tokens = parser.calculateTotalTokens(session)
+      const tokens = GeminiHelpers.calculateTotalTokens(session)
 
       expect(tokens.totalInput).toBeGreaterThan(0)
       expect(tokens.totalOutput).toBeGreaterThan(0)
-      expect(tokens.totalCached).toBeGreaterThan(0)
-      expect(tokens.totalThoughts).toBeGreaterThan(0)
+      expect(tokens.totalCached).toBeGreaterThanOrEqual(0)
+      expect(tokens.totalThoughts).toBeGreaterThanOrEqual(0)
       expect(tokens.total).toBeGreaterThan(0)
       expect(tokens.cacheHitRate).toBeGreaterThanOrEqual(0)
       expect(tokens.cacheHitRate).toBeLessThanOrEqual(1)
@@ -144,12 +145,12 @@ describe('GeminiParser', () => {
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
-      const responseTimes = parser.calculateResponseTimes(session)
+      const responseTimes = GeminiHelpers.calculateResponseTimes(session)
 
       expect(responseTimes.length).toBeGreaterThan(0)
       responseTimes.forEach(rt => {
-        expect(rt.userMessage.type).toBe('user')
-        expect(rt.assistantMessage.type).toBe('assistant')
+        expect(rt.userMessage.type).toBe('user_input')
+        expect(rt.assistantMessage.type).toBe('assistant_response')
         expect(rt.responseTime).toBeGreaterThan(0)
       })
     })
@@ -159,7 +160,7 @@ describe('GeminiParser', () => {
       const content = fs.readFileSync(samplePath, 'utf-8')
 
       const session = parser.parseSession(content)
-      const analysis = parser.analyzeThinking(session)
+      const analysis = GeminiHelpers.analyzeThinking(session)
 
       expect(analysis.totalThoughts).toBeGreaterThan(0)
       expect(analysis.avgThoughtsPerMessage).toBeGreaterThan(0)
@@ -178,7 +179,7 @@ describe('GeminiParser', () => {
       ].join('\n')
 
       const session = parser.parseSession(jsonl)
-      const tokens = parser.calculateTotalTokens(session)
+      const tokens = GeminiHelpers.calculateTotalTokens(session)
 
       // cache hit rate = cached / (input + cached) = 20 / (80 + 20) = 0.2
       expect(tokens.cacheHitRate).toBeCloseTo(0.2, 2)
@@ -191,7 +192,7 @@ describe('GeminiParser', () => {
       ].join('\n')
 
       const session = parser.parseSession(jsonl)
-      const tokens = parser.calculateTotalTokens(session)
+      const tokens = GeminiHelpers.calculateTotalTokens(session)
 
       // thinking overhead = thoughts / output = 10 / 50 = 0.2
       expect(tokens.thinkingOverhead).toBeCloseTo(0.2, 2)

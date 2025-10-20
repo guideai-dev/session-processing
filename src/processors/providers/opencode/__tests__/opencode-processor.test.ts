@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { OpenCodeProcessor, OpenCodeParser } from '../index.js'
+import { OpenCodeProcessor } from '../index.js'
+import { OpenCodeParser } from '../../../../parsers/index.js'
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -63,8 +64,8 @@ describe('OpenCodeProcessor', () => {
       const processor = new OpenCodeProcessor()
       const session = processor.parseSession(SAMPLE_OPENCODE_SESSION)
 
-      const userMessages = session.messages.filter(m => m.type === 'user')
-      const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+      const userMessages = session.messages.filter(m => m.type === 'user_input')
+      const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
 
       expect(userMessages.length).toBeGreaterThan(0)
       expect(assistantMessages.length).toBeGreaterThan(0)

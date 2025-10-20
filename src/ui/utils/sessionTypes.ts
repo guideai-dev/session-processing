@@ -2,7 +2,6 @@
 export type {
   BaseSessionMessage,
   ConversationTurn,
-  SessionParser,
   ProviderAdapter,
   SessionViewerProps,
   ClaudeMessage,
@@ -10,3 +9,5 @@ export type {
   ToolResultContent,
   TextContent,
 } from '@guideai-dev/types'
+
+// SessionParser is now exported from parsers/index.js (unified parser system)

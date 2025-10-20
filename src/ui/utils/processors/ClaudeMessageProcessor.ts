@@ -236,6 +236,11 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
       return message.content
     }
 
+    // StructuredMessageContent has a structured array
+    if (message.content?.structured && Array.isArray(message.content.structured)) {
+      return message.content.structured
+    }
+
     // Nested in message.content
     if (message.content?.content && Array.isArray(message.content.content)) {
       return message.content.content

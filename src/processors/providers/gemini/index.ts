@@ -1,5 +1,5 @@
+import { GeminiParser } from '../../../parsers/index.js'
 import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
-import { GeminiParser } from './parser.js'
 
 import { GeminiEngagementProcessor } from './metrics/engagement.js'
 import { GeminiErrorProcessor } from './metrics/error.js'
@@ -29,9 +29,9 @@ export class GeminiProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonContent: string, provider: string) {
+  parseSession(jsonContent: string, _provider: string) {
     this.validateJsonContent(jsonContent)
-    return this.parser.parseSession(jsonContent, provider)
+    return this.parser.parseSession(jsonContent)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -157,6 +157,9 @@ export class GeminiProcessor extends BaseProviderProcessor {
   }
 }
 
+// Export helpers for testing
+export * as GeminiHelpers from './helpers.js'
+
 // Export individual processors for testing
 export {
   GeminiPerformanceProcessor,
@@ -164,5 +167,4 @@ export {
   GeminiQualityProcessor,
   GeminiUsageProcessor,
   GeminiErrorProcessor,
-  GeminiParser,
 }

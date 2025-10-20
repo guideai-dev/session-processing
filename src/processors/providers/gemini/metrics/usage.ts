@@ -2,7 +2,7 @@ import type { ParsedMessage, UsageMetrics } from '@guideai-dev/types'
 import { extractTextFromMessage, isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/index.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { GeminiParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class GeminiUsageProcessor extends BaseMetricProcessor {
   readonly name = 'gemini-usage'
@@ -10,11 +10,9 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
   readonly description =
     'Analyzes token usage patterns including cache efficiency and thinking overhead'
 
-  private parser = new GeminiParser()
-
   async process(session: ParsedSession): Promise<UsageMetrics> {
-    const tokenStats = this.parser.calculateTotalTokens(session)
-    const _thinkingAnalysis = this.parser.analyzeThinking(session)
+    const tokenStats = helpers.calculateTotalTokens(session)
+    const _thinkingAnalysis = helpers.analyzeThinking(session)
 
     // Calculate message-level statistics
     const messagesWithTokens = session.messages.filter(m => m.metadata?.tokens)
@@ -76,7 +74,7 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
         improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore),
 
         // Gemini-specific token metrics
-        total_tokens: tokenStats.total,
+        total_tokens: tokenStats.totalTokens,
         total_input_tokens: tokenStats.totalInput,
         total_output_tokens: tokenStats.totalOutput,
         total_cached_tokens: tokenStats.totalCached,

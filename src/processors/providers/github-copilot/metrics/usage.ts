@@ -7,17 +7,15 @@ import type {
 import { extractTextFromMessage } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { GitHubCopilotParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class CopilotUsageProcessor extends BaseMetricProcessor {
   readonly name = 'usage'
   readonly metricType = 'usage' as const
   readonly description = 'Measures Read/Write ratio and input clarity for AI usage efficiency'
 
-  private parser = new GitHubCopilotParser()
-
   async process(session: ParsedSession): Promise<UsageMetrics> {
-    const toolUses = this.parser.extractToolUses(session)
+    const toolUses = helpers.extractToolUses(session)
     const userMessages = session.messages.filter(m => m.type === 'user')
 
     // Calculate Read/Write ratio (key metric for efficiency)
@@ -40,7 +38,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     const inputClarityScore = this.calculateInputClarityScore(userMessages)
 
     // Calculate total lines read from actual tool results (for git diff efficiency ratios)
-    const toolResults = this.parser.extractToolResults(session)
+    const toolResults = helpers.extractToolResults(session)
     const totalLinesRead = this.calculateLinesRead(toolUses, toolResults)
 
     return {

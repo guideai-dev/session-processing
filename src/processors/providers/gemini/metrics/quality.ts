@@ -2,18 +2,16 @@ import type { ParsedMessage, QualityMetrics } from '@guideai-dev/types'
 import { extractTextFromMessage, isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/index.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { GeminiParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class GeminiQualityProcessor extends BaseMetricProcessor {
   readonly name = 'gemini-quality'
   readonly metricType = 'quality'
   readonly description = 'Assesses session quality including thinking depth analysis'
 
-  private parser = new GeminiParser()
-
   async process(session: ParsedSession): Promise<QualityMetrics> {
-    const thinkingAnalysis = this.parser.analyzeThinking(session)
-    const tokenStats = this.parser.calculateTotalTokens(session)
+    const thinkingAnalysis = helpers.analyzeThinking(session)
+    const tokenStats = helpers.calculateTotalTokens(session)
 
     const assistantMessages = session.messages.filter(m => m.type === 'assistant')
     const userMessages = session.messages.filter(m => m.type === 'user')
@@ -198,8 +196,8 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
     taskSuccessRate: number,
     iterationCount: number,
     processQuality: number,
-    thinkingAnalysis: ReturnType<GeminiParser['analyzeThinking']>,
-    tokenStats: ReturnType<GeminiParser['calculateTotalTokens']>
+    thinkingAnalysis: ReturnType<typeof helpers.analyzeThinking>,
+    tokenStats: ReturnType<typeof helpers.calculateTotalTokens>
   ): string[] {
     const tips: string[] = []
 

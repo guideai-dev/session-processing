@@ -3,18 +3,16 @@ import type { ErrorMetrics, ToolResultContent, ToolUseContent } from '@guideai-d
 import { filterErrorResults, isErrorResult } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { GitHubCopilotParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class CopilotErrorProcessor extends BaseMetricProcessor {
   readonly name = 'error'
   readonly metricType = 'error' as const
   readonly description = 'Tracks errors, failures, and recovery patterns during session'
 
-  private parser = new GitHubCopilotParser()
-
   async process(session: ParsedSession): Promise<ErrorMetrics> {
-    const toolResults = this.parser.extractToolResults(session)
-    const toolUses = this.parser.extractToolUses(session)
+    const toolResults = helpers.extractToolResults(session)
+    const toolUses = helpers.extractToolUses(session)
 
     if (toolResults.length === 0) {
       return {
@@ -225,7 +223,7 @@ export class CopilotErrorProcessor extends BaseMetricProcessor {
     // or when a different approach is tried after an error
 
     let recoveryCount = 0
-    const toolUses = this.parser.extractToolUses(session)
+    const toolUses = helpers.extractToolUses(session)
     const errorTools = errors.map(e => e.tool)
 
     // Simple heuristic: count retries of the same tool type after errors

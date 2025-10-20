@@ -7,18 +7,16 @@ import type {
 import { extractTextFromMessage, getUserMessages, isErrorResult } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { ClaudeCodeParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class ClaudeQualityProcessor extends BaseMetricProcessor {
   readonly name = 'quality'
   readonly metricType = 'quality' as const
   readonly description = 'Measures task success rate, iteration count, and process quality'
 
-  private parser = new ClaudeCodeParser()
-
   async process(session: ParsedSession): Promise<QualityMetrics> {
-    const toolUses = this.parser.extractToolUses(session)
-    const toolResults = this.parser.extractToolResults(session)
+    const toolUses = helpers.extractToolUses(session)
+    const toolResults = helpers.extractToolResults(session)
     const userMessages = session.messages.filter(m => m.type === 'user')
 
     // Calculate task success rate (key metric for quality)

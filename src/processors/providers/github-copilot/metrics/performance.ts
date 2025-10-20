@@ -2,14 +2,12 @@ import type { PerformanceMetrics } from '@guideai-dev/types'
 import { isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { GitHubCopilotParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class CopilotPerformanceProcessor extends BaseMetricProcessor {
   readonly name = 'performance'
   readonly metricType = 'performance' as const
   readonly description = 'Measures response latency, tool execution time, and task completion time'
-
-  private parser = new GitHubCopilotParser()
 
   async process(session: ParsedSession): Promise<PerformanceMetrics> {
     const messages = session.messages
@@ -22,7 +20,7 @@ export class CopilotPerformanceProcessor extends BaseMetricProcessor {
     }
 
     // Calculate response latency (average time between user message and assistant response)
-    const responseTimes = this.parser.calculateResponseTimes(session)
+    const responseTimes = helpers.calculateResponseTimes(session)
     const averageResponseTime =
       responseTimes.length > 0
         ? responseTimes.reduce((sum, rt) => sum + rt.responseTime, 0) / responseTimes.length

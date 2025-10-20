@@ -7,7 +7,6 @@ export { ProcessorRegistry, processorRegistry } from './registry.js'
 // Export Claude Code processor
 export {
   ClaudeCodeProcessor,
-  ClaudeCodeParser,
   ClaudePerformanceProcessor,
   ClaudeEngagementProcessor,
   ClaudeQualityProcessor,

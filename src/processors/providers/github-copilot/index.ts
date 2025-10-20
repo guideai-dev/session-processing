@@ -1,5 +1,5 @@
+import { CopilotParser } from '../../../parsers/index.js'
 import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
-import { GitHubCopilotParser } from './parser.js'
 
 import { CopilotEngagementProcessor } from './metrics/engagement.js'
 import { CopilotErrorProcessor } from './metrics/error.js'
@@ -12,7 +12,7 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
   readonly providerName = 'github-copilot'
   readonly description = 'Processes GitHub Copilot session logs with comprehensive metrics analysis'
 
-  private parser = new GitHubCopilotParser()
+  private parser = new CopilotParser()
   private metricProcessors: BaseMetricProcessor[]
 
   constructor() {
@@ -28,9 +28,9 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string, provider: string) {
+  parseSession(jsonlContent: string, _provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent, provider)
+    return this.parser.parseSession(jsonlContent)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -177,5 +177,4 @@ export {
   CopilotQualityProcessor,
   CopilotUsageProcessor,
   CopilotErrorProcessor,
-  GitHubCopilotParser,
 }

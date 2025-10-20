@@ -1,14 +1,12 @@
 import type { PerformanceMetrics } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import { CodexParser } from '../parser.js'
+import * as helpers from './../helpers.js'
 
 export class CodexPerformanceProcessor extends BaseMetricProcessor {
   readonly name = 'performance'
   readonly metricType = 'performance' as const
   readonly description = 'Measures response latency and task completion time'
-
-  private parser = new CodexParser()
 
   async process(session: ParsedSession): Promise<PerformanceMetrics> {
     const messages = session.messages
@@ -21,7 +19,7 @@ export class CodexPerformanceProcessor extends BaseMetricProcessor {
     }
 
     // Calculate response latency (average time between user message and assistant response)
-    const responseTimes = this.parser.calculateResponseTimes(session)
+    const responseTimes = helpers.calculateResponseTimes(session)
     const averageResponseTime =
       responseTimes.length > 0
         ? responseTimes.reduce((sum, rt) => sum + rt.responseTime, 0) / responseTimes.length
