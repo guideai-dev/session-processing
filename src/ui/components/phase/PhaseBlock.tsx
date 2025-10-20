@@ -3,10 +3,10 @@
  */
 
 import { PhaseHeader } from './PhaseHeader.js'
-import { PhaseStats } from './PhaseStats.js'
-import { PhaseSummary } from './PhaseSummary.js'
 import { getPhaseBorderColor } from './PhaseIcon.js'
 import type { SessionPhaseType } from './PhaseIcon.js'
+import { PhaseStats } from './PhaseStats.js'
+import { PhaseSummary } from './PhaseSummary.js'
 
 export interface SessionPhase {
   phaseType: SessionPhaseType

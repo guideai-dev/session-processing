@@ -15,13 +15,13 @@
 
 import {
   ChartBarIcon,
-  XCircleIcon,
   CloudArrowUpIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
+  XCircleIcon,
 } from '@heroicons/react/24/outline'
-import { RatingBadge } from './RatingBadge.js'
 import type { SessionRating } from '../../utils/rating.js'
+import { RatingBadge } from './RatingBadge.js'
 
 interface AgentSession {
   id: string
@@ -80,7 +80,7 @@ function SessionCard({
   // Determine if processing from session status if not explicitly provided
   const actuallyProcessing = isProcessing || session.processingStatus === 'processing'
 
-  const formatDate = (dateString: string | null) => {
+  const _formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleString()
   }
@@ -104,7 +104,7 @@ function SessionCard({
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+    return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`
   }
 
   const formatDuration = (durationMs: number | null) => {
@@ -115,11 +115,11 @@ function SessionCard({
 
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m`
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`
-    } else {
-      return `${seconds}s`
     }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`
+    }
+    return `${seconds}s`
   }
 
   const formatCommitRange = () => {
@@ -170,7 +170,7 @@ function SessionCard({
     }
   }
 
-  const handleAssessClick = (e: React.MouseEvent) => {
+  const _handleAssessClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     if (onAssessSession) {
@@ -281,7 +281,6 @@ function SessionCard({
           label: 'Assessment In Progress',
           clickable: true,
         }
-      case 'not_started':
       default:
         return {
           icon: '📋',
@@ -303,7 +302,8 @@ function SessionCard({
         label: 'Sync Failed - Click to view error',
         clickable: true,
       }
-    } else if (session.syncedToServer) {
+    }
+    if (session.syncedToServer) {
       return {
         icon: <CloudArrowUpIcon className="w-4 h-4" strokeWidth={2} />,
         color: 'text-success',
@@ -311,19 +311,18 @@ function SessionCard({
         label: 'Synced to server',
         clickable: false,
       }
-    } else {
-      return {
-        icon: <CloudArrowUpIcon className="w-4 h-4" strokeWidth={2} />,
-        color: 'text-base-content/30',
-        bgColor: 'bg-base-200',
-        label: 'Click to sync to server',
-        clickable: true,
-      }
+    }
+    return {
+      icon: <CloudArrowUpIcon className="w-4 h-4" strokeWidth={2} />,
+      color: 'text-base-content/30',
+      bgColor: 'bg-base-200',
+      label: 'Click to sync to server',
+      clickable: true,
     }
   }
 
   const processingInfo = getProcessingStatusInfo(session.processingStatus)
-  const assessmentInfo = getAssessmentStatusInfo(session.assessmentStatus)
+  const _assessmentInfo = getAssessmentStatusInfo(session.assessmentStatus)
   const syncInfo = getSyncStatusInfo()
 
   // Render the card content
@@ -334,7 +333,7 @@ function SessionCard({
         <div className="absolute -top-2 -right-2 z-10">
           <div className="relative">
             <span className="flex h-5 w-5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
               <span className="relative inline-flex rounded-full h-5 w-5 bg-success items-center justify-center">
                 <span className="text-[10px] font-bold text-white">●</span>
               </span>
@@ -364,7 +363,7 @@ function SessionCard({
             <ProviderIcon providerId={session.provider} size={16} />
             {isActive && (
               <span className="badge badge-success badge-xs gap-1 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-white"></span>
+                <span className="w-2 h-2 rounded-full bg-white" />
                 LIVE
               </span>
             )}
@@ -439,7 +438,7 @@ function SessionCard({
             }
           >
             {actuallyProcessing ? (
-              <span className="loading loading-spinner loading-xs text-info"></span>
+              <span className="loading loading-spinner loading-xs text-info" />
             ) : (
               <span className={processingInfo.color}>{processingInfo.icon}</span>
             )}

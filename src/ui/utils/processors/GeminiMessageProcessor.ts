@@ -5,10 +5,15 @@
  * Uses base processor logic with enhanced support for Gemini's inline tool call format.
  */
 
-import { BaseMessageProcessor } from './BaseMessageProcessor.js'
-import { BaseSessionMessage } from '../sessionTypes.js'
-import { createDisplayMetadata, ContentBlock, createContentBlock } from '../timelineTypes.js'
 import { CpuChipIcon } from '@heroicons/react/24/outline'
+import type { BaseSessionMessage } from '../sessionTypes.js'
+import { type ContentBlock, createContentBlock, createDisplayMetadata } from '../timelineTypes.js'
+import { BaseMessageProcessor } from './BaseMessageProcessor.js'
+
+interface GeminiContentPart {
+  type: string
+  text?: string
+}
 
 export class GeminiMessageProcessor extends BaseMessageProcessor {
   name = 'gemini-code'
@@ -80,8 +85,8 @@ export class GeminiMessageProcessor extends BaseMessageProcessor {
     } else if (message.content?.parts && Array.isArray(message.content.parts)) {
       // Extract text from parts array
       const textParts = message.content.parts
-        .filter((part: any) => part.type === 'text' && part.text)
-        .map((part: any) => part.text)
+        .filter((part: GeminiContentPart) => part.type === 'text' && part.text)
+        .map((part: GeminiContentPart) => part.text as string)
       textContent = textParts.join('\n')
     }
 
@@ -97,7 +102,7 @@ export class GeminiMessageProcessor extends BaseMessageProcessor {
    * Override to handle Gemini's inline tool result format
    */
   protected getToolResultBlocks(message: BaseSessionMessage): ContentBlock[] {
-    const content = message.content?.content || message.content
+    const _content = message.content?.content || message.content
     const toolName = message.metadata?.toolName
 
     // If we have structured sections (from inline parsing), create blocks for each

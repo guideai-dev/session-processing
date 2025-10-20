@@ -5,9 +5,9 @@
  * Most logic is handled by base processor; this adds OpenCode-specific branding.
  */
 
-import { BaseMessageProcessor } from './BaseMessageProcessor.js'
-import { BaseSessionMessage } from '../sessionTypes.js'
+import type { BaseSessionMessage } from '../sessionTypes.js'
 import { createDisplayMetadata } from '../timelineTypes.js'
+import { BaseMessageProcessor } from './BaseMessageProcessor.js'
 
 export class OpenCodeMessageProcessor extends BaseMessageProcessor {
   name = 'opencode'

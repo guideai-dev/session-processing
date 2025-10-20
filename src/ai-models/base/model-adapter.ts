@@ -1,12 +1,12 @@
+import type { BaseModelTask } from './model-task.js'
 import type {
-  ModelTaskConfig,
-  ModelTaskDefinition,
-  ModelTaskContext,
-  ModelTaskResult,
   ModelAdapterConfig,
   ModelHealthCheck,
+  ModelTaskConfig,
+  ModelTaskContext,
+  ModelTaskDefinition,
+  ModelTaskResult,
 } from './types.js'
-import type { BaseModelTask } from './model-task.js'
 
 /**
  * Base class for AI model adapters (Claude, OpenAI, etc.)
@@ -86,12 +86,15 @@ export abstract class BaseModelAdapter {
   /**
    * Format a prompt with context variables
    */
-  protected formatPrompt(template: string, variables: Record<string, any>): string {
+  protected formatPrompt(
+    template: string,
+    variables: Record<string, string | number | boolean | null | undefined>
+  ): string {
     let formatted = template
 
     for (const [key, value] of Object.entries(variables)) {
       const placeholder = `{{${key}}}`
-      formatted = formatted.replace(new RegExp(placeholder, 'g'), String(value))
+      formatted = formatted.replace(new RegExp(placeholder, 'g'), String(value ?? ''))
     }
 
     return formatted
@@ -101,7 +104,7 @@ export abstract class BaseModelAdapter {
    * Calculate estimated cost based on tokens
    * Subclasses should override with their pricing model
    */
-  protected calculateCost(tokensUsed: number): number {
+  protected calculateCost(_tokensUsed: number): number {
     return 0 // Override in subclass
   }
 }

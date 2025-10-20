@@ -1,6 +1,7 @@
+import type { PerformanceMetrics } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { PerformanceMetrics } from '@guideai-dev/types'
 import { GitHubCopilotParser } from '../parser.js'
 
 export class CopilotPerformanceProcessor extends BaseMetricProcessor {
@@ -56,7 +57,7 @@ export class CopilotPerformanceProcessor extends BaseMetricProcessor {
           min_tool_execution_ms: Math.round(Math.min(...toolExecutionTimes)),
           max_tool_execution_ms: Math.round(Math.max(...toolExecutionTimes)),
         }),
-      } as any,
+      },
     }
   }
 
@@ -70,18 +71,17 @@ export class CopilotPerformanceProcessor extends BaseMetricProcessor {
     const toolCalls = new Map<string, { requestTime: Date; name: string }>()
 
     for (const message of session.messages) {
-      // Tool call requested
-      if (message.content?.toolUses && message.content.toolUses.length > 0) {
+      // Tool call requested and completed
+      if (isStructuredMessageContent(message.content)) {
+        // Tool call requested
         for (const toolUse of message.content.toolUses) {
           toolCalls.set(toolUse.id, {
             requestTime: message.timestamp,
             name: toolUse.name,
           })
         }
-      }
 
-      // Tool call completed
-      if (message.content?.toolResults && message.content.toolResults.length > 0) {
+        // Tool call completed
         for (const toolResult of message.content.toolResults) {
           const toolCall = toolCalls.get(toolResult.tool_use_id)
           if (toolCall) {

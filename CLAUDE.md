@@ -2,6 +2,103 @@
 
 AI-powered session analysis and processing for coding agent interactions.
 
+## Development Standards
+
+**CRITICAL: This package MUST maintain strict type safety and code quality.**
+
+### Before ANY Code Changes
+
+All code changes MUST pass ALL of the following checks:
+
+```bash
+# 1. Type checking (REQUIRED - zero errors allowed)
+pnpm typecheck
+
+# 2. Linting (REQUIRED - zero errors allowed)
+pnpm lint
+
+# 3. Building (REQUIRED - must complete successfully)
+pnpm build
+
+# 4. Testing (REQUIRED when tests exist)
+pnpm test
+```
+
+### Type Safety Requirements
+
+1. **NO `any` types** - Use proper TypeScript types for all parameters, return values, and variables
+2. **NO type assertions without justification** - Use type guards and narrowing instead of `as` casts when possible
+3. **Proper generic constraints** - All generic types must have appropriate constraints
+4. **Strict null checks** - Handle `null` and `undefined` explicitly
+5. **Import types correctly** - Use `import type` for type-only imports
+
+### Common Type Issues to Avoid
+
+❌ **DON'T:**
+```typescript
+// Using 'any'
+function process(data: any) { ... }
+
+// Unsafe type assertions
+const result = data as SomeType
+
+// Comparing incompatible types
+if (message.type === 'custom-type-not-in-union') { ... }
+
+// Missing type imports
+const components = { ... }  // No types for react-markdown
+```
+
+✅ **DO:**
+```typescript
+// Proper types with generics
+function process<T extends BaseType>(data: T): ProcessedResult { ... }
+
+// Type guards and narrowing
+if (typeof data === 'string') { ... }
+if ('propertyName' in object) { ... }
+
+// Only check types in the union
+if (message.content?.type === 'valid-content-type') { ... }
+
+// Import and use proper types
+import type { Components } from 'react-markdown'
+const components: Partial<Components> = { ... }
+```
+
+### File-Specific Type Requirements
+
+**UI Components (`src/ui/components/**`):**
+- All React component props must have explicit interfaces
+- Event handlers must use proper React event types
+- No `any` in JSX prop types
+
+**Processors (`src/ui/utils/processors/**`):**
+- All message types must extend `BaseSessionMessage`
+- Content types must match defined `ContentBlock` unions
+- Parser methods must have explicit return types
+
+**Parsers (`src/ui/utils/sessionParser.ts`):**
+- Raw message content must be properly typed or use `unknown` with type guards
+- All adapter methods must match `ProviderAdapter` interface
+- Content processing must return defined content types
+
+**AI Models (`src/ai-models/**`):**
+- Task inputs must extend proper base types
+- LLM responses must be validated and typed
+- Error handling must be explicit
+
+### Quick Type Check Command
+
+```bash
+# Run all quality checks in sequence
+pnpm typecheck && pnpm lint && pnpm build
+```
+
+If this fails, your code MUST NOT be committed. Fix all errors before proceeding.
+
+---
+
 ## Session Phase Analysis Task
 
 The `SessionPhaseAnalysisTask` analyzes complete AI coding session transcripts and breaks them down into meaningful phases based on the flow of conversation.

@@ -5,9 +5,9 @@
  * Used by both desktop and server apps for consistent UI.
  */
 
-import { RatingBadge } from './RatingBadge.js'
-import type { SessionRating } from '../../utils/rating.js'
 import { buildGitHubDiffUrl } from '../../utils/git-url.js'
+import type { SessionRating } from '../../utils/rating.js'
+import { RatingBadge } from './RatingBadge.js'
 
 export interface SessionDetailHeaderProps {
   // Session data
@@ -99,11 +99,11 @@ export function SessionDetailHeader({
 
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m ${seconds % 60}s`
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`
-    } else {
-      return `${seconds}s`
     }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`
+    }
+    return `${seconds}s`
   }
 
   const formatFileSize = (bytes: number) => {
@@ -111,7 +111,7 @@ export function SessionDetailHeader({
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
+    return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`
   }
 
   const actuallyProcessing = isProcessing || processingStatus === 'processing'
@@ -160,67 +160,64 @@ export function SessionDetailHeader({
               </span>
 
               {/* Sync Status Icon (desktop only) */}
-              {syncStatus && (
-                <>
-                  {syncStatus.failed ? (
-                    <div
-                      className="tooltip tooltip-bottom cursor-pointer hover:scale-110 transition-transform"
-                      data-tip="Sync failed - Click to view error"
-                      onClick={() => syncStatus.onShowError?.(syncStatus.reason || 'Unknown error')}
+              {syncStatus &&
+                (syncStatus.failed ? (
+                  <div
+                    className="tooltip tooltip-bottom cursor-pointer hover:scale-110 transition-transform"
+                    data-tip="Sync failed - Click to view error"
+                    onClick={() => syncStatus.onShowError?.(syncStatus.reason || 'Unknown error')}
+                  >
+                    <svg
+                      className="w-4 h-4 text-error"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        className="w-4 h-4 text-error"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                        />
-                      </svg>
-                    </div>
-                  ) : syncStatus.synced ? (
-                    <div className="tooltip tooltip-bottom" data-tip="Synced to server">
-                      <svg
-                        className="w-4 h-4 text-success"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </div>
-                  ) : (
-                    <div
-                      className="tooltip tooltip-bottom cursor-pointer hover:scale-110 transition-transform"
-                      data-tip="Click to sync to server"
-                      onClick={syncStatus.onSync}
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
+                    </svg>
+                  </div>
+                ) : syncStatus.synced ? (
+                  <div className="tooltip tooltip-bottom" data-tip="Synced to server">
+                    <svg
+                      className="w-4 h-4 text-success"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        className="w-4 h-4 text-base-content/30"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </>
-              )}
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  <div
+                    className="tooltip tooltip-bottom cursor-pointer hover:scale-110 transition-transform"
+                    data-tip="Click to sync to server"
+                    onClick={syncStatus.onSync}
+                  >
+                    <svg
+                      className="w-4 h-4 text-base-content/30"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                  </div>
+                ))}
             </div>
 
             {/* Right: Action Buttons (desktop only) */}
@@ -241,7 +238,7 @@ export function SessionDetailHeader({
                   }
                 >
                   {actuallyProcessing ? (
-                    <span className="loading loading-spinner loading-xs"></span>
+                    <span className="loading loading-spinner loading-xs" />
                   ) : (
                     <svg
                       className="w-3.5 h-3.5"
@@ -341,7 +338,7 @@ export function SessionDetailHeader({
                   }`}
                 >
                   {actuallyProcessing ? (
-                    <span className="loading loading-spinner loading-xs"></span>
+                    <span className="loading loading-spinner loading-xs" />
                   ) : (
                     <svg
                       className="w-3.5 h-3.5"

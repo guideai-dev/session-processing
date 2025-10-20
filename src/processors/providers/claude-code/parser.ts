@@ -1,4 +1,17 @@
-import type { ParsedSession, ParsedMessage } from '../../base/types.js'
+import type {
+  ContentBlock,
+  StructuredMessageContent,
+  TextContent,
+  ToolResultContent,
+  ToolUseContent,
+} from '@guideai-dev/types'
+import {
+  isStructuredMessageContent,
+  isTextContent,
+  isToolResultContent,
+  isToolUseContent,
+} from '@guideai-dev/types'
+import type { ParsedMessage, ParsedSession } from '../../base/types.js'
 
 export interface ClaudeMessage {
   uuid: string
@@ -6,9 +19,9 @@ export interface ClaudeMessage {
   type: 'user' | 'assistant' | 'summary'
   message: {
     role: string
-    content: string | Array<{ type: string; text?: string; tool_use_id?: string; content?: any }>
+    content: string | ContentBlock[]
   }
-  content?: string | Array<{ type: string; text?: string; tool_use_id?: string; content?: any }>
+  content?: string | ContentBlock[]
   parentUuid?: string
   isMeta?: boolean
   sessionId: string
@@ -18,26 +31,8 @@ export interface ClaudeMessage {
   level?: string
 }
 
-export interface ToolUseContent {
-  type: 'tool_use'
-  id: string
-  name: string
-  input: Record<string, any>
-}
-
-export interface ToolResultContent {
-  type: 'tool_result'
-  tool_use_id: string
-  content: any
-}
-
-export interface TextContent {
-  type: 'text'
-  text: string
-}
-
 export class ClaudeCodeParser {
-  parseSession(jsonlContent: string): ParsedSession {
+  parseSession(jsonlContent: string, provider: string): ParsedSession {
     const lines = jsonlContent.split('\n').filter(line => line.trim())
     const messages: ParsedMessage[] = []
     let sessionId = ''
@@ -62,7 +57,7 @@ export class ClaudeCodeParser {
         const timestamp = new Date(rawMessage.timestamp)
 
         // Validate timestamp is valid
-        if (isNaN(timestamp.getTime())) {
+        if (Number.isNaN(timestamp.getTime())) {
           continue
         }
 
@@ -83,9 +78,7 @@ export class ClaudeCodeParser {
         if (parsedMessage) {
           messages.push(parsedMessage)
         }
-      } catch (error) {
-        continue
-      }
+      } catch (_error) {}
     }
 
     if (!sessionId) {
@@ -128,9 +121,9 @@ export class ClaudeCodeParser {
     }
 
     // Parse content based on format
-    let content: any
-    let toolUses: ToolUseContent[] = []
-    let toolResults: ToolResultContent[] = []
+    let content: string | StructuredMessageContent
+    const toolUses: ToolUseContent[] = []
+    const toolResults: ToolResultContent[] = []
 
     // Handle different message formats
     const messageContent = rawMessage.message?.content ?? rawMessage.content
@@ -142,12 +135,12 @@ export class ClaudeCodeParser {
       const textParts: string[] = []
 
       for (const part of messageContent) {
-        if (part.type === 'text' && part.text) {
+        if (isTextContent(part)) {
           textParts.push(part.text)
-        } else if (part.type === 'tool_use') {
-          toolUses.push(part as ToolUseContent)
-        } else if (part.type === 'tool_result') {
-          toolResults.push(part as ToolResultContent)
+        } else if (isToolUseContent(part)) {
+          toolUses.push(part)
+        } else if (isToolResultContent(part)) {
+          toolResults.push(part)
         }
       }
 
@@ -189,7 +182,7 @@ export class ClaudeCodeParser {
     const toolUses: ToolUseContent[] = []
 
     for (const message of session.messages) {
-      if (message.content?.toolUses) {
+      if (isStructuredMessageContent(message.content)) {
         toolUses.push(...message.content.toolUses)
       }
     }
@@ -204,7 +197,7 @@ export class ClaudeCodeParser {
     const toolResults: ToolResultContent[] = []
 
     for (const message of session.messages) {
-      if (message.content?.toolResults) {
+      if (isStructuredMessageContent(message.content)) {
         toolResults.push(...message.content.toolResults)
       }
     }
@@ -274,17 +267,21 @@ export class ClaudeCodeParser {
       return message.content
     }
 
-    if (message.content?.text) {
-      return message.content.text
-    }
-
-    if (Array.isArray(message.content?.structured)) {
+    if (isStructuredMessageContent(message.content)) {
       const textParts: string[] = []
-      for (const part of message.content.structured) {
-        if (part.type === 'text' && part.text) {
-          textParts.push(part.text)
+
+      if (message.content.text) {
+        textParts.push(message.content.text)
+      }
+
+      if (Array.isArray(message.content.structured)) {
+        for (const part of message.content.structured) {
+          if (isTextContent(part)) {
+            textParts.push(part.text)
+          }
         }
       }
+
       return textParts.join(' ')
     }
 

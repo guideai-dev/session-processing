@@ -5,6 +5,7 @@
  * instead of fetching via hooks. The parent component should handle data fetching.
  */
 
+import type { AIModelMetadata } from '@guideai-dev/types'
 import { MetricCard } from './MetricCard.js'
 import { MetricSection } from './MetricSection.js'
 
@@ -72,11 +73,11 @@ interface MetricsOverviewProps {
   isCancelling?: boolean
   aiModelSummary?: string | null
   aiModelQualityScore?: number | null
-  aiModelMetadata?: any | null
+  aiModelMetadata?: AIModelMetadata | null
 }
 
 export function MetricsOverview({
-  sessionId,
+  sessionId: _sessionId,
   metrics,
   isLoading = false,
   error = null,
@@ -93,7 +94,7 @@ export function MetricsOverview({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <span className="loading loading-spinner loading-lg"></span>
+          <span className="loading loading-spinner loading-lg" />
           <p className="mt-4 text-base-content/70">Loading metrics...</p>
         </div>
       </div>
@@ -155,7 +156,7 @@ export function MetricsOverview({
                   >
                     {isCancelling ? (
                       <>
-                        <span className="loading loading-spinner loading-sm"></span>
+                        <span className="loading loading-spinner loading-sm" />
                         Cancelling...
                       </>
                     ) : (
@@ -164,7 +165,7 @@ export function MetricsOverview({
                   </button>
                 )}
                 <button className="btn btn-primary" disabled>
-                  <span className="loading loading-spinner loading-sm"></span>
+                  <span className="loading loading-spinner loading-sm" />
                   Processing...
                 </button>
               </>
@@ -230,7 +231,7 @@ export function MetricsOverview({
             ) : null}
 
             {/* Bottom Row: Improvements + Strengths */}
-            {aiModelMetadata && aiModelMetadata['quality-assessment'] && (
+            {aiModelMetadata?.['quality-assessment'] && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Improvements */}
                 {aiModelMetadata['quality-assessment'].improvements &&
@@ -240,14 +241,12 @@ export function MetricsOverview({
                         Areas for Improvement
                       </div>
                       <ul className="space-y-2">
-                        {aiModelMetadata['quality-assessment'].improvements.map(
-                          (item: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              <span className="text-warning mt-1">•</span>
-                              <span>{item}</span>
-                            </li>
-                          )
-                        )}
+                        {aiModelMetadata['quality-assessment'].improvements.map((item: string) => (
+                          <li key={item} className="flex items-start gap-2 text-sm">
+                            <span className="text-warning mt-1">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   )}
@@ -260,14 +259,12 @@ export function MetricsOverview({
                         Strengths
                       </div>
                       <ul className="space-y-2">
-                        {aiModelMetadata['quality-assessment'].strengths.map(
-                          (item: string, idx: number) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              <span className="text-success mt-1">•</span>
-                              <span>{item}</span>
-                            </li>
-                          )
-                        )}
+                        {aiModelMetadata['quality-assessment'].strengths.map((item: string) => (
+                          <li key={item} className="flex items-start gap-2 text-sm">
+                            <span className="text-success mt-1">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   )}
@@ -275,7 +272,7 @@ export function MetricsOverview({
             )}
 
             {/* Additional Metadata (Intent Extraction, etc.) */}
-            {aiModelMetadata && aiModelMetadata['intent-extraction'] && (
+            {aiModelMetadata?.['intent-extraction'] && (
               <div className="card bg-base-100 border border-base-300 p-4">
                 <h5 className="font-semibold mb-3">Intent Extraction</h5>
                 <div className="space-y-3">
@@ -296,20 +293,23 @@ export function MetricsOverview({
                     </div>
                   )}
                   {aiModelMetadata['intent-extraction'].technologies &&
-                    aiModelMetadata['intent-extraction'].technologies.length > 0 && (
+                    (Array.isArray(aiModelMetadata['intent-extraction'].technologies)
+                      ? aiModelMetadata['intent-extraction'].technologies.length > 0
+                      : Object.keys(aiModelMetadata['intent-extraction'].technologies).length >
+                        0) && (
                       <div>
                         <div className="text-xs text-base-content/60 mb-1">Technologies</div>
                         <div className="flex flex-wrap gap-2">
                           {Array.isArray(aiModelMetadata['intent-extraction'].technologies)
                             ? aiModelMetadata['intent-extraction'].technologies.map(
-                                (tech: string, idx: number) => (
-                                  <span key={idx} className="badge badge-ghost">
+                                (tech: string) => (
+                                  <span key={tech} className="badge badge-ghost">
                                     {tech}
                                   </span>
                                 )
                               )
                             : Object.entries(aiModelMetadata['intent-extraction'].technologies).map(
-                                ([key, val]: [string, any]) => (
+                                ([key, val]: [string, string]) => (
                                   <span key={key} className="badge badge-ghost">
                                     {val}
                                   </span>
@@ -325,8 +325,8 @@ export function MetricsOverview({
                         {Array.isArray(aiModelMetadata['intent-extraction'].challenges) ? (
                           <ul className="space-y-1">
                             {aiModelMetadata['intent-extraction'].challenges.map(
-                              (challenge: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
+                              (challenge: string) => (
+                                <li key={challenge} className="flex items-start gap-2 text-sm">
                                   <span className="text-primary mt-1">•</span>
                                   <span>{challenge}</span>
                                 </li>
@@ -347,8 +347,8 @@ export function MetricsOverview({
                         {Array.isArray(aiModelMetadata['intent-extraction'].secondaryGoals) ? (
                           <ul className="space-y-1">
                             {aiModelMetadata['intent-extraction'].secondaryGoals.map(
-                              (goal: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm">
+                              (goal: string) => (
+                                <li key={goal} className="flex items-start gap-2 text-sm">
                                   <span className="text-primary mt-1">•</span>
                                   <span>{goal}</span>
                                 </li>
@@ -392,7 +392,7 @@ export function MetricsOverview({
                 label="Read/Write Ratio"
                 value={
                   metrics.usage.readWriteRatio
-                    ? parseFloat(metrics.usage.readWriteRatio)
+                    ? Number.parseFloat(metrics.usage.readWriteRatio)
                     : undefined
                 }
                 suffix=":1"
@@ -402,7 +402,7 @@ export function MetricsOverview({
                 label="Input Clarity Score"
                 value={
                   metrics.usage.inputClarityScore
-                    ? parseFloat(metrics.usage.inputClarityScore)
+                    ? Number.parseFloat(metrics.usage.inputClarityScore)
                     : undefined
                 }
                 type="percentage"
@@ -415,8 +415,8 @@ export function MetricsOverview({
               <div className="card bg-base-100 p-4">
                 <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
                 <ul className="text-sm space-y-1">
-                  {metrics.usage.improvementTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start">
+                  {metrics.usage.improvementTips.map((tip: string) => (
+                    <li key={tip} className="flex items-start">
                       <span className="text-primary mr-2">•</span>
                       {tip}
                     </li>
@@ -466,8 +466,8 @@ export function MetricsOverview({
                 <div className="card bg-base-100 p-4">
                   <h4 className="font-semibold mb-3">Error Categories</h4>
                   <div className="flex flex-wrap gap-2">
-                    {metrics.error.errorTypes.map((errorType: string, index: number) => (
-                      <span key={index} className="badge badge-error badge-outline">
+                    {metrics.error.errorTypes.map((errorType: string) => (
+                      <span key={errorType} className="badge badge-error badge-outline">
                         {errorType.replace(/_/g, ' ')}
                       </span>
                     ))}
@@ -490,8 +490,8 @@ export function MetricsOverview({
                 <div className="card bg-base-100 p-4">
                   <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
                   <ul className="text-sm space-y-1">
-                    {metrics.error.improvementTips.map((tip: string, index: number) => (
-                      <li key={index} className="flex items-start">
+                    {metrics.error.improvementTips.map((tip: string) => (
+                      <li key={tip} className="flex items-start">
                         <span className="text-primary mr-2">•</span>
                         {tip}
                       </li>
@@ -517,7 +517,7 @@ export function MetricsOverview({
                   label="Interruption Rate"
                   value={
                     metrics.engagement.interruptionRate
-                      ? parseFloat(metrics.engagement.interruptionRate)
+                      ? Number.parseFloat(metrics.engagement.interruptionRate)
                       : undefined
                   }
                   type="percentage"
@@ -527,7 +527,7 @@ export function MetricsOverview({
                   label="Session Length"
                   value={
                     metrics.engagement.sessionLengthMinutes
-                      ? parseFloat(metrics.engagement.sessionLengthMinutes)
+                      ? Number.parseFloat(metrics.engagement.sessionLengthMinutes)
                       : undefined
                   }
                   suffix=" min"
@@ -541,8 +541,8 @@ export function MetricsOverview({
                   <div className="card bg-base-100 p-4">
                     <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
                     <ul className="text-sm space-y-1">
-                      {metrics.engagement.improvementTips.map((tip: string, index: number) => (
-                        <li key={index} className="flex items-start">
+                      {metrics.engagement.improvementTips.map((tip: string) => (
+                        <li key={tip} className="flex items-start">
                           <span className="text-primary mr-2">•</span>
                           {tip}
                         </li>
@@ -664,7 +664,7 @@ export function MetricsOverview({
                 label="Task Success Rate"
                 value={
                   metrics.quality.taskSuccessRate
-                    ? parseFloat(metrics.quality.taskSuccessRate)
+                    ? Number.parseFloat(metrics.quality.taskSuccessRate)
                     : undefined
                 }
                 type="percentage"
@@ -679,7 +679,7 @@ export function MetricsOverview({
                 label="Process Quality Score"
                 value={
                   metrics.quality.processQualityScore
-                    ? parseFloat(metrics.quality.processQualityScore)
+                    ? Number.parseFloat(metrics.quality.processQualityScore)
                     : undefined
                 }
                 type="percentage"
@@ -697,8 +697,8 @@ export function MetricsOverview({
               <div className="card bg-base-100 p-4">
                 <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
                 <ul className="text-sm space-y-1">
-                  {metrics.quality.improvementTips.map((tip: string, index: number) => (
-                    <li key={index} className="flex items-start">
+                  {metrics.quality.improvementTips.map((tip: string) => (
+                    <li key={tip} className="flex items-start">
                       <span className="text-primary mr-2">•</span>
                       {tip}
                     </li>
@@ -724,7 +724,7 @@ export function MetricsOverview({
                   label="Response Latency"
                   value={
                     metrics.performance.responseLatencyMs
-                      ? parseFloat(metrics.performance.responseLatencyMs)
+                      ? Number.parseFloat(metrics.performance.responseLatencyMs)
                       : undefined
                   }
                   type="duration"
@@ -734,7 +734,7 @@ export function MetricsOverview({
                   label="Task Completion Time"
                   value={
                     metrics.performance.taskCompletionTimeMs
-                      ? parseFloat(metrics.performance.taskCompletionTimeMs)
+                      ? Number.parseFloat(metrics.performance.taskCompletionTimeMs)
                       : undefined
                   }
                   type="duration"
@@ -748,8 +748,8 @@ export function MetricsOverview({
                   <div className="card bg-base-100 p-4">
                     <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
                     <ul className="text-sm space-y-1">
-                      {metrics.performance.improvementTips.map((tip: string, index: number) => (
-                        <li key={index} className="flex items-start">
+                      {metrics.performance.improvementTips.map((tip: string) => (
+                        <li key={tip} className="flex items-start">
                           <span className="text-primary mr-2">•</span>
                           {tip}
                         </li>
@@ -763,7 +763,8 @@ export function MetricsOverview({
 
       {/* Git Diff Metrics - Desktop Only */}
       {metrics.gitDiff &&
-        metrics.gitDiff.totalFiles !== undefined && metrics.gitDiff.totalFiles !== null &&
+        metrics.gitDiff.totalFiles !== undefined &&
+        metrics.gitDiff.totalFiles !== null &&
         metrics.gitDiff.totalFiles > 0 && (
           <MetricSection
             title="Code Changes"
@@ -803,7 +804,7 @@ export function MetricsOverview({
                   label="Lines Read / Changed"
                   value={
                     metrics.gitDiff.linesReadPerChanged
-                      ? parseFloat(metrics.gitDiff.linesReadPerChanged)
+                      ? Number.parseFloat(metrics.gitDiff.linesReadPerChanged)
                       : undefined
                   }
                   suffix=":1"
@@ -813,7 +814,7 @@ export function MetricsOverview({
                   label="Reads / File"
                   value={
                     metrics.gitDiff.readsPerFile
-                      ? parseFloat(metrics.gitDiff.readsPerFile)
+                      ? Number.parseFloat(metrics.gitDiff.readsPerFile)
                       : undefined
                   }
                   tooltip="Read operations per file changed - lower is better"
@@ -822,7 +823,7 @@ export function MetricsOverview({
                   label="Lines/Min"
                   value={
                     metrics.gitDiff.linesPerMinute
-                      ? parseFloat(metrics.gitDiff.linesPerMinute)
+                      ? Number.parseFloat(metrics.gitDiff.linesPerMinute)
                       : undefined
                   }
                   tooltip="Code velocity - lines changed per minute"
@@ -831,7 +832,7 @@ export function MetricsOverview({
                   label="Lines/Tool"
                   value={
                     metrics.gitDiff.linesPerTool
-                      ? parseFloat(metrics.gitDiff.linesPerTool)
+                      ? Number.parseFloat(metrics.gitDiff.linesPerTool)
                       : undefined
                   }
                   tooltip="Lines changed per tool use - higher is better"
@@ -843,8 +844,8 @@ export function MetricsOverview({
                 <div className="card bg-base-100 p-4">
                   <h4 className="font-semibold mb-3">💡 Improvement Tips</h4>
                   <ul className="text-sm space-y-1">
-                    {metrics.gitDiff.improvementTips.map((tip: string, index: number) => (
-                      <li key={index} className="flex items-start">
+                    {metrics.gitDiff.improvementTips.map((tip: string) => (
+                      <li key={tip} className="flex items-start">
                         <span className="text-primary mr-2">•</span>
                         {tip}
                       </li>

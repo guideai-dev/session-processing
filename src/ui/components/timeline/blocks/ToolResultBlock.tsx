@@ -2,12 +2,14 @@
  * ToolResultBlock - Renders tool result content
  */
 
+import { DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
 import { extractClaudeMdFromToolResult } from '../../../utils/systemReminderParser.js'
-import { DocumentTextIcon } from '@heroicons/react/24/outline'
+
+type ToolResultContent = string | Array<string | Record<string, unknown>> | Record<string, unknown>
 
 interface ToolResultBlockProps {
-  content: any
+  content: ToolResultContent
   collapsed?: boolean
 }
 
@@ -44,17 +46,25 @@ export function ToolResultBlock({
     if (Array.isArray(content)) {
       return (
         <div className="space-y-1">
-          {content.map((item, index) => (
-            <div key={index} className="p-2 bg-base-200 rounded text-sm">
-              {typeof item === 'string' ? (
-                <div className="whitespace-pre-wrap">{item}</div>
-              ) : (
-                <pre className="text-xs overflow-auto">
-                  <code>{JSON.stringify(item, null, 2)}</code>
-                </pre>
-              )}
-            </div>
-          ))}
+          {content.map((item, index) => {
+            // Generate stable key from content
+            const itemKey =
+              typeof item === 'string'
+                ? `item-${index}-${item.substring(0, 30).replace(/\s/g, '')}`
+                : `item-${index}-${JSON.stringify(item).substring(0, 30)}`
+
+            return (
+              <div key={itemKey} className="p-2 bg-base-200 rounded text-sm">
+                {typeof item === 'string' ? (
+                  <div className="whitespace-pre-wrap">{item}</div>
+                ) : (
+                  <pre className="text-xs overflow-auto">
+                    <code>{JSON.stringify(item, null, 2)}</code>
+                  </pre>
+                )}
+              </div>
+            )
+          })}
         </div>
       )
     }
@@ -110,14 +120,16 @@ function highlightClaudeMd(text: string) {
   return (
     <div>
       {lines.map((line, i) => {
+        const lineKey = `line-${i}-${line.substring(0, 20).replace(/\s/g, '')}`
+
         if (line.includes('CLAUDE.md')) {
           return (
-            <div key={i} className="bg-warning/10 border-l-2 border-warning pl-2 py-0.5">
+            <div key={lineKey} className="bg-warning/10 border-l-2 border-warning pl-2 py-0.5">
               {highlightClaudeMdInLine(line)}
             </div>
           )
         }
-        return <div key={i}>{line}</div>
+        return <div key={lineKey}>{line}</div>
       })}
     </div>
   )
@@ -132,14 +144,16 @@ function highlightClaudeMdInLine(line: string) {
   return (
     <>
       {parts.map((part, i) => {
+        const partKey = `part-${i}-${part.substring(0, 10)}`
+
         if (part.match(/CLAUDE\.md/i)) {
           return (
-            <span key={i} className="text-warning font-bold bg-warning/20 px-1 rounded">
+            <span key={partKey} className="text-warning font-bold bg-warning/20 px-1 rounded">
               {part}
             </span>
           )
         }
-        return <span key={i}>{part}</span>
+        return <span key={partKey}>{part}</span>
       })}
     </>
   )

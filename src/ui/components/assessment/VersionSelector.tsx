@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import { ClockIcon, RocketLaunchIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import type { AssessmentVersion } from '@guideai-dev/types'
+import { ChartBarIcon, ClockIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
 
 interface VersionOption {
   version: AssessmentVersion

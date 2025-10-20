@@ -1,12 +1,30 @@
+import type { ContentBlock, TextContent } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
+import { getUserDisplayName } from '../../../../utils/user.js'
 import { BaseModelTask } from '../../../base/model-task.js'
 import type { ModelTaskConfig, ModelTaskContext } from '../../../base/types.js'
-import { getUserDisplayName } from '../../../../utils/user.js'
+
+export interface IntentExtractionInput {
+  userName: string
+  userMessages: string
+}
+
+export interface IntentExtractionOutput {
+  primaryGoal: string
+  secondaryGoals?: string[]
+  technologies?: string[]
+  challenges?: string[]
+  taskType: 'feature_development' | 'bug_fix' | 'refactoring' | 'learning' | 'debugging' | 'other'
+}
 
 /**
  * Intent Extraction Task
  * Extracts user intents and goals from the session
  */
-export class IntentExtractionTask extends BaseModelTask {
+export class IntentExtractionTask extends BaseModelTask<
+  IntentExtractionInput,
+  IntentExtractionOutput
+> {
   readonly taskType = 'intent-extraction'
   readonly name = 'Intent Extraction'
   readonly description = 'Extract user intents and goals from session messages'
@@ -65,7 +83,7 @@ Respond with a JSON object:
     }
   }
 
-  prepareInput(context: ModelTaskContext): any {
+  prepareInput(context: ModelTaskContext): IntentExtractionInput {
     const session = context.session
     if (!session) {
       throw new Error('Session data is required for intent extraction')
@@ -81,14 +99,16 @@ Respond with a JSON object:
         let content = ''
         if (typeof msg.content === 'string') {
           content = msg.content
-        } else if (msg.content?.text) {
+        } else if (isStructuredMessageContent(msg.content)) {
           // Parser wraps structured content in { text, toolUses, toolResults, structured }
-          content = msg.content.text
+          content = msg.content.text || ''
         } else if (Array.isArray(msg.content)) {
           // Fallback: Extract text from content array (for other providers)
           content = msg.content
-            .filter((item: any) => item.type === 'text' && item.text)
-            .map((item: any) => item.text)
+            .filter(
+              (item: ContentBlock): item is TextContent => item.type === 'text' && 'text' in item
+            )
+            .map((item: TextContent) => item.text)
             .join(' ')
         }
         return `[${index + 1}] ${content}`
@@ -112,13 +132,15 @@ Respond with a JSON object:
     return userMessageCount > 0
   }
 
-  processOutput(output: any, context: ModelTaskContext): any {
+  processOutput(output: unknown, _context: ModelTaskContext): IntentExtractionOutput {
     // Validate the output structure
     if (typeof output !== 'object' || output === null) {
       throw new Error('Intent extraction output must be an object')
     }
 
-    if (!output.primaryGoal || typeof output.primaryGoal !== 'string') {
+    const result = output as IntentExtractionOutput
+
+    if (!result.primaryGoal || typeof result.primaryGoal !== 'string') {
       throw new Error('Primary goal is required and must be a string')
     }
 
@@ -130,17 +152,17 @@ Respond with a JSON object:
       'debugging',
       'other',
     ]
-    if (!output.taskType || !validTaskTypes.includes(output.taskType)) {
-      output.taskType = 'other'
+    if (!result.taskType || !validTaskTypes.includes(result.taskType)) {
+      result.taskType = 'other'
     }
 
     // Ensure arrays exist and are arrays
     return {
-      primaryGoal: output.primaryGoal,
-      secondaryGoals: Array.isArray(output.secondaryGoals) ? output.secondaryGoals : [],
-      technologies: Array.isArray(output.technologies) ? output.technologies : [],
-      challenges: Array.isArray(output.challenges) ? output.challenges : [],
-      taskType: output.taskType,
+      primaryGoal: result.primaryGoal,
+      secondaryGoals: Array.isArray(result.secondaryGoals) ? result.secondaryGoals : [],
+      technologies: Array.isArray(result.technologies) ? result.technologies : [],
+      challenges: Array.isArray(result.challenges) ? result.challenges : [],
+      taskType: result.taskType,
     }
   }
 }

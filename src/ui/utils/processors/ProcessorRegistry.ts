@@ -5,13 +5,13 @@
  * Supports Claude Code, GitHub Copilot, Codex, OpenCode, Gemini Code, and generic fallback processors.
  */
 
-import { BaseMessageProcessor } from './BaseMessageProcessor.js'
+import type { BaseMessageProcessor } from './BaseMessageProcessor.js'
 import { ClaudeMessageProcessor } from './ClaudeMessageProcessor.js'
-import { CopilotMessageProcessor } from './CopilotMessageProcessor.js'
 import { CodexMessageProcessor } from './CodexMessageProcessor.js'
-import { OpenCodeMessageProcessor } from './OpenCodeMessageProcessor.js'
+import { CopilotMessageProcessor } from './CopilotMessageProcessor.js'
 import { GeminiMessageProcessor } from './GeminiMessageProcessor.js'
 import { GenericMessageProcessor } from './GenericMessageProcessor.js'
+import { OpenCodeMessageProcessor } from './OpenCodeMessageProcessor.js'
 
 class MessageProcessorRegistry {
   private processors = new Map<string, BaseMessageProcessor>()
@@ -44,8 +44,9 @@ class MessageProcessorRegistry {
     const normalizedProvider = provider.toLowerCase().trim()
 
     // Try exact match
-    if (this.processors.has(normalizedProvider)) {
-      return this.processors.get(normalizedProvider)!
+    const exactMatch = this.processors.get(normalizedProvider)
+    if (exactMatch) {
+      return exactMatch
     }
 
     // Try partial match (e.g., "claude" matches "claude-code")

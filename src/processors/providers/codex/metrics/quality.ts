@@ -1,6 +1,12 @@
+import type {
+  ParsedMessage,
+  QualityMetrics,
+  ToolResultContent,
+  ToolUseContent,
+} from '@guideai-dev/types'
+import { extractTextFromMessage, isErrorResult } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { QualityMetrics } from '@guideai-dev/types'
 import { CodexParser } from '../parser.js'
 
 export class CodexQualityProcessor extends BaseMetricProcessor {
@@ -69,22 +75,11 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
     }
   }
 
-  private hasErrorIndicators(result: any): boolean {
-    const resultStr = JSON.stringify(result).toLowerCase()
-    const errorKeywords = [
-      'error',
-      'failed',
-      'exception',
-      'not found',
-      'permission denied',
-      'invalid',
-      'cannot',
-      'unable',
-    ]
-    return errorKeywords.some(keyword => resultStr.includes(keyword))
+  private hasErrorIndicators(result: ToolResultContent): boolean {
+    return isErrorResult(result)
   }
 
-  private calculateIterations(userMessages: any[], session: ParsedSession): number {
+  private calculateIterations(_userMessages: ParsedMessage[], session: ParsedSession): number {
     // Context-based detection: only count user messages that follow assistant responses
     // and contain actual refinement/correction language
     let iterations = 0
@@ -99,7 +94,7 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
       const prevMessage = i > 0 ? session.messages[i - 1] : null
       if (!prevMessage || prevMessage.type !== 'assistant') continue
 
-      const content = this.extractContent(message).toLowerCase()
+      const content = extractTextFromMessage(message).toLowerCase()
 
       // More specific refinement patterns that indicate actual iterations
       const refinementPatterns = [
@@ -141,7 +136,7 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
     return iterations
   }
 
-  private detectPlanModeUsage(toolUses: any[]): { used: boolean; count: number } {
+  private detectPlanModeUsage(toolUses: ToolUseContent[]): { used: boolean; count: number } {
     // Codex uses 'update_plan' function calls
     const updatePlanTools = toolUses.filter(tool => tool.name === 'update_plan')
     return {
@@ -151,8 +146,8 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
   }
 
   private calculateProcessQuality(
-    toolUses: any[],
-    session: ParsedSession,
+    toolUses: ToolUseContent[],
+    _session: ParsedSession,
     usedPlanMode: boolean,
     usedTodoTracking: boolean
   ): number {
@@ -210,7 +205,7 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
     iterationCount: number,
     processQuality: number,
     usedPlanMode: boolean,
-    usedTodoTracking: boolean
+    _usedTodoTracking: boolean
   ): string[] {
     const tips: string[] = []
 
@@ -286,7 +281,7 @@ export class CodexQualityProcessor extends BaseMetricProcessor {
     const assistantMessages = session.messages.filter(m => m.type === 'assistant')
 
     for (const message of assistantMessages) {
-      const content = this.extractContent(message).toLowerCase()
+      const content = extractTextFromMessage(message).toLowerCase()
 
       for (const pattern of affirmationPatterns) {
         const matches = content.match(pattern)

@@ -6,25 +6,50 @@
  */
 
 import {
-  TimelineMessage,
-  TimelineGroup,
-  TimelineItem,
-  ProcessedTimeline,
-  ContentBlock,
-  createDisplayMetadata,
-  createContentBlock,
-} from '../timelineTypes.js'
-import { BaseSessionMessage } from '../sessionTypes.js'
-import {
-  UserIcon,
-  CpuChipIcon,
-  WrenchScrewdriverIcon,
   CheckCircleIcon,
   CommandLineIcon,
-  StopCircleIcon,
+  CpuChipIcon,
   InformationCircleIcon,
   PhotoIcon,
+  StopCircleIcon,
+  UserIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
+import type { BaseSessionMessage } from '../sessionTypes.js'
+import {
+  type ContentBlock,
+  type ProcessedTimeline,
+  type TimelineGroup,
+  type TimelineItem,
+  type TimelineMessage,
+  createContentBlock,
+  createDisplayMetadata,
+} from '../timelineTypes.js'
+
+// Type definitions for content structures
+export interface ContentPart {
+  type: string
+  text?: string
+  id?: string
+  name?: string
+  input?: Record<string, unknown>
+  tool_use_id?: string
+  content?: unknown
+  data?: string // For image data URLs
+  source?: {
+    data?: string
+    media_type?: string
+  }
+  // Thinking content properties
+  thinking?: string // Plain text thinking
+  signature?: string // Encrypted thinking signature
+}
+
+export type MessageContent =
+  | string
+  | ContentPart[]
+  | { parts?: ContentPart[] }
+  | Record<string, unknown>
 
 /**
  * Abstract base class for message processors
@@ -141,8 +166,6 @@ export abstract class BaseMessageProcessor {
       case 'tool_use':
       case 'tool_result':
         return 'tool'
-      case 'meta':
-      case 'command_output':
       default:
         return 'system'
     }
@@ -152,7 +175,9 @@ export abstract class BaseMessageProcessor {
    * Get display metadata (icon, title, colors) for a message
    * Can be overridden by subclasses for provider-specific icons/titles
    */
-  protected getDisplayMetadata(message: BaseSessionMessage) {
+  protected getDisplayMetadata(
+    message: BaseSessionMessage
+  ): ReturnType<typeof createDisplayMetadata> {
     switch (message.type) {
       case 'user_input':
         return createDisplayMetadata({
@@ -266,15 +291,15 @@ export abstract class BaseMessageProcessor {
    */
   protected getToolUseBlocks(message: BaseSessionMessage): ContentBlock[] {
     const content = message.content
-    const toolName = this.getToolName(message)
+    const toolName = this.getToolName(message) || 'unknown'
     const input = content?.input || content
 
     return [
       createContentBlock(
         'tool_use',
-        { name: toolName, input },
+        { name: toolName, input: input as Record<string, unknown> },
         {
-          toolName: toolName || undefined,
+          toolName,
           collapsed: true,
         }
       ),
@@ -311,15 +336,11 @@ export abstract class BaseMessageProcessor {
       const blocks: ContentBlock[] = []
 
       // Show command name prominently
-      blocks.push(
-        createContentBlock('text', `**Command:** \`${parsedCommand.name}\``)
-      )
+      blocks.push(createContentBlock('text', `**Command:** \`${parsedCommand.name}\``))
 
       // Show message if present
       if (parsedCommand.message) {
-        blocks.push(
-          createContentBlock('text', parsedCommand.message)
-        )
+        blocks.push(createContentBlock('text', parsedCommand.message))
       }
 
       // Show args if present
@@ -345,7 +366,9 @@ export abstract class BaseMessageProcessor {
   /**
    * Parse XML-like command structure from Claude Code
    */
-  protected parseCommandXml(text: string): { name: string; message?: string; args?: string } | null {
+  protected parseCommandXml(
+    text: string
+  ): { name: string; message?: string; args?: string } | null {
     const nameMatch = text.match(/<command-name>([^<]+)<\/command-name>/)
     const messageMatch = text.match(/<command-message>([^<]*)<\/command-message>/)
     const argsMatch = text.match(/<command-args>([^<]*)<\/command-args>/)
@@ -358,11 +381,11 @@ export abstract class BaseMessageProcessor {
       name: nameMatch[1].trim(),
     }
 
-    if (messageMatch && messageMatch[1].trim()) {
+    if (messageMatch?.[1].trim()) {
       result.message = messageMatch[1].trim()
     }
 
-    if (argsMatch && argsMatch[1].trim()) {
+    if (argsMatch?.[1].trim()) {
       result.args = argsMatch[1].trim()
     }
 
@@ -479,8 +502,13 @@ export abstract class BaseMessageProcessor {
   /**
    * Helper: Extract parts array from content
    */
-  protected extractParts(content: any): any[] | null {
-    if (content?.parts && Array.isArray(content.parts)) {
+  protected extractParts(content: MessageContent): ContentPart[] | null {
+    if (
+      content &&
+      typeof content === 'object' &&
+      'parts' in content &&
+      Array.isArray(content.parts)
+    ) {
       return content.parts
     }
 
@@ -505,12 +533,12 @@ export abstract class BaseMessageProcessor {
   /**
    * Helper: Extract text from parts structure
    */
-  protected extractTextFromParts(content: any): string | null {
+  protected extractTextFromParts(content: MessageContent): string | null {
     const parts = this.extractParts(content)
     if (!parts) return null
 
     const textParts = parts
-      .filter(part => part.type === 'text')
+      .filter((part): part is ContentPart & { text: string } => part.type === 'text' && !!part.text)
       .map(part => part.text)
       .join(' ')
 
@@ -520,7 +548,7 @@ export abstract class BaseMessageProcessor {
   /**
    * Helper: Extract image data from an image part
    */
-  protected extractImageFromPart(part: any): { type: string; data: string } | null {
+  protected extractImageFromPart(part: ContentPart): { type: string; data: string } | null {
     if (part.source?.data) {
       const mediaType = part.source.media_type || 'image/png'
       const data = part.source.data.startsWith('data:')

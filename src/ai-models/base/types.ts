@@ -6,10 +6,10 @@ import type { ParsedSession } from '../../processors/base/types.js'
 export interface ModelTaskConfig {
   taskType: string
   prompt: string
-  inputSchema?: Record<string, any>
+  inputSchema?: Record<string, unknown>
   responseFormat: {
     type: 'json' | 'text'
-    schema?: Record<string, any>
+    schema?: Record<string, unknown>
   }
   recordingStrategy: {
     updateAgentSession?: string[] // Field names to update in agent_sessions
@@ -20,11 +20,12 @@ export interface ModelTaskConfig {
 
 /**
  * Result from executing an AI model task
+ * Generic type parameter TOutput represents the task's output type
  */
-export interface ModelTaskResult {
+export interface ModelTaskResult<TOutput = unknown> {
   taskType: string
   success: boolean
-  output: any
+  output: TOutput
   metadata: {
     modelUsed: string
     tokensUsed?: number

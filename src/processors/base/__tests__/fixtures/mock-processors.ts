@@ -42,7 +42,7 @@ export class TestProviderProcessor extends BaseProviderProcessor {
 	readonly providerName = 'test-provider'
 	readonly description = 'Test provider processor'
 
-	parseSession(jsonlContent: string): ParsedSession {
+	parseSession(jsonlContent: string, provider: string): ParsedSession {
 		this.validateJsonlContent(jsonlContent)
 
 		const lines = jsonlContent.split('\n').filter((line) => line.trim())
@@ -78,7 +78,7 @@ export class ErrorThrowingProviderProcessor extends BaseProviderProcessor {
 	readonly providerName = 'error-provider'
 	readonly description = 'Error throwing provider processor'
 
-	parseSession(_jsonlContent: string): ParsedSession {
+	parseSession(_jsonlContent: string, _provider: string): ParsedSession {
 		throw new Error('Intentional parsing error')
 	}
 
@@ -124,7 +124,17 @@ export const VALID_SESSION: ParsedSession = {
 		{
 			id: 'msg-4',
 			type: 'assistant',
-			content: { text: 'I am doing well, thank you!' },
+			content: {
+				text: 'I am doing well, thank you!',
+				toolUses: [],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: 'I am doing well, thank you!',
+					},
+				],
+			},
 			timestamp: new Date('2025-01-01T00:00:10Z'),
 		},
 	],

@@ -46,7 +46,9 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist *.tsbuildinfo",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

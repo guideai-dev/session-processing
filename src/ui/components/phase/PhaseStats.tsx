@@ -24,11 +24,11 @@ export function PhaseStats({
 
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m`
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`
-    } else {
-      return `${seconds}s`
     }
+    if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`
+    }
+    return `${seconds}s`
   }
 
   const formatTimestamp = (ts: string): string => {

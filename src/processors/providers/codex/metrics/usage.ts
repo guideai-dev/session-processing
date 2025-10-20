@@ -1,6 +1,12 @@
+import type {
+  ParsedMessage,
+  ToolResultContent,
+  ToolUseContent,
+  UsageMetrics,
+} from '@guideai-dev/types'
+import { extractTextFromMessage, getUserMessages } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { UsageMetrics } from '@guideai-dev/types'
 import { CodexParser } from '../parser.js'
 
 export class CodexUsageProcessor extends BaseMetricProcessor {
@@ -46,14 +52,14 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
     }
   }
 
-  private calculateInputClarityScore(userMessages: any[]): number {
+  private calculateInputClarityScore(userMessages: ParsedMessage[]): number {
     if (userMessages.length === 0) return 0
 
     let totalScore = 0
     let totalWords = 0
 
     for (const message of userMessages) {
-      const content = this.extractContent(message)
+      const content = extractTextFromMessage(message)
       const words = content.split(/\s+/).filter(word => word.length > 0)
       totalWords += words.length
 
@@ -161,7 +167,7 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
     return tips
   }
 
-  private calculateLinesRead(toolUses: any[], toolResults: any[]): number {
+  private calculateLinesRead(toolUses: ToolUseContent[], toolResults: ToolResultContent[]): number {
     let total = 0
 
     // Map tool uses to their results by ID

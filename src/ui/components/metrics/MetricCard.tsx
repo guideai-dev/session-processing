@@ -33,7 +33,7 @@ function getMetricColor(value: number, type: 'percentage' | 'time' | 'score'): s
 
 interface MetricCardProps {
   label: string
-  value: any
+  value: string | number | boolean | null | undefined | unknown[] | Record<string, unknown>
   unit?: string
   suffix?: string
   type?: 'number' | 'percentage' | 'duration' | 'array' | 'object' | 'string'
@@ -55,9 +55,9 @@ export function MetricCard({
 
     switch (type) {
       case 'duration':
-        return formatDuration(value)
+        return typeof value === 'number' ? formatDuration(value) : 'N/A'
       case 'percentage':
-        return formatPercentage(value)
+        return typeof value === 'number' ? formatPercentage(value) : 'N/A'
       case 'array':
         if (Array.isArray(value)) {
           return value.length === 0 ? 'None' : value.join(', ')

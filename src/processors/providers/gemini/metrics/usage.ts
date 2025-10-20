@@ -1,5 +1,7 @@
+import type { ParsedMessage, UsageMetrics } from '@guideai-dev/types'
+import { extractTextFromMessage, isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/index.js'
-import type { ParsedSession, SessionMetricsData } from '../../../base/types.js'
+import type { ParsedSession } from '../../../base/types.js'
 import { GeminiParser } from '../parser.js'
 
 export class GeminiUsageProcessor extends BaseMetricProcessor {
@@ -10,13 +12,13 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
 
   private parser = new GeminiParser()
 
-  async process(session: ParsedSession): Promise<SessionMetricsData> {
+  async process(session: ParsedSession): Promise<UsageMetrics> {
     const tokenStats = this.parser.calculateTotalTokens(session)
-    const thinkingAnalysis = this.parser.analyzeThinking(session)
+    const _thinkingAnalysis = this.parser.analyzeThinking(session)
 
     // Calculate message-level statistics
     const messagesWithTokens = session.messages.filter(m => m.metadata?.tokens)
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+    const _assistantMessages = session.messages.filter(m => m.type === 'assistant')
     const userMessages = session.messages.filter(m => m.type === 'user')
 
     const avgInputTokens =
@@ -25,10 +27,10 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
     const avgOutputTokens =
       messagesWithTokens.length > 0 ? tokenStats.totalOutput / messagesWithTokens.length : 0
 
-    const avgCachedTokens =
+    const _avgCachedTokens =
       messagesWithTokens.length > 0 ? tokenStats.totalCached / messagesWithTokens.length : 0
 
-    const avgThinkingTokens =
+    const _avgThinkingTokens =
       messagesWithTokens.length > 0 ? tokenStats.totalThoughts / messagesWithTokens.length : 0
 
     // Calculate cache efficiency score (0-100)
@@ -54,7 +56,7 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
     const readWriteRatio = writeOps > 0 ? Number((readOps / writeOps).toFixed(2)) : readOps
 
     // Calculate input clarity based on message length and detail
-    const inputClarityScore = this.calculateInputClarity(userMessages)
+    const inputClarityScore = this.calculateInputClarityScore(userMessages)
 
     // Calculate total lines read from tool results (for git diff efficiency ratios)
     const totalLinesRead = this.calculateLinesRead(tools, session)
@@ -96,32 +98,25 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
 
     for (const message of session.messages) {
       // Extract from content.toolUses (new JSONL format)
-      if (message.content?.toolUses && Array.isArray(message.content.toolUses)) {
+      if (isStructuredMessageContent(message.content)) {
         for (const tool of message.content.toolUses) {
           tools.push({ name: tool.name || 'unknown', timestamp: message.timestamp })
         }
-      }
-
-      // Also track tool results for completeness
-      if (message.content?.toolResults && Array.isArray(message.content.toolResults)) {
-        // Tool results don't have names directly, but we can count them as operations
-        for (const result of message.content.toolResults) {
-          // Skip adding tool results to the list as they don't have tool names
-        }
+        // Tool results are tracked but don't have names
       }
     }
 
     return tools
   }
 
-  private calculateInputClarity(userMessages: any[]): number {
+  private calculateInputClarityScore(userMessages: ParsedMessage[]): number {
     if (userMessages.length === 0) return 0
 
     let totalScore = 0
     let totalWords = 0
 
     for (const message of userMessages) {
-      const content = this.extractContent(message)
+      const content = extractTextFromMessage(message)
       const words = content.split(/\s+/).filter(word => word.length > 0)
       totalWords += words.length
 
@@ -206,14 +201,14 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
   }
 
   private calculateLinesRead(
-    tools: Array<{ name: string; timestamp: Date }>,
+    _tools: Array<{ name: string; timestamp: Date }>,
     session: ParsedSession
   ): number {
     let total = 0
 
     // Extract from content.toolResults (new JSONL format)
     for (const message of session.messages) {
-      if (message.content?.toolResults && Array.isArray(message.content.toolResults)) {
+      if (isStructuredMessageContent(message.content)) {
         for (const result of message.content.toolResults) {
           const content = result.content
           if (typeof content === 'string') {

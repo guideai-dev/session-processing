@@ -5,8 +5,8 @@
  * including project documentation (CLAUDE.md), instructions, and other contextual information.
  */
 
+import { BookOpenIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
-import { DocumentTextIcon, BookOpenIcon } from '@heroicons/react/24/outline'
 
 interface SystemReminderBlockProps {
   content: string
@@ -95,8 +95,8 @@ export function SystemReminderBlock({
           {claudeMdPaths.length > 0 && (
             <div className="text-xs bg-base-200 p-2 rounded border border-warning/20">
               <div className="font-semibold mb-1 text-warning">📄 Project Instructions:</div>
-              {claudeMdPaths.map((path, i) => (
-                <div key={i} className="font-mono text-xs text-secondary pl-4">
+              {claudeMdPaths.map(path => (
+                <div key={path} className="font-mono text-xs text-secondary pl-4">
                   {path}
                 </div>
               ))}
@@ -135,10 +135,13 @@ function renderHighlightedContent(content: string, hasClaudeMd: boolean) {
 
         const isHeaderLine = line.startsWith('# ') || line.startsWith('## ')
 
+        // Create a stable key using line index and a hash of content
+        const lineKey = `line-${i}-${line.substring(0, 20).replace(/\s/g, '')}`
+
         if (isClaudeMdLine) {
           return (
             <div
-              key={i}
+              key={lineKey}
               className="whitespace-pre-wrap bg-warning/10 border-l-2 border-warning pl-2 py-0.5"
             >
               {highlightClaudeMdInLine(line)}
@@ -148,14 +151,14 @@ function renderHighlightedContent(content: string, hasClaudeMd: boolean) {
 
         if (isHeaderLine) {
           return (
-            <div key={i} className="whitespace-pre-wrap font-semibold text-warning mt-2">
+            <div key={lineKey} className="whitespace-pre-wrap font-semibold text-warning mt-2">
               {line}
             </div>
           )
         }
 
         return (
-          <div key={i} className="whitespace-pre-wrap">
+          <div key={lineKey} className="whitespace-pre-wrap">
             {line}
           </div>
         )
@@ -173,14 +176,17 @@ function highlightClaudeMdInLine(line: string) {
   return (
     <>
       {parts.map((part, i) => {
+        // Create stable key using part index and content
+        const partKey = `part-${i}-${part.substring(0, 10)}`
+
         if (part.match(/CLAUDE\.md/i)) {
           return (
-            <span key={i} className="text-warning font-bold bg-warning/20 px-1 rounded">
+            <span key={partKey} className="text-warning font-bold bg-warning/20 px-1 rounded">
               {part}
             </span>
           )
         }
-        return <span key={i}>{part}</span>
+        return <span key={partKey}>{part}</span>
       })}
     </>
   )

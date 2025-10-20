@@ -26,6 +26,19 @@ export const MOCK_SESSION: ParsedSession = {
 						input: { filePath: '/auth/user.ts', content: 'export class User {}' },
 					},
 				],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: "I'll help you create a user authentication system. Let me start by creating the necessary files.",
+					},
+					{
+						type: 'tool_use',
+						id: 'tool-1',
+						name: 'write',
+						input: { filePath: '/auth/user.ts', content: 'export class User {}' },
+					},
+				],
 			},
 			timestamp: new Date('2025-01-01T00:00:05Z'),
 		},
@@ -41,6 +54,19 @@ export const MOCK_SESSION: ParsedSession = {
 			content: {
 				text: 'I will add password hashing functionality.',
 				toolUses: [
+					{
+						type: 'tool_use',
+						id: 'tool-2',
+						name: 'edit',
+						input: { filePath: '/auth/user.ts', content: 'Updated with bcrypt' },
+					},
+				],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: 'I will add password hashing functionality.',
+					},
 					{
 						type: 'tool_use',
 						id: 'tool-2',
@@ -78,6 +104,14 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			type: 'assistant',
 			content: {
 				text: 'Let me analyze the requirements and create a plan.',
+				toolUses: [],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: 'Let me analyze the requirements and create a plan.',
+					},
+				],
 			},
 			timestamp: new Date('2025-01-01T00:01:00Z'),
 		},
@@ -86,6 +120,14 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			type: 'assistant',
 			content: {
 				text: 'Here is my proposed approach: 1. Create models 2. Add routes 3. Add validation',
+				toolUses: [],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: 'Here is my proposed approach: 1. Create models 2. Add routes 3. Add validation',
+					},
+				],
 			},
 			timestamp: new Date('2025-01-01T00:02:00Z'),
 		},
@@ -101,6 +143,19 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			content: {
 				text: 'Creating the blog post model.',
 				toolUses: [
+					{
+						type: 'tool_use',
+						id: 'tool-1',
+						name: 'write',
+						input: { filePath: '/models/post.ts', content: 'export class Post {}' },
+					},
+				],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: 'Creating the blog post model.',
+					},
 					{
 						type: 'tool_use',
 						id: 'tool-1',
@@ -124,6 +179,19 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 						input: { filePath: '/routes/posts.ts', content: 'export const router = {}' },
 					},
 				],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: 'Adding API routes.',
+					},
+					{
+						type: 'tool_use',
+						id: 'tool-2',
+						name: 'write',
+						input: { filePath: '/routes/posts.ts', content: 'export const router = {}' },
+					},
+				],
 			},
 			timestamp: new Date('2025-01-01T00:10:00Z'),
 		},
@@ -139,6 +207,19 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			content: {
 				text: 'I will fix the failing tests.',
 				toolUses: [
+					{
+						type: 'tool_use',
+						id: 'tool-3',
+						name: 'edit',
+						input: { filePath: '/tests/posts.test.ts', content: 'Fixed tests' },
+					},
+				],
+				toolResults: [],
+				structured: [
+					{
+						type: 'text',
+						text: 'I will fix the failing tests.',
+					},
 					{
 						type: 'tool_use',
 						id: 'tool-3',

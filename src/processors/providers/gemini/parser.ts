@@ -1,5 +1,5 @@
+import type { ParsedMessage, ParsedSession } from '../../base/types.js'
 import { ClaudeCodeParser } from '../claude-code/parser.js'
-import type { ParsedSession, ParsedMessage } from '../../base/types.js'
 
 // Gemini-specific types
 export interface Thought {
@@ -17,17 +17,23 @@ export interface GeminiTokens {
   total: number
 }
 
+export interface GeminiMessageMetadata {
+  thoughts?: Thought[]
+  tokens?: GeminiTokens
+  model?: string
+}
+
 /**
  * GeminiParser extends ClaudeCodeParser to reuse tool call parsing logic
  * while preserving Gemini-specific features (Extended Thinking, token metrics)
  */
 export class GeminiParser extends ClaudeCodeParser {
-  parseSession(jsonlContent: string): ParsedSession {
+  parseSession(jsonlContent: string, provider: string): ParsedSession {
     // Parse JSONL lines to extract Gemini-specific metadata first
     const geminiMetadata = this.extractGeminiMetadata(jsonlContent)
 
     // Use parent Claude parser for tool parsing (tool_use/tool_result messages)
-    const session = super.parseSession(jsonlContent)
+    const session = super.parseSession(jsonlContent, provider)
 
     // Override provider
     session.provider = 'gemini-code'
@@ -44,8 +50,8 @@ export class GeminiParser extends ClaudeCodeParser {
   /**
    * Extract Gemini-specific metadata from JSONL before parsing
    */
-  private extractGeminiMetadata(jsonlContent: string): Map<string, any> {
-    const metadata = new Map<string, any>()
+  private extractGeminiMetadata(jsonlContent: string): Map<string, GeminiMessageMetadata> {
+    const metadata = new Map<string, GeminiMessageMetadata>()
     const lines = jsonlContent.split('\n').filter(line => line.trim())
 
     for (const line of lines) {
@@ -60,7 +66,7 @@ export class GeminiParser extends ClaudeCodeParser {
             model: parsed.gemini_model,
           })
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore parsing errors
       }
     }
@@ -71,7 +77,10 @@ export class GeminiParser extends ClaudeCodeParser {
   /**
    * Enhance parsed messages with Gemini-specific metadata
    */
-  private enhanceMessagesWithGeminiData(session: ParsedSession, geminiMetadata: Map<string, any>): void {
+  private enhanceMessagesWithGeminiData(
+    session: ParsedSession,
+    geminiMetadata: Map<string, GeminiMessageMetadata>
+  ): void {
     for (const message of session.messages) {
       const metadata = geminiMetadata.get(message.id)
 
@@ -126,7 +135,11 @@ export class GeminiParser extends ClaudeCodeParser {
       ...session.metadata,
       hasThoughts: session.messages.some(m => m.metadata?.thoughts),
       hasCachedTokens: session.messages.some(m => m.metadata?.hasCachedTokens),
-      totalThoughts: session.messages.reduce((sum, m) => sum + (m.metadata?.thoughtCount || 0), 0),
+      totalThoughts: session.messages.reduce(
+        (sum, m) =>
+          sum + (typeof m.metadata?.thoughtCount === 'number' ? m.metadata.thoughtCount : 0),
+        0
+      ),
     }
   }
 
@@ -136,8 +149,8 @@ export class GeminiParser extends ClaudeCodeParser {
   extractThoughts(session: ParsedSession): Thought[] {
     const allThoughts: Thought[] = []
     for (const message of session.messages) {
-      if (message.metadata?.thoughts) {
-        allThoughts.push(...message.metadata.thoughts)
+      if (message.metadata?.thoughts && Array.isArray(message.metadata.thoughts)) {
+        allThoughts.push(...(message.metadata.thoughts as Thought[]))
       }
     }
     return allThoughts
@@ -164,14 +177,14 @@ export class GeminiParser extends ClaudeCodeParser {
     let total = 0
 
     for (const message of session.messages) {
-      if (message.metadata?.tokens) {
-        const tokens = message.metadata.tokens
-        totalInput += tokens.input || 0
-        totalOutput += tokens.output || 0
-        totalCached += tokens.cached || 0
-        totalThoughts += tokens.thoughts || 0
-        totalTool += tokens.tool || 0
-        total += tokens.total || 0
+      if (message.metadata?.tokens && typeof message.metadata.tokens === 'object') {
+        const tokens = message.metadata.tokens as Record<string, unknown>
+        totalInput += typeof tokens.input === 'number' ? tokens.input : 0
+        totalOutput += typeof tokens.output === 'number' ? tokens.output : 0
+        totalCached += typeof tokens.cached === 'number' ? tokens.cached : 0
+        totalThoughts += typeof tokens.thoughts === 'number' ? tokens.thoughts : 0
+        totalTool += typeof tokens.tool === 'number' ? tokens.tool : 0
+        total += typeof tokens.total === 'number' ? tokens.total : 0
       }
     }
 
@@ -182,8 +195,7 @@ export class GeminiParser extends ClaudeCodeParser {
       totalThoughts,
       totalTool,
       total,
-      cacheHitRate:
-        totalInput + totalCached > 0 ? totalCached / (totalInput + totalCached) : 0,
+      cacheHitRate: totalInput + totalCached > 0 ? totalCached / (totalInput + totalCached) : 0,
       thinkingOverhead: totalOutput > 0 ? totalThoughts / totalOutput : 0,
     }
   }
@@ -203,8 +215,9 @@ export class GeminiParser extends ClaudeCodeParser {
     let maxThinkingDepth = 0
 
     for (const message of session.messages) {
-      if (message.metadata?.thoughts) {
-        const thoughtCount = message.metadata.thoughts.length
+      const thoughts = message.metadata?.thoughts as unknown[] | undefined
+      if (thoughts && Array.isArray(thoughts)) {
+        const thoughtCount = thoughts.length
         totalThoughts += thoughtCount
         thinkingMessages++
         if (thoughtCount > maxThinkingDepth) {

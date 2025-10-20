@@ -1,6 +1,6 @@
+import type { PerformanceMetrics } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { PerformanceMetrics } from '@guideai-dev/types'
 import { CodexParser } from '../parser.js'
 
 export class CodexPerformanceProcessor extends BaseMetricProcessor {

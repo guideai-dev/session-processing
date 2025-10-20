@@ -5,18 +5,18 @@
  * session_meta, and turn_context types.
  */
 
-import { BaseMessageProcessor } from './BaseMessageProcessor.js'
-import { BaseSessionMessage } from '../sessionTypes.js'
-import { createDisplayMetadata, ContentBlock, createContentBlock } from '../timelineTypes.js'
 import {
-  HashtagIcon,
-  LightBulbIcon,
-  UserIcon,
-  CpuChipIcon,
-  StopCircleIcon,
-  InformationCircleIcon,
   Cog6ToothIcon,
+  CpuChipIcon,
+  HashtagIcon,
+  InformationCircleIcon,
+  LightBulbIcon,
+  StopCircleIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline'
+import type { BaseSessionMessage } from '../sessionTypes.js'
+import { type ContentBlock, createContentBlock, createDisplayMetadata } from '../timelineTypes.js'
+import { BaseMessageProcessor, type MessageContent } from './BaseMessageProcessor.js'
 
 export class CodexMessageProcessor extends BaseMessageProcessor {
   name = 'codex'
@@ -44,7 +44,7 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
   /**
    * Map Codex payload types to standard message types
    */
-  private mapCodexType(payloadType: string, payload: any): BaseSessionMessage['type'] {
+  private mapCodexType(payloadType: string, payload: MessageContent): BaseSessionMessage['type'] {
     // Handle event_msg types
     if (payloadType === 'token_count') return 'meta'
     if (payloadType === 'agent_reasoning') return 'assistant_response'
@@ -56,8 +56,22 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
     if (payloadType === 'reasoning') return 'assistant_response'
     if (payloadType === 'function_call') return 'tool_use'
     if (payloadType === 'function_call_output') return 'tool_result'
-    if (payloadType === 'message' && payload?.role === 'user') return 'user_input'
-    if (payloadType === 'message' && payload?.role === 'assistant') return 'assistant_response'
+    if (
+      payloadType === 'message' &&
+      typeof payload === 'object' &&
+      payload !== null &&
+      'role' in payload &&
+      (payload as Record<string, unknown>).role === 'user'
+    )
+      return 'user_input'
+    if (
+      payloadType === 'message' &&
+      typeof payload === 'object' &&
+      payload !== null &&
+      'role' in payload &&
+      (payload as Record<string, unknown>).role === 'assistant'
+    )
+      return 'assistant_response'
 
     // Meta types
     if (payloadType === 'session_meta') return 'meta'
@@ -164,7 +178,7 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
 
     // Function call (tool use)
     if (payloadType === 'function_call') {
-      const toolName = payload?.name || 'Unknown Tool'
+      const _toolName = payload?.name || 'Unknown Tool'
       // Use base class getDisplayMetadata for consistent tool icon
       return super.getDisplayMetadata({ ...message, type: 'tool_use' } as BaseSessionMessage)
     }
@@ -218,10 +232,16 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
 
     // Token count
     if (payloadType === 'token_count') {
-      const info = payload?.info
-      const rateLimits = payload?.rate_limits
+      const info =
+        typeof payload === 'object' && payload !== null && 'info' in payload
+          ? payload.info
+          : undefined
+      const rateLimits =
+        typeof payload === 'object' && payload !== null && 'rate_limits' in payload
+          ? payload.rate_limits
+          : undefined
 
-      const content: any = {}
+      const content: Record<string, unknown> = {}
       if (info) content.token_usage = info
       if (rateLimits) content.rate_limits = rateLimits
 

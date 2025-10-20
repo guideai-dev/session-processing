@@ -1,12 +1,12 @@
-import { BaseProviderProcessor, BaseMetricProcessor } from '../../base/index.js'
+import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
 import { OpenCodeParser } from './parser.js'
 
+import { OpenCodeEngagementProcessor } from './metrics/engagement.js'
+import { OpenCodeErrorProcessor } from './metrics/error.js'
 // Import metric processors
 import { OpenCodePerformanceProcessor } from './metrics/performance.js'
-import { OpenCodeEngagementProcessor } from './metrics/engagement.js'
 import { OpenCodeQualityProcessor } from './metrics/quality.js'
 import { OpenCodeUsageProcessor } from './metrics/usage.js'
-import { OpenCodeErrorProcessor } from './metrics/error.js'
 
 /**
  * OpenCode uses Claude-like message format (Anthropic Messages API)
@@ -32,9 +32,9 @@ export class OpenCodeProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string) {
+  parseSession(jsonlContent: string, provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent)
+    return this.parser.parseSession(jsonlContent, provider)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -64,9 +64,7 @@ export class OpenCodeProcessor extends BaseProviderProcessor {
           if (hasOpenCodeFields) {
             return true
           }
-        } catch {
-          continue
-        }
+        } catch {}
       }
 
       return false

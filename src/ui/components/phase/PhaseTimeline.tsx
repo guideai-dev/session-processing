@@ -27,11 +27,11 @@ export function PhaseTimeline({ phaseAnalysis }: PhaseTimelineProps) {
 
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m`
-    } else if (minutes > 0) {
-      return `${minutes}m`
-    } else {
-      return `${seconds}s`
     }
+    if (minutes > 0) {
+      return `${minutes}m`
+    }
+    return `${seconds}s`
   }
 
   return (
@@ -65,8 +65,11 @@ export function PhaseTimeline({ phaseAnalysis }: PhaseTimelineProps) {
 
       {/* Phase Blocks */}
       <div>
-        {phases.map((phase, index) => (
-          <PhaseBlock key={index} phase={phase} />
+        {phases.map(phase => (
+          <PhaseBlock
+            key={`${phase.phaseType}-${phase.startStep}-${phase.endStep}`}
+            phase={phase}
+          />
         ))}
       </div>
     </div>

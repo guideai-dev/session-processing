@@ -1,12 +1,34 @@
+import type { ContentBlock, ToolUseContent } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
+import { getUserDisplayName } from '../../../../utils/user.js'
 import { BaseModelTask } from '../../../base/model-task.js'
 import type { ModelTaskConfig, ModelTaskContext } from '../../../base/types.js'
-import { getUserDisplayName } from '../../../../utils/user.js'
+
+export interface QualityAssessmentInput {
+  userName: string
+  provider: string
+  durationMinutes: number
+  messageCount: number
+  interruptionCount: number
+  toolCount: number
+  errorCount: number
+}
+
+export interface QualityAssessmentOutput {
+  score: number
+  reasoning: string
+  strengths: string[]
+  improvements: string[]
+}
 
 /**
  * Quality Assessment Task
  * Evaluates the quality and completeness of an agent session
  */
-export class QualityAssessmentTask extends BaseModelTask {
+export class QualityAssessmentTask extends BaseModelTask<
+  QualityAssessmentInput,
+  QualityAssessmentOutput
+> {
   readonly taskType = 'quality-assessment'
   readonly name = 'Quality Assessment'
   readonly description = 'Evaluate session quality and provide a score'
@@ -61,7 +83,7 @@ Respond with a JSON object containing:
     }
   }
 
-  prepareInput(context: ModelTaskContext): any {
+  prepareInput(context: ModelTaskContext): QualityAssessmentInput {
     const session = context.session
     if (!session) {
       throw new Error('Session data is required for quality assessment')
@@ -80,25 +102,25 @@ Respond with a JSON object containing:
 
     // Count unique tools from assistant messages
     const toolNames: string[] = []
-    session.messages
-      .filter(msg => msg.type === 'assistant')
-      .forEach(msg => {
-        // Parser stores tool uses in msg.content.toolUses array
-        if (msg.content?.toolUses && Array.isArray(msg.content.toolUses)) {
-          msg.content.toolUses.forEach((toolUse: any) => {
-            if (toolUse.name) {
-              toolNames.push(toolUse.name)
-            }
-          })
-        } else if (Array.isArray(msg.content)) {
-          // Fallback: Check direct array format (for other providers)
-          msg.content.forEach((item: any) => {
-            if (item.type === 'tool_use' && item.name) {
-              toolNames.push(item.name)
-            }
-          })
+    const assistantMessages = session.messages.filter(msg => msg.type === 'assistant')
+
+    for (const msg of assistantMessages) {
+      // Parser stores tool uses in msg.content.toolUses array
+      if (isStructuredMessageContent(msg.content)) {
+        for (const toolUse of msg.content.toolUses) {
+          if (toolUse.name) {
+            toolNames.push(toolUse.name)
+          }
         }
-      })
+      } else if (Array.isArray(msg.content)) {
+        // Fallback: Check direct array format (for other providers)
+        for (const item of msg.content) {
+          if (item.type === 'tool_use' && 'name' in item && item.name) {
+            toolNames.push(item.name as string)
+          }
+        }
+      }
+    }
     const toolCount = new Set(toolNames).size
 
     // Estimate errors from content
@@ -106,9 +128,9 @@ Respond with a JSON object containing:
       let contentStr = ''
       if (typeof msg.content === 'string') {
         contentStr = msg.content.toLowerCase()
-      } else if (msg.content?.text) {
+      } else if (isStructuredMessageContent(msg.content)) {
         // Parser wraps content in { text, toolUses, toolResults, structured }
-        contentStr = msg.content.text.toLowerCase()
+        contentStr = (msg.content.text || '').toLowerCase()
       } else {
         contentStr = JSON.stringify(msg.content).toLowerCase()
       }
@@ -136,22 +158,24 @@ Respond with a JSON object containing:
     return super.canExecute(context) && !!context.session && context.session.messages.length > 0
   }
 
-  processOutput(output: any, context: ModelTaskContext): any {
+  processOutput(output: unknown, _context: ModelTaskContext): QualityAssessmentOutput {
     // Validate the output structure
     if (typeof output !== 'object' || output === null) {
       throw new Error('Quality assessment output must be an object')
     }
 
-    if (typeof output.score !== 'number' || output.score < 0 || output.score > 100) {
+    const result = output as QualityAssessmentOutput
+
+    if (typeof result.score !== 'number' || result.score < 0 || result.score > 100) {
       throw new Error('Quality score must be a number between 0 and 100')
     }
 
     // Ensure arrays exist
     return {
-      score: output.score,
-      reasoning: output.reasoning || '',
-      strengths: Array.isArray(output.strengths) ? output.strengths : [],
-      improvements: Array.isArray(output.improvements) ? output.improvements : [],
+      score: result.score,
+      reasoning: result.reasoning || '',
+      strengths: Array.isArray(result.strengths) ? result.strengths : [],
+      improvements: Array.isArray(result.improvements) ? result.improvements : [],
     }
   }
 }

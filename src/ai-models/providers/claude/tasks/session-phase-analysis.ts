@@ -1,3 +1,5 @@
+import type { ContentBlock, TextContent, ToolUseContent } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
 import { getUserDisplayName } from '../../../../utils/user.js'
 import { BaseModelTask } from '../../../base/model-task.js'
 import type { ModelTaskConfig, ModelTaskContext } from '../../../base/types.js'
@@ -44,11 +46,29 @@ export interface SessionPhaseAnalysis {
 }
 
 /**
+ * Input prepared for the phase analysis AI model
+ */
+export interface PhaseAnalysisInput {
+  userName: string
+  provider: string
+  durationMinutes: number | string
+  messageCount: number
+  sessionStart: string
+  sessionEnd: string
+  sessionDurationMs: number
+  phasePattern: string
+  transcript: string
+}
+
+/**
  * Session Phase Analysis Task
  * Analyzes the entire chat transcript and breaks it into meaningful broader steps/phases
  * based on configurable patterns
  */
-export class SessionPhaseAnalysisTask extends BaseModelTask {
+export class SessionPhaseAnalysisTask extends BaseModelTask<
+  PhaseAnalysisInput,
+  SessionPhaseAnalysis
+> {
   readonly taskType = 'session-phase-analysis'
   readonly name = 'Session Phase Analysis'
   readonly description =
@@ -184,7 +204,7 @@ Always refer to the person as {{userName}} in your summaries.`,
     // For now, we'll keep it simple and use the default
   }
 
-  prepareInput(context: ModelTaskContext): any {
+  prepareInput(context: ModelTaskContext): PhaseAnalysisInput {
     const session = context.session
     if (!session) {
       throw new Error('Session data is required for phase analysis')
@@ -204,12 +224,14 @@ Always refer to the person as {{userName}} in your summaries.`,
         let content = ''
         if (typeof msg.content === 'string') {
           content = msg.content
-        } else if (msg.content?.text) {
-          content = msg.content.text
+        } else if (isStructuredMessageContent(msg.content)) {
+          content = msg.content.text || ''
         } else if (Array.isArray(msg.content)) {
           content = msg.content
-            .filter((item: any) => item.type === 'text' && item.text)
-            .map((item: any) => item.text)
+            .filter(
+              (item: ContentBlock): item is TextContent => item.type === 'text' && 'text' in item
+            )
+            .map((item: TextContent) => item.text)
             .join(' ')
         }
 
@@ -221,13 +243,9 @@ Always refer to the person as {{userName}} in your summaries.`,
 
         // Add tool use information for assistant messages
         let toolInfo = ''
-        if (
-          msg.type === 'assistant' &&
-          msg.content?.toolUses &&
-          Array.isArray(msg.content.toolUses)
-        ) {
+        if (msg.type === 'assistant' && isStructuredMessageContent(msg.content)) {
           const tools = msg.content.toolUses
-            .map((tool: any) => tool.name)
+            .map((tool: ToolUseContent) => tool.name)
             .filter(Boolean)
             .join(', ')
           if (tools) {
@@ -265,18 +283,20 @@ Always refer to the person as {{userName}} in your summaries.`,
     return super.canExecute(context) && !!context.session && context.session.messages.length >= 3
   }
 
-  processOutput(output: any, context: ModelTaskContext): SessionPhaseAnalysis {
+  processOutput(output: unknown, context: ModelTaskContext): SessionPhaseAnalysis {
     // Validate the output structure
     if (typeof output !== 'object' || output === null) {
       throw new Error('Phase analysis output must be an object')
     }
 
-    if (!Array.isArray(output.phases)) {
+    const result = output as Record<string, unknown>
+
+    if (!Array.isArray(result.phases)) {
       throw new Error('Phase analysis output must contain a phases array')
     }
 
     // Validate each phase
-    for (const phase of output.phases) {
+    for (const phase of result.phases) {
       if (!phase.phaseType || typeof phase.phaseType !== 'string') {
         throw new Error('Each phase must have a phaseType string')
       }
@@ -296,7 +316,7 @@ Always refer to the person as {{userName}} in your summaries.`,
 
     // Ensure proper structure
     return {
-      phases: output.phases.map((phase: any) => ({
+      phases: result.phases.map((phase: SessionPhase) => ({
         phaseType: phase.phaseType,
         startStep: phase.startStep,
         endStep: phase.endStep,
@@ -305,10 +325,10 @@ Always refer to the person as {{userName}} in your summaries.`,
         durationMs: phase.durationMs,
         timestamp: phase.timestamp,
       })),
-      totalPhases: output.totalPhases || output.phases.length,
-      totalSteps: output.totalSteps || context.session?.messages.length || 0,
-      sessionDurationMs: output.sessionDurationMs || context.session?.duration || 0,
-      pattern: output.pattern || 'unknown',
+      totalPhases: (result.totalPhases as number) || result.phases.length,
+      totalSteps: (result.totalSteps as number) || context.session?.messages.length || 0,
+      sessionDurationMs: (result.sessionDurationMs as number) || context.session?.duration || 0,
+      pattern: (result.pattern as string) || 'unknown',
     }
   }
 }

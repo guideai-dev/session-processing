@@ -1,4 +1,5 @@
 import type { MetricType, SessionMetricsData } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
 import type { ParsedSession, ProcessorResult } from './types.js'
 
 export abstract class BaseMetricProcessor {
@@ -16,7 +17,7 @@ export abstract class BaseMetricProcessor {
    * Check if this processor can handle the given session
    * Default implementation checks if the provider is supported
    */
-  canProcess(session: ParsedSession): boolean {
+  canProcess(_session: ParsedSession): boolean {
     return true
   }
 
@@ -94,8 +95,8 @@ export abstract class BaseMetricProcessor {
     if (typeof message.content === 'string') {
       return message.content
     }
-    if (typeof message.content === 'object' && message.content?.text) {
-      return message.content.text
+    if (isStructuredMessageContent(message.content)) {
+      return message.content.text || ''
     }
     return JSON.stringify(message.content || '')
   }

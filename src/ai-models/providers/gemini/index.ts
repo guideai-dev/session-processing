@@ -1,11 +1,11 @@
 import { BaseModelAdapter } from '../../base/model-adapter.js'
+import type { BaseModelTask } from '../../base/model-task.js'
 import type {
   ModelAdapterConfig,
+  ModelHealthCheck,
   ModelTaskContext,
   ModelTaskResult,
-  ModelHealthCheck,
 } from '../../base/types.js'
-import type { BaseModelTask } from '../../base/model-task.js'
 import { GeminiAPIClient } from './client.js'
 
 /**
@@ -64,10 +64,13 @@ export class GeminiModelAdapter extends BaseModelAdapter {
       const input = task.prepareInput(context)
 
       // Format prompt with input variables
-      const prompt = this.formatPrompt(config.prompt, input)
+      const prompt = this.formatPrompt(
+        config.prompt,
+        input as Record<string, string | number | boolean | null | undefined>
+      )
 
       // Execute based on response format
-      let rawOutput: any
+      let rawOutput: unknown
       let tokensUsed = 0
 
       if (config.responseFormat.type === 'json') {

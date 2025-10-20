@@ -1,15 +1,18 @@
 import type {
   ModelTaskConfig,
-  ModelTaskDefinition,
   ModelTaskContext,
+  ModelTaskDefinition,
   ModelTaskResult,
 } from './types.js'
 
 /**
  * Base class for AI model tasks
  * Each task defines how to extract input from a session and what to do with the output
+ *
+ * @template TInput - The type of input prepared for the AI model
+ * @template TOutput - The type of output expected from the AI model
  */
-export abstract class BaseModelTask {
+export abstract class BaseModelTask<TInput = unknown, TOutput = unknown> {
   abstract readonly taskType: string
   abstract readonly name: string
   abstract readonly description: string
@@ -22,13 +25,13 @@ export abstract class BaseModelTask {
   /**
    * Prepare input for the AI model from the session data
    */
-  abstract prepareInput(context: ModelTaskContext): any
+  abstract prepareInput(context: ModelTaskContext): TInput
 
   /**
    * Process the output from the AI model
    * Can transform or validate the response before recording
    */
-  processOutput(output: any, context: ModelTaskContext): any {
+  processOutput(output: TOutput, _context: ModelTaskContext): TOutput {
     // Default implementation: return as-is
     return output
   }

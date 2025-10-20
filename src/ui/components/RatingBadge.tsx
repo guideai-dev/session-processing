@@ -5,11 +5,11 @@
  * When onRate is provided, becomes interactive and shows QuickRatingPopover on click.
  */
 
-import { useState, useRef } from 'react'
-import { HandThumbUpIcon, HandThumbDownIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
-import { QuickRatingPopover } from './QuickRatingPopover.js'
+import { HandThumbDownIcon, HandThumbUpIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
+import { useRef, useState } from 'react'
 import type { SessionRating } from '../../utils/rating.js'
 import { getRatingDisplayInfo } from '../../utils/rating.js'
+import { QuickRatingPopover } from './QuickRatingPopover.js'
 
 export interface RatingBadgeProps {
   rating: SessionRating | null

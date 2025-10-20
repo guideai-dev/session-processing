@@ -4,9 +4,9 @@
  * This replaces the old MessageCard component with a provider-agnostic design.
  */
 
-import { TimelineMessage as TimelineMessageType } from '../../utils/timelineTypes.js'
-import { MessageHeader } from './MessageHeader.js'
+import type { TimelineMessage as TimelineMessageType } from '../../utils/timelineTypes.js'
 import { ContentRenderer } from './ContentRenderer.js'
+import { MessageHeader } from './MessageHeader.js'
 
 interface TimelineMessageProps {
   message: TimelineMessageType

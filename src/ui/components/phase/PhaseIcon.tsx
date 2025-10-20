@@ -3,18 +3,19 @@
  */
 
 import {
+  BoltIcon,
+  CheckCircleIcon,
+  ClipboardDocumentListIcon,
   DocumentTextIcon,
+  HandThumbUpIcon,
   MagnifyingGlassIcon,
   PencilSquareIcon,
-  HandThumbUpIcon,
-  BoltIcon,
-  StopCircleIcon,
-  ClipboardDocumentListIcon,
-  CheckCircleIcon,
-  WrenchScrewdriverIcon,
-  SparklesIcon,
   QuestionMarkCircleIcon,
+  SparklesIcon,
+  StopCircleIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
+import type React from 'react'
 
 export type SessionPhaseType =
   | 'initial_specification'
@@ -33,7 +34,7 @@ export type SessionPhaseType =
  * Get the HeroIcon component for a phase type
  */
 export function getPhaseIcon(phaseType: SessionPhaseType) {
-  const iconMap: Record<SessionPhaseType, any> = {
+  const iconMap: Record<SessionPhaseType, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
     initial_specification: DocumentTextIcon,
     analysis_planning: MagnifyingGlassIcon,
     plan_modification: PencilSquareIcon,

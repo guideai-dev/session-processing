@@ -1,6 +1,6 @@
+import type { GitDiff, GitDiffMetrics } from '@guideai-dev/types'
 import { BaseMetricProcessor } from './metric-processor.js'
 import type { ParsedSession } from './types.js'
-import type { GitDiffMetrics } from '@guideai-dev/types'
 
 /**
  * Universal git diff metric processor - works with ALL providers
@@ -32,10 +32,10 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
    */
   async processWithExistingMetrics(
     session: ParsedSession,
-    existingMetrics?: any
+    existingMetrics?: Record<string, unknown>
   ): Promise<GitDiffMetrics> {
     // Check if git diff data is available (desktop only)
-    const gitDiff = session.metadata?.gitDiff
+    const gitDiff = session.metadata?.gitDiff as GitDiff | undefined
     if (!gitDiff || !gitDiff.files) {
       // Return empty metrics if no git data (server sessions)
       return {
@@ -53,34 +53,34 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
 
     // Calculate core diff metrics (provider-agnostic)
     const totalFiles = gitDiff.files.length
-    const linesAdded = gitDiff.files.reduce(
-      (sum: number, f: any) => sum + (f.stats?.additions || 0),
-      0
-    )
-    const linesRemoved = gitDiff.files.reduce(
-      (sum: number, f: any) => sum + (f.stats?.deletions || 0),
-      0
-    )
+    const linesAdded = gitDiff.files.reduce((sum, file) => sum + (file.stats?.additions || 0), 0)
+    const linesRemoved = gitDiff.files.reduce((sum, file) => sum + (file.stats?.deletions || 0), 0)
     const linesModified = linesAdded + linesRemoved
     const netLines = linesAdded - linesRemoved
 
     // Extract total lines read from EXISTING usage metrics (already calculated)
-    const totalLinesRead = existingMetrics?.usage?.metadata?.total_lines_read || 0
-    const readOperations = existingMetrics?.usage?.metadata?.read_operations || 0
+    const usage = existingMetrics?.usage as Record<string, unknown> | undefined
+    const usageMetadata = usage?.metadata as Record<string, unknown> | undefined
+    const totalLinesRead = (usageMetadata?.total_lines_read as number) || 0
+    const readOperations = (usageMetadata?.read_operations as number) || 0
 
     // Calculate tool count (provider-agnostic)
     const toolCount = this.getTotalToolCount(session)
 
     // Calculate efficiency ratios
     const linesReadPerChanged =
-      linesModified > 0 ? parseFloat((totalLinesRead / linesModified).toFixed(2)) : 0
+      linesModified > 0 ? Number.parseFloat((totalLinesRead / linesModified).toFixed(2)) : 0
 
-    const readsPerFile = totalFiles > 0 ? parseFloat((readOperations / totalFiles).toFixed(2)) : 0
+    const readsPerFile =
+      totalFiles > 0 ? Number.parseFloat((readOperations / totalFiles).toFixed(2)) : 0
 
     const linesPerMinute =
-      session.duration > 0 ? parseFloat((linesModified / (session.duration / 60000)).toFixed(2)) : 0
+      session.duration > 0
+        ? Number.parseFloat((linesModified / (session.duration / 60000)).toFixed(2))
+        : 0
 
-    const linesPerTool = toolCount > 0 ? parseFloat((linesModified / toolCount).toFixed(2)) : 0
+    const linesPerTool =
+      toolCount > 0 ? Number.parseFloat((linesModified / toolCount).toFixed(2)) : 0
 
     return {
       git_total_files_changed: totalFiles,
@@ -107,8 +107,14 @@ export class GitDiffMetricProcessor extends BaseMetricProcessor {
    */
   private getTotalToolCount(session: ParsedSession): number {
     return session.messages
-      .filter(m => m.metadata?.hasToolUses || (m.metadata?.toolCount && m.metadata.toolCount > 0))
-      .reduce((sum, m) => sum + (m.metadata?.toolCount || 0), 0)
+      .filter(m => {
+        const toolCount = m.metadata?.toolCount as number | undefined
+        return m.metadata?.hasToolUses || (toolCount && toolCount > 0)
+      })
+      .reduce((sum, m) => {
+        const toolCount = (m.metadata?.toolCount as number | undefined) || 0
+        return sum + toolCount
+      }, 0)
   }
 
   /**

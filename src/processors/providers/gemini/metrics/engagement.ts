@@ -1,12 +1,14 @@
+import type { EngagementMetrics } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/index.js'
-import type { ParsedSession, SessionMetricsData } from '../../../base/types.js'
+import type { ParsedSession } from '../../../base/types.js'
 
 export class GeminiEngagementProcessor extends BaseMetricProcessor {
   readonly name = 'gemini-engagement'
   readonly metricType = 'engagement'
   readonly description = 'Analyzes user engagement patterns and conversation flow'
 
-  async process(session: ParsedSession): Promise<SessionMetricsData> {
+  async process(session: ParsedSession): Promise<EngagementMetrics> {
     const userMessages = session.messages.filter(m => m.type === 'user')
     const assistantMessages = session.messages.filter(m => m.type === 'assistant')
 
@@ -50,7 +52,12 @@ export class GeminiEngagementProcessor extends BaseMetricProcessor {
 
     // User message length analysis
     const userMessageLengths = userMessages.map(m => {
-      const text = typeof m.content === 'string' ? m.content : m.content?.text || ''
+      const text =
+        typeof m.content === 'string'
+          ? m.content
+          : isStructuredMessageContent(m.content)
+            ? m.content.text || ''
+            : ''
       return text.length
     })
 

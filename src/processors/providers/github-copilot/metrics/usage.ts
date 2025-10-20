@@ -1,6 +1,12 @@
+import type {
+  ParsedMessage,
+  ToolResultContent,
+  ToolUseContent,
+  UsageMetrics,
+} from '@guideai-dev/types'
+import { extractTextFromMessage } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { UsageMetrics } from '@guideai-dev/types'
 import { GitHubCopilotParser } from '../parser.js'
 
 export class CopilotUsageProcessor extends BaseMetricProcessor {
@@ -56,7 +62,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
         tool_diversity: toolDiversity,
         bash_command_count: bashCommandCount,
         unique_tools: Array.from(uniqueTools),
-      } as any,
+      },
     }
   }
 
@@ -65,7 +71,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
    * - str_replace_editor with "view" command
    * - bash with read-like commands (cat, grep, find, ls, etc.)
    */
-  private countReadOperations(toolUses: any[]): number {
+  private countReadOperations(toolUses: ToolUseContent[]): number {
     let count = 0
 
     for (const tool of toolUses) {
@@ -73,7 +79,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
         count++
       } else if (tool.name === 'bash') {
         // Check if bash command is a read operation
-        const command = tool.input?.command || ''
+        const command = typeof tool.input?.command === 'string' ? tool.input.command : ''
         const readCommands = [
           'cat',
           'grep',
@@ -101,19 +107,19 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
    * - str_replace_editor with "str_replace", "create", "insert" commands
    * - bash with write-like commands (echo, sed, awk, etc.)
    */
-  private countWriteOperations(toolUses: any[]): number {
+  private countWriteOperations(toolUses: ToolUseContent[]): number {
     let count = 0
 
     for (const tool of toolUses) {
       if (tool.name === 'str_replace_editor') {
-        const command = tool.input?.command || ''
+        const command = typeof tool.input?.command === 'string' ? tool.input.command : ''
         const writeCommands = ['str_replace', 'create', 'insert', 'write']
         if (writeCommands.includes(command)) {
           count++
         }
       } else if (tool.name === 'bash') {
         // Check if bash command is a write operation
-        const command = tool.input?.command || ''
+        const command = typeof tool.input?.command === 'string' ? tool.input.command : ''
         const writeCommands = [
           'echo',
           'sed',
@@ -135,14 +141,14 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     return count
   }
 
-  private calculateInputClarityScore(userMessages: any[]): number {
+  private calculateInputClarityScore(userMessages: ParsedMessage[]): number {
     if (userMessages.length === 0) return 0
 
     let totalScore = 0
     let totalWords = 0
 
     for (const message of userMessages) {
-      const content = this.extractContent(message)
+      const content = extractTextFromMessage(message)
       const words = content.split(/\s+/).filter(word => word.length > 0)
       totalWords += words.length
 
@@ -262,7 +268,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
     return tips
   }
 
-  private calculateLinesRead(toolUses: any[], toolResults: any[]): number {
+  private calculateLinesRead(toolUses: ToolUseContent[], toolResults: ToolResultContent[]): number {
     let total = 0
 
     // Map tool uses to their results by ID

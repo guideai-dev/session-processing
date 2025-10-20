@@ -132,7 +132,7 @@ export class GeminiAPIClient {
   /**
    * Send a prompt expecting JSON response
    */
-  async promptJSON<T = any>(
+  async promptJSON<T = unknown>(
     prompt: string,
     options?: {
       model?: string
@@ -200,7 +200,7 @@ export class GeminiAPIClient {
   /**
    * Make a request to the Gemini API
    */
-  private async makeRequest(model: string, body: GeminiRequest): Promise<any> {
+  private async makeRequest(model: string, body: GeminiRequest): Promise<unknown> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
@@ -235,7 +235,7 @@ export class GeminiAPIClient {
         } catch {
           // If not JSON, use raw text (truncate if too long)
           if (errorText.length > 200) {
-            errorMessage = errorText.substring(0, 200) + '...'
+            errorMessage = `${errorText.substring(0, 200)}...`
           }
         }
 

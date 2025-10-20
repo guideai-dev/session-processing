@@ -1,5 +1,6 @@
+import { isStructuredMessageContent } from '@guideai-dev/types'
+import type { ParsedMessage, ParsedSession } from '../../base/types.js'
 import { ClaudeCodeParser } from '../claude-code/parser.js'
-import type { ParsedSession } from '../../base/types.js'
 
 /**
  * OpenCodeParser extends ClaudeCodeParser but sets provider to 'opencode'
@@ -7,8 +8,8 @@ import type { ParsedSession } from '../../base/types.js'
  * but has lowercase tool names that need to be normalized to title case
  */
 export class OpenCodeParser extends ClaudeCodeParser {
-  parseSession(jsonlContent: string): ParsedSession {
-    const session = super.parseSession(jsonlContent)
+  parseSession(jsonlContent: string, provider: string): ParsedSession {
+    const session = super.parseSession(jsonlContent, provider)
 
     // Normalize tool names from lowercase to title case
     // OpenCode uses: read, write, edit, bash, glob, etc.
@@ -28,16 +29,16 @@ export class OpenCodeParser extends ClaudeCodeParser {
   private normalizeToolNames(session: ParsedSession): void {
     for (const message of session.messages) {
       // Normalize tool uses
-      if (message.content?.toolUses) {
+      if (isStructuredMessageContent(message.content)) {
         for (const toolUse of message.content.toolUses) {
           toolUse.name = this.toTitleCase(toolUse.name)
         }
-      }
 
-      // Update hasToolUses metadata if toolUses array was modified
-      if (message.metadata && message.content?.toolUses) {
-        message.metadata.hasToolUses = message.content.toolUses.length > 0
-        message.metadata.toolCount = message.content.toolUses.length
+        // Update hasToolUses metadata if toolUses array was modified
+        if (message.metadata) {
+          message.metadata.hasToolUses = message.content.toolUses.length > 0
+          message.metadata.toolCount = message.content.toolUses.length
+        }
       }
     }
   }
@@ -55,9 +56,12 @@ export class OpenCodeParser extends ClaudeCodeParser {
    */
   calculateResponseTimes(
     session: ParsedSession
-  ): Array<{ userMessage: any; assistantMessage: any; responseTime: number }> {
-    const responseTimes: Array<{ userMessage: any; assistantMessage: any; responseTime: number }> =
-      []
+  ): Array<{ userMessage: ParsedMessage; assistantMessage: ParsedMessage; responseTime: number }> {
+    const responseTimes: Array<{
+      userMessage: ParsedMessage
+      assistantMessage: ParsedMessage
+      responseTime: number
+    }> = []
 
     for (let i = 0; i < session.messages.length; i++) {
       const current = session.messages[i]

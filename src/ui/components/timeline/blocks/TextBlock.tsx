@@ -2,18 +2,20 @@
  * TextBlock - Renders text content with optional markdown rendering
  */
 
-import { useState, useEffect } from 'react'
 import { CodeBracketIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import type { ComponentPropsWithoutRef } from 'react'
+import { useEffect, useState } from 'react'
+import type { Components } from 'react-markdown'
 
 interface TextBlockProps {
   content: string
 }
 
 interface MarkdownDeps {
-  ReactMarkdown: any
-  Prism: any
-  oneDark: any
-  oneLight: any
+  ReactMarkdown: typeof import('react-markdown').default
+  Prism: typeof import('react-syntax-highlighter/dist/esm/prism').default
+  oneDark: Record<string, unknown>
+  oneLight: Record<string, unknown>
 }
 
 /**
@@ -111,6 +113,104 @@ export function TextBlock({ content }: TextBlockProps) {
   // Select theme based on current mode
   const syntaxTheme = isDark ? oneDark : oneLight
 
+  // Define custom components with proper types
+  const components: Partial<Components> = {
+    // Headings
+    h1: props => <h1 className="text-lg font-bold text-base-content mt-4 mb-2" {...props} />,
+    h2: props => <h2 className="text-base font-bold text-base-content mt-3 mb-2" {...props} />,
+    h3: props => <h3 className="text-sm font-semibold text-base-content mt-2 mb-1" {...props} />,
+    h4: props => <h4 className="text-sm font-medium text-base-content mt-2 mb-1" {...props} />,
+    h5: props => <h5 className="text-xs font-medium text-base-content mt-1 mb-1" {...props} />,
+    h6: props => <h6 className="text-xs font-medium text-base-content/80 mt-1 mb-1" {...props} />,
+
+    // Paragraphs
+    p: props => <p className="text-sm text-base-content leading-relaxed" {...props} />,
+
+    // Lists
+    ul: props => (
+      <ul className="list-disc list-inside text-sm text-base-content mb-2 space-y-1" {...props} />
+    ),
+    ol: props => (
+      <ol
+        className="list-decimal list-inside text-sm text-base-content mb-2 space-y-1"
+        {...props}
+      />
+    ),
+    li: props => <li className="text-sm text-base-content" {...props} />,
+
+    // Inline code
+    code: props => {
+      // The 'inline' property is added by react-markdown, not part of standard HTML attributes
+      const inline = 'inline' in props ? (props as { inline?: boolean }).inline : false
+      const { className, children, ...rest } = props
+      const match = /language-(\w+)/.exec(className || '')
+      const language = match ? match[1] : undefined
+
+      if (!inline && Prism && language) {
+        // Block code with syntax highlighting
+        return (
+          <div className="my-2">
+            <Prism
+              language={language}
+              style={syntaxTheme as Record<string, React.CSSProperties>}
+              customStyle={{
+                margin: 0,
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                padding: '0.75rem',
+              }}
+            >
+              {String(children).replace(/\n$/, '')}
+            </Prism>
+          </div>
+        )
+      }
+
+      // Inline code
+      return (
+        <code
+          className="bg-base-200 text-primary px-1.5 py-0.5 rounded text-xs font-mono"
+          {...rest}
+        >
+          {children}
+        </code>
+      )
+    },
+
+    // Links
+    a: props => {
+      const { href, children, ...rest } = props
+      return (
+        <a
+          href={href}
+          className="text-primary hover:text-primary-focus underline"
+          target="_blank"
+          rel="noopener noreferrer"
+          {...rest}
+        >
+          {children}
+        </a>
+      )
+    },
+
+    // Blockquotes
+    blockquote: props => (
+      <blockquote
+        className="border-l-4 border-base-300 pl-3 py-1 my-2 text-base-content/80 italic"
+        {...props}
+      />
+    ),
+
+    // Horizontal rules
+    hr: () => <hr className="border-base-300 my-3" />,
+
+    // Strong/Bold
+    strong: props => <strong className="font-semibold text-base-content" {...props} />,
+
+    // Emphasis/Italic
+    em: props => <em className="italic text-base-content" {...props} />,
+  }
+
   // Render markdown with custom styling
   return (
     <div className="relative group">
@@ -136,116 +236,7 @@ export function TextBlock({ content }: TextBlockProps) {
         }
       `}</style>
       <div className="prose prose-sm max-w-none text-base-content markdown-content">
-        <ReactMarkdown
-          components={{
-            // Headings
-            h1: ({ children }: any) => (
-              <h1 className="text-lg font-bold text-base-content mt-4 mb-2">{children}</h1>
-            ),
-            h2: ({ children }: any) => (
-              <h2 className="text-base font-bold text-base-content mt-3 mb-2">{children}</h2>
-            ),
-            h3: ({ children }: any) => (
-              <h3 className="text-sm font-semibold text-base-content mt-2 mb-1">{children}</h3>
-            ),
-            h4: ({ children }: any) => (
-              <h4 className="text-sm font-medium text-base-content mt-2 mb-1">{children}</h4>
-            ),
-            h5: ({ children }: any) => (
-              <h5 className="text-xs font-medium text-base-content mt-1 mb-1">{children}</h5>
-            ),
-            h6: ({ children }: any) => (
-              <h6 className="text-xs font-medium text-base-content/80 mt-1 mb-1">{children}</h6>
-            ),
-
-            // Paragraphs
-            p: ({ children }: any) => (
-              <p className="text-sm text-base-content leading-relaxed">{children}</p>
-            ),
-
-            // Lists
-            ul: ({ children }: any) => (
-              <ul className="list-disc list-inside text-sm text-base-content mb-2 space-y-1">
-                {children}
-              </ul>
-            ),
-            ol: ({ children }: any) => (
-              <ol className="list-decimal list-inside text-sm text-base-content mb-2 space-y-1">
-                {children}
-              </ol>
-            ),
-            li: ({ children }: any) => <li className="text-sm text-base-content">{children}</li>,
-
-            // Inline code
-            code: ({ inline, className, children, ...props }: any) => {
-              const match = /language-(\w+)/.exec(className || '')
-              const language = match ? match[1] : undefined
-
-              if (!inline && Prism && language) {
-                // Block code with syntax highlighting
-                return (
-                  <div className="my-2">
-                    <Prism
-                      language={language}
-                      style={syntaxTheme}
-                      customStyle={{
-                        margin: 0,
-                        borderRadius: '0.375rem',
-                        fontSize: '0.875rem',
-                        padding: '0.75rem',
-                      }}
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </Prism>
-                  </div>
-                )
-              }
-
-              // Inline code
-              return (
-                <code
-                  className="bg-base-200 text-primary px-1.5 py-0.5 rounded text-xs font-mono"
-                  {...props}
-                >
-                  {children}
-                </code>
-              )
-            },
-
-            // Links
-            a: ({ href, children }: any) => (
-              <a
-                href={href}
-                className="text-primary hover:text-primary-focus underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {children}
-              </a>
-            ),
-
-            // Blockquotes
-            blockquote: ({ children }: any) => (
-              <blockquote className="border-l-4 border-base-300 pl-3 py-1 my-2 text-base-content/80 italic">
-                {children}
-              </blockquote>
-            ),
-
-            // Horizontal rules
-            hr: () => <hr className="border-base-300 my-3" />,
-
-            // Strong/Bold
-            strong: ({ children }: any) => (
-              <strong className="font-semibold text-base-content">{children}</strong>
-            ),
-
-            // Emphasis/Italic
-            em: ({ children }: any) => <em className="italic text-base-content">{children}</em>,
-          }}
-        >
-          {content}
-        </ReactMarkdown>
+        <ReactMarkdown components={components}>{content}</ReactMarkdown>
       </div>
 
       {/* Toggle button - only visible on hover */}

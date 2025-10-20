@@ -1,12 +1,12 @@
-import { BaseProviderProcessor, BaseMetricProcessor } from '../../base/index.js'
+import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
 import { GitHubCopilotParser } from './parser.js'
 
+import { CopilotEngagementProcessor } from './metrics/engagement.js'
+import { CopilotErrorProcessor } from './metrics/error.js'
 // Import simplified metric processors
 import { CopilotPerformanceProcessor } from './metrics/performance.js'
-import { CopilotEngagementProcessor } from './metrics/engagement.js'
 import { CopilotQualityProcessor } from './metrics/quality.js'
 import { CopilotUsageProcessor } from './metrics/usage.js'
-import { CopilotErrorProcessor } from './metrics/error.js'
 
 export class GitHubCopilotProcessor extends BaseProviderProcessor {
   readonly providerName = 'github-copilot'
@@ -28,9 +28,9 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string) {
+  parseSession(jsonlContent: string, provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent)
+    return this.parser.parseSession(jsonlContent, provider)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -62,10 +62,7 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
           if (hasCopilotFields) {
             return true
           }
-        } catch {
-          // Skip non-JSON lines
-          continue
-        }
+        } catch {}
       }
 
       return false
@@ -121,7 +118,7 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
           if (validTypes.includes(message.type)) {
             // Validate timestamp format
             const timestamp = new Date(message.timestamp)
-            if (!isNaN(timestamp.getTime())) {
+            if (!Number.isNaN(timestamp.getTime())) {
               validMessageLines++
               if (validMessageLines >= targetValidLines) {
                 break
@@ -129,10 +126,7 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
             }
           }
         }
-      } catch (parseError) {
-        // Skip lines that aren't valid JSON
-        continue
-      }
+      } catch (_parseError) {}
     }
 
     if (validMessageLines === 0) {
@@ -164,10 +158,7 @@ export class GitHubCopilotProcessor extends BaseProviderProcessor {
         if (validJsonLines >= targetValidLines) {
           break
         }
-      } catch {
-        // Skip non-JSON lines
-        continue
-      }
+      } catch {}
     }
 
     if (validJsonLines === 0) {

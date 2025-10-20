@@ -2,7 +2,7 @@
  * PhaseHeader - Icon and title row for a phase
  */
 
-import { getPhaseIcon, getPhaseColor, formatPhaseType } from './PhaseIcon.js'
+import { formatPhaseType, getPhaseColor, getPhaseIcon } from './PhaseIcon.js'
 import type { SessionPhaseType } from './PhaseIcon.js'
 
 interface PhaseHeaderProps {

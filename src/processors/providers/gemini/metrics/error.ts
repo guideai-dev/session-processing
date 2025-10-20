@@ -1,12 +1,15 @@
 import { BaseMetricProcessor } from '../../../base/index.js'
-import type { ParsedSession, SessionMetricsData } from '../../../base/types.js'
+
+import type { ErrorMetrics } from '@guideai-dev/types'
+import { filterErrorResults, isErrorResult, isStructuredMessageContent } from '@guideai-dev/types'
+import type { ParsedSession } from '../../../base/types.js'
 
 export class GeminiErrorProcessor extends BaseMetricProcessor {
   readonly name = 'gemini-error'
   readonly metricType = 'error'
   readonly description = 'Detects and analyzes errors and issues in Gemini sessions'
 
-  async process(session: ParsedSession): Promise<SessionMetricsData> {
+  async process(session: ParsedSession): Promise<ErrorMetrics> {
     const errors: Array<{
       messageId: string
       timestamp: Date
@@ -24,7 +27,11 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
     // Analyze each message for errors or warnings
     for (const message of session.messages) {
       const text =
-        typeof message.content === 'string' ? message.content : message.content?.text || ''
+        typeof message.content === 'string'
+          ? message.content
+          : isStructuredMessageContent(message.content)
+            ? message.content.text || ''
+            : ''
 
       // Check for error indicators in content
       if (this.containsErrorPattern(text)) {

@@ -43,7 +43,7 @@ export interface AssessmentQuestionConfig {
  */
 export function calculateRating(
   responses: AssessmentResponse[],
-  questions?: AssessmentQuestionConfig[]
+  _questions?: AssessmentQuestionConfig[]
 ): SessionRating | null {
   // Find the helpfulness question response (usefulness-1)
   const helpfulnessResponse = responses.find(r => r.questionId === 'usefulness-1')
@@ -64,9 +64,11 @@ export function calculateRating(
   // Map score to rating
   if (score >= 1 && score <= 3) {
     return 'thumbs_down'
-  } else if (score === 4) {
+  }
+  if (score === 4) {
     return 'meh'
-  } else if (score >= 5 && score <= 7) {
+  }
+  if (score >= 5 && score <= 7) {
     return 'thumbs_up'
   }
 

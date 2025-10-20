@@ -1,5 +1,6 @@
+import type { PerformanceMetrics } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/index.js'
-import type { ParsedSession, SessionMetricsData } from '../../../base/types.js'
+import type { ParsedSession } from '../../../base/types.js'
 import { GeminiParser } from '../parser.js'
 
 export class GeminiPerformanceProcessor extends BaseMetricProcessor {
@@ -9,7 +10,7 @@ export class GeminiPerformanceProcessor extends BaseMetricProcessor {
 
   private parser = new GeminiParser()
 
-  async process(session: ParsedSession): Promise<SessionMetricsData> {
+  async process(session: ParsedSession): Promise<PerformanceMetrics> {
     const responseTimes = this.parser.calculateResponseTimes(session)
 
     if (responseTimes.length === 0) {

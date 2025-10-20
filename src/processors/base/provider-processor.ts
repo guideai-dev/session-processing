@@ -1,5 +1,5 @@
 import type { BaseMetricProcessor } from './metric-processor.js'
-import type { ParsedSession, ProcessorResult, ProcessorContext } from './types.js'
+import type { ParsedSession, ProcessorContext, ProcessorResult } from './types.js'
 
 export abstract class BaseProviderProcessor {
   abstract readonly providerName: string
@@ -9,7 +9,7 @@ export abstract class BaseProviderProcessor {
    * Parse the raw JSONL content into a structured session object
    * Each provider implements this differently based on their log format
    */
-  abstract parseSession(jsonlContent: string): ParsedSession
+  abstract parseSession(jsonlContent: string, provider: string): ParsedSession
 
   /**
    * Get all metric processors for this provider
@@ -43,7 +43,7 @@ export abstract class BaseProviderProcessor {
     jsonlContent: string,
     context: ProcessorContext
   ): Promise<ProcessorResult[]> {
-    const session = this.parseSession(jsonlContent)
+    const session = this.parseSession(jsonlContent, context.provider)
     const processors = this.getMetricProcessors()
 
     // Run all processors sequentially to ensure each completes before the next
@@ -62,7 +62,7 @@ export abstract class BaseProviderProcessor {
         }
 
         successfulResults.push(result)
-      } catch (error) {
+      } catch (_error) {
         // Silently continue on processor errors
       }
     }
@@ -92,7 +92,7 @@ export abstract class BaseProviderProcessor {
     for (let i = 0; i < linesToCheck; i++) {
       try {
         JSON.parse(lines[i])
-      } catch (error) {
+      } catch (_error) {
         throw new Error(`Invalid JSON on line ${i + 1}: ${lines[i]}`)
       }
     }
@@ -107,11 +107,11 @@ export abstract class BaseProviderProcessor {
 
     try {
       const date = new Date(timestampStr)
-      if (isNaN(date.getTime())) {
+      if (Number.isNaN(date.getTime())) {
         return null
       }
       return date
-    } catch (error) {
+    } catch (_error) {
       return null
     }
   }

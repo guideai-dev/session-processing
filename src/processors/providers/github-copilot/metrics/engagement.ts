@@ -1,6 +1,7 @@
+import type { EngagementMetrics } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { EngagementMetrics } from '@guideai-dev/types'
 import { GitHubCopilotParser } from '../parser.js'
 
 export class CopilotEngagementProcessor extends BaseMetricProcessor {
@@ -59,7 +60,7 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
         cancellations_from_info: cancellations,
         conversation_turns: conversationTurns,
         avg_seconds_per_turn: avgTimePerTurn,
-      } as any,
+      },
     }
   }
 
@@ -69,8 +70,8 @@ export class CopilotEngagementProcessor extends BaseMetricProcessor {
   private detectCancellations(session: ParsedSession): number {
     let count = 0
     for (const message of session.messages) {
-      if (message.metadata?.isInfo && message.content?.text) {
-        const text = message.content.text.toLowerCase()
+      if (message.metadata?.isInfo && isStructuredMessageContent(message.content)) {
+        const text = (message.content.text || '').toLowerCase()
         if (text.includes('cancelled') || text.includes('canceled')) {
           count++
         }

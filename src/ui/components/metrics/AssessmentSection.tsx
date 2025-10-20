@@ -5,10 +5,10 @@
  * instead of fetching them via hooks. The parent component should handle data fetching.
  */
 
-import { MetricSection } from './MetricSection.js'
-import { RatingBadge } from '../RatingBadge.js'
 import type { AssessmentAnswer } from '@guideai-dev/types'
 import type { SessionRating } from '../../../utils/rating.js'
+import { RatingBadge } from '../RatingBadge.js'
+import { MetricSection } from './MetricSection.js'
 
 // Type definitions for assessment data
 interface AssessmentQuestion {
@@ -39,7 +39,7 @@ interface AssessmentSectionProps {
 }
 
 export function AssessmentSection({
-  sessionId,
+  sessionId: _sessionId,
   assessment,
   questions = [],
   isLoading = false,
@@ -53,7 +53,7 @@ export function AssessmentSection({
         icon="📝"
       >
         <div className="flex items-center justify-center py-8">
-          <span className="loading loading-spinner loading-md"></span>
+          <span className="loading loading-spinner loading-md" />
         </div>
       </MetricSection>
     )
@@ -78,7 +78,7 @@ export function AssessmentSection({
   const hasResponses = assessment.responses && assessment.responses.length > 0
 
   // Create a map of question IDs to question configs
-  const questionMap = new Map(questions.map(q => [q.id, q]))
+  const _questionMap = new Map(questions.map(q => [q.id, q]))
 
   // Create a map of response IDs to responses for quick lookup
   const responseMap = new Map((assessment.responses || []).map(r => [r.questionId, r]))
@@ -89,7 +89,7 @@ export function AssessmentSection({
       const response = responseMap.get(question.id)
       return response ? { question, response } : null
     })
-    .filter(Boolean) as Array<{ question: any; response: any }>
+    .filter(Boolean) as Array<{ question: AssessmentQuestion; response: AssessmentResponse }>
 
   const categoryLabels: Record<string, string> = {
     usefulness: '💡 Usefulness',
@@ -112,7 +112,7 @@ export function AssessmentSection({
           <div className="rating rating-sm">
             {Array.from({ length: 7 }, (_, i) => (
               <input
-                key={i}
+                key={`likert-${i + 1}`}
                 type="radio"
                 className="mask mask-circle bg-primary"
                 checked={answer.value === i + 1}

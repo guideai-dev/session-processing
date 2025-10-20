@@ -1,6 +1,12 @@
+import type {
+  ParsedMessage,
+  QualityMetrics,
+  ToolResultContent,
+  ToolUseContent,
+} from '@guideai-dev/types'
+import { extractTextFromMessage, getUserMessages, isErrorResult } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { QualityMetrics } from '@guideai-dev/types'
 import { OpenCodeParser } from '../parser.js'
 
 export class OpenCodeQualityProcessor extends BaseMetricProcessor {
@@ -67,7 +73,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     }
   }
 
-  private hasErrorIndicators(result: any): boolean {
+  private hasErrorIndicators(result: ToolResultContent): boolean {
     // OpenCode tool results have an explicit is_error field - use it first
     if (result.is_error !== undefined) {
       return result.is_error === true
@@ -88,7 +94,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     return errorKeywords.some(keyword => resultStr.includes(keyword))
   }
 
-  private calculateIterations(userMessages: any[], session: ParsedSession): number {
+  private calculateIterations(_userMessages: ParsedMessage[], session: ParsedSession): number {
     // Context-based detection: only count user messages that follow assistant responses
     // and contain actual refinement/correction language
     let iterations = 0
@@ -103,7 +109,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
       const prevMessage = i > 0 ? session.messages[i - 1] : null
       if (!prevMessage || prevMessage.type !== 'assistant') continue
 
-      const content = this.extractContent(message).toLowerCase()
+      const content = extractTextFromMessage(message).toLowerCase()
 
       // More specific refinement patterns that indicate actual iterations
       const refinementPatterns = [
@@ -145,7 +151,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     return iterations
   }
 
-  private detectPlanModeUsage(toolUses: any[]): { used: boolean; count: number } {
+  private detectPlanModeUsage(toolUses: ToolUseContent[]): { used: boolean; count: number } {
     const exitPlanModeTools = toolUses.filter(tool => tool.name === 'ExitPlanMode')
     return {
       used: exitPlanModeTools.length > 0,
@@ -153,7 +159,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     }
   }
 
-  private detectTodoTrackingUsage(toolUses: any[]): { used: boolean; count: number } {
+  private detectTodoTrackingUsage(toolUses: ToolUseContent[]): { used: boolean; count: number } {
     const todoWriteTools = toolUses.filter(tool => tool.name === 'TodoWrite')
     return {
       used: todoWriteTools.length > 0,
@@ -162,8 +168,8 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
   }
 
   private calculateProcessQuality(
-    toolUses: any[],
-    session: ParsedSession,
+    toolUses: ToolUseContent[],
+    _session: ParsedSession,
     usedPlanMode: boolean,
     usedTodoTracking: boolean
   ): number {
@@ -313,7 +319,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     const assistantMessages = session.messages.filter(m => m.type === 'assistant')
 
     for (const message of assistantMessages) {
-      const content = this.extractContent(message).toLowerCase()
+      const content = extractTextFromMessage(message).toLowerCase()
 
       for (const pattern of affirmationPatterns) {
         const matches = content.match(pattern)

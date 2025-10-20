@@ -2,8 +2,8 @@
  * ThinkingBlock - Renders Gemini thinking/reasoning content with expand/collapse
  */
 
-import { useState } from 'react'
 import { LightBulbIcon } from '@heroicons/react/24/outline'
+import { useState } from 'react'
 
 interface Thought {
   subject: string
@@ -38,8 +38,11 @@ export function ThinkingBlock({ content, collapsed: initialCollapsed = true }: T
       </button>
       {!collapsed && (
         <div className="space-y-3 mt-2">
-          {content.map((thought, index) => (
-            <div key={index} className="bg-base-100 p-3 rounded-md border border-base-300">
+          {content.map(thought => (
+            <div
+              key={`${thought.timestamp}-${thought.subject}`}
+              className="bg-base-100 p-3 rounded-md border border-base-300"
+            >
               <div className="font-semibold text-sm text-primary mb-1">{thought.subject}</div>
               <div className="text-sm text-base-content/80 whitespace-pre-wrap">
                 {thought.description}

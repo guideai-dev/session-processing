@@ -6,16 +6,16 @@
  * special Claude Code features.
  */
 
-import { BaseMessageProcessor } from './BaseMessageProcessor.js'
-import { BaseSessionMessage } from '../sessionTypes.js'
-import { createDisplayMetadata, ContentBlock, createContentBlock } from '../timelineTypes.js'
 import {
-  MapIcon,
-  ListBulletIcon,
-  LightBulbIcon,
-  DocumentTextIcon,
   DocumentIcon,
+  DocumentTextIcon,
+  LightBulbIcon,
+  ListBulletIcon,
+  MapIcon,
 } from '@heroicons/react/24/outline'
+import type { BaseSessionMessage } from '../sessionTypes.js'
+import { type ContentBlock, createContentBlock, createDisplayMetadata } from '../timelineTypes.js'
+import { BaseMessageProcessor, type ContentPart } from './BaseMessageProcessor.js'
 
 export class ClaudeMessageProcessor extends BaseMessageProcessor {
   name = 'claude-code'
@@ -25,10 +25,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
    */
   protected normalizeMessage(message: BaseSessionMessage) {
     // Handle file-history-snapshot messages
-    if (
-      (message as any).type === 'file-history-snapshot' ||
-      message.content?.type === 'file-history-snapshot'
-    ) {
+    if (message.content?.type === 'file-history-snapshot') {
       return {
         ...super.normalizeMessage(message),
         type: 'meta' as const,
@@ -36,7 +33,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     }
 
     // Handle summary messages
-    if ((message as any).type === 'summary' || message.content?.type === 'summary') {
+    if (message.content?.type === 'summary') {
       return {
         ...super.normalizeMessage(message),
         type: 'meta' as const,
@@ -87,10 +84,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     }
 
     // Handle file-history-snapshot
-    if (
-      (message as any).type === 'file-history-snapshot' ||
-      message.content?.type === 'file-history-snapshot'
-    ) {
+    if (message.content?.type === 'file-history-snapshot') {
       return createDisplayMetadata({
         icon: 'FILE',
         IconComponent: DocumentIcon,
@@ -105,7 +99,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
     }
 
     // Handle summary
-    if ((message as any).type === 'summary' || message.content?.type === 'summary') {
+    if (message.content?.type === 'summary') {
       return createDisplayMetadata({
         icon: 'SUM',
         IconComponent: DocumentTextIcon,
@@ -143,15 +137,12 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
    */
   protected getContentBlocks(message: BaseSessionMessage): ContentBlock[] {
     // Handle file-history-snapshot
-    if (
-      (message as any).type === 'file-history-snapshot' ||
-      message.content?.type === 'file-history-snapshot'
-    ) {
+    if (message.content?.type === 'file-history-snapshot') {
       return this.getFileHistoryBlocks(message)
     }
 
     // Handle summary
-    if ((message as any).type === 'summary' || message.content?.type === 'summary') {
+    if (message.content?.type === 'summary') {
       return this.getSummaryBlocks(message)
     }
 
@@ -204,27 +195,25 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
         }
 
         // Tool use
-        else if (item.type === 'tool_use') {
+        else if (item.type === 'tool_use' && item.name && item.input) {
           blocks.push(
             createContentBlock(
               'tool_use',
-              { name: item.name, input: item.input },
-              {
-                toolName: item.name,
-                collapsed: true,
-              }
+              { name: String(item.name), input: item.input as Record<string, unknown> },
+              { collapsed: true }
             )
           )
         }
 
         // Tool result
-        else if (item.type === 'tool_result') {
-          blocks.push(
-            createContentBlock('tool_result', item.content, {
-              toolUseId: item.tool_use_id,
-              collapsed: true,
-            })
-          )
+        else if (item.type === 'tool_result' && item.content !== undefined) {
+          const content =
+            typeof item.content === 'string'
+              ? item.content
+              : Array.isArray(item.content)
+                ? item.content
+                : (item.content as Record<string, unknown>)
+          blocks.push(createContentBlock('tool_result', content, { collapsed: true }))
         }
 
         // Unknown type - show as JSON
@@ -241,7 +230,7 @@ export class ClaudeMessageProcessor extends BaseMessageProcessor {
   /**
    * Extract Claude content array from various message structures
    */
-  private extractClaudeContentArray(message: BaseSessionMessage): any[] | null {
+  private extractClaudeContentArray(message: BaseSessionMessage): ContentPart[] | null {
     // Direct content array
     if (Array.isArray(message.content)) {
       return message.content

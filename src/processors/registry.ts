@@ -1,9 +1,18 @@
 import type { BaseProviderProcessor } from './base/index.js'
 import { ClaudeCodeProcessor } from './providers/claude-code/index.js'
-import { GitHubCopilotProcessor } from './providers/github-copilot/index.js'
 import { CodexProcessor } from './providers/codex/index.js'
-import { OpenCodeProcessor } from './providers/opencode/index.js'
 import { GeminiProcessor } from './providers/gemini/index.js'
+import { GitHubCopilotProcessor } from './providers/github-copilot/index.js'
+import { OpenCodeProcessor } from './providers/opencode/index.js'
+
+interface ProcessorInfo {
+  description: string
+  metricProcessors: Array<{
+    name: string
+    metricType: string
+    description: string
+  }>
+}
 
 export class ProcessorRegistry {
   private processors = new Map<string, BaseProviderProcessor>()
@@ -79,8 +88,8 @@ export class ProcessorRegistry {
   /**
    * Get processor information for all registered processors
    */
-  getProcessorInfo(): Record<string, any> {
-    const info: Record<string, any> = {}
+  getProcessorInfo(): Record<string, ProcessorInfo> {
+    const info: Record<string, ProcessorInfo> = {}
 
     for (const [providerName, processor] of this.processors) {
       info[providerName] = {
@@ -101,14 +110,12 @@ export class ProcessorRegistry {
    */
   detectProcessor(content: string): BaseProviderProcessor | null {
     // Try each processor's canProcess method
-    for (const [providerName, processor] of this.processors) {
+    for (const [_providerName, processor] of this.processors) {
       try {
         if (processor.canProcess(content)) {
           return processor
         }
-      } catch (error) {
-        continue
-      }
+      } catch (_error) {}
     }
 
     return null

@@ -1,12 +1,12 @@
-import { BaseProviderProcessor, BaseMetricProcessor } from '../../base/index.js'
+import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
 import { GeminiParser } from './parser.js'
 
+import { GeminiEngagementProcessor } from './metrics/engagement.js'
+import { GeminiErrorProcessor } from './metrics/error.js'
 // Import simplified metric processors
 import { GeminiPerformanceProcessor } from './metrics/performance.js'
-import { GeminiEngagementProcessor } from './metrics/engagement.js'
 import { GeminiQualityProcessor } from './metrics/quality.js'
 import { GeminiUsageProcessor } from './metrics/usage.js'
-import { GeminiErrorProcessor } from './metrics/error.js'
 
 export class GeminiProcessor extends BaseProviderProcessor {
   readonly providerName = 'gemini-code'
@@ -29,9 +29,9 @@ export class GeminiProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonContent: string) {
+  parseSession(jsonContent: string, provider: string) {
     this.validateJsonContent(jsonContent)
-    return this.parser.parseSession(jsonContent)
+    return this.parser.parseSession(jsonContent, provider)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -56,20 +56,19 @@ export class GeminiProcessor extends BaseProviderProcessor {
           const data = JSON.parse(line)
 
           // Look for Gemini-specific markers
-          if (data.type === 'gemini' ||
-              data.gemini_thoughts ||
-              data.gemini_tokens ||
-              data.gemini_model) {
+          if (
+            data.type === 'gemini' ||
+            data.gemini_thoughts ||
+            data.gemini_tokens ||
+            data.gemini_model
+          ) {
             return true
           }
-        } catch {
-          // Skip invalid JSON lines
-          continue
-        }
+        } catch {}
       }
 
       return false
-    } catch (error) {
+    } catch (_error) {
       return false
     }
   }
@@ -131,13 +130,15 @@ export class GeminiProcessor extends BaseProviderProcessor {
         }
 
         // Check for Gemini-specific fields
-        if (data.type === 'gemini' ||
-            data.gemini_thoughts ||
-            data.gemini_tokens ||
-            data.gemini_model) {
+        if (
+          data.type === 'gemini' ||
+          data.gemini_thoughts ||
+          data.gemini_tokens ||
+          data.gemini_model
+        ) {
           hasGeminiFields = true
         }
-      } catch (error) {
+      } catch (_error) {
         throw new Error(`Invalid JSON on line ${i + 1}`)
       }
     }

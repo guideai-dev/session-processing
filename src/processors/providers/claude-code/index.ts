@@ -1,16 +1,17 @@
+import type { ProcessorContext, ProcessorResult } from '@guideai-dev/types'
 import {
+  type BaseMetricProcessor,
   BaseProviderProcessor,
-  BaseMetricProcessor,
   GitDiffMetricProcessor,
 } from '../../base/index.js'
 import { ClaudeCodeParser } from './parser.js'
 
+import { ClaudeEngagementProcessor } from './metrics/engagement.js'
+import { ClaudeErrorProcessor } from './metrics/error.js'
 // Import simplified metric processors
 import { ClaudePerformanceProcessor } from './metrics/performance.js'
-import { ClaudeEngagementProcessor } from './metrics/engagement.js'
 import { ClaudeQualityProcessor } from './metrics/quality.js'
 import { ClaudeUsageProcessor } from './metrics/usage.js'
-import { ClaudeErrorProcessor } from './metrics/error.js'
 
 export class ClaudeCodeProcessor extends BaseProviderProcessor {
   readonly providerName = 'claude-code'
@@ -34,9 +35,9 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string) {
+  parseSession(jsonlContent: string, provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent)
+    return this.parser.parseSession(jsonlContent, provider)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -46,8 +47,11 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
   /**
    * Override to run git diff processor LAST with access to existing metrics
    */
-  async processMetrics(jsonlContent: string, context: any): Promise<any[]> {
-    const session = this.parseSession(jsonlContent)
+  async processMetrics(
+    jsonlContent: string,
+    context: ProcessorContext
+  ): Promise<ProcessorResult[]> {
+    const session = this.parseSession(jsonlContent, context.provider)
 
     // Attach git diff data from context if available (desktop only)
     if (context.gitDiffData) {
@@ -61,7 +65,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
     const results = await super.processMetrics(jsonlContent, context)
 
     // Collect existing metrics for git diff processor
-    const existingMetrics: any = {}
+    const existingMetrics: Record<string, unknown> = {}
     for (const result of results) {
       if (result.metricType === 'performance') existingMetrics.performance = result.metrics
       if (result.metricType === 'usage') existingMetrics.usage = result.metrics
@@ -119,10 +123,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
           if (hasClaudeFields) {
             return true
           }
-        } catch {
-          // Skip non-JSON lines (like summary lines)
-          continue
-        }
+        } catch {}
       }
 
       return false
@@ -175,7 +176,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
           if (['user', 'assistant'].includes(message.type)) {
             // Validate timestamp format
             const timestamp = new Date(message.timestamp)
-            if (!isNaN(timestamp.getTime())) {
+            if (!Number.isNaN(timestamp.getTime())) {
               validMessageLines++
               if (validMessageLines >= targetValidLines) {
                 break
@@ -183,10 +184,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
             }
           }
         }
-      } catch (parseError) {
-        // Skip lines that aren't valid JSON (though this should be rare after earlier validation)
-        continue
-      }
+      } catch (_parseError) {}
     }
 
     if (validMessageLines === 0) {
@@ -218,10 +216,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
         if (validJsonLines >= targetValidLines) {
           break
         }
-      } catch {
-        // Skip non-JSON lines (like summary lines)
-        continue
-      }
+      } catch {}
     }
 
     if (validJsonLines === 0) {

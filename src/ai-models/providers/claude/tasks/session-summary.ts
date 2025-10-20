@@ -1,12 +1,24 @@
+import type { ContentBlock, TextContent, ToolUseContent } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guideai-dev/types'
+import { getUserDisplayName } from '../../../../utils/user.js'
 import { BaseModelTask } from '../../../base/model-task.js'
 import type { ModelTaskConfig, ModelTaskContext } from '../../../base/types.js'
-import { getUserDisplayName } from '../../../../utils/user.js'
+
+export interface SessionSummaryInput {
+  userName: string
+  provider: string
+  durationMinutes: number | string
+  messageCount: number
+  toolsUsed: string
+  userMessages: string
+  assistantActions: string
+}
 
 /**
  * Session Summary Task
  * Generates a concise 2-3 sentence summary of an agent session
  */
-export class SessionSummaryTask extends BaseModelTask {
+export class SessionSummaryTask extends BaseModelTask<SessionSummaryInput, string> {
   readonly taskType = 'session-summary'
   readonly name = 'Session Summary'
   readonly description = 'Generate a concise summary of the agent session'
@@ -38,7 +50,7 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
     }
   }
 
-  prepareInput(context: ModelTaskContext): any {
+  prepareInput(context: ModelTaskContext): SessionSummaryInput {
     const session = context.session
     if (!session) {
       throw new Error('Session data is required for summary task')
@@ -53,14 +65,18 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
       .map(msg => {
         if (typeof msg.content === 'string') {
           return msg.content
-        } else if (msg.content?.text) {
+        }
+        if (isStructuredMessageContent(msg.content)) {
           // Parser wraps structured content in { text, toolUses, toolResults, structured }
-          return msg.content.text
-        } else if (Array.isArray(msg.content)) {
+          return msg.content.text || ''
+        }
+        if (Array.isArray(msg.content)) {
           // Fallback: Extract text from content array (for other providers)
           return msg.content
-            .filter((item: any) => item.type === 'text' && item.text)
-            .map((item: any) => item.text)
+            .filter(
+              (item: ContentBlock): item is TextContent => item.type === 'text' && 'text' in item
+            )
+            .map((item: TextContent) => item.text)
             .join(' ')
         }
         return ''
@@ -71,25 +87,25 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
 
     // Extract tool uses from assistant messages
     const toolNames: string[] = []
-    session.messages
-      .filter(msg => msg.type === 'assistant')
-      .forEach(msg => {
-        // Parser stores tool uses in msg.content.toolUses array
-        if (msg.content?.toolUses && Array.isArray(msg.content.toolUses)) {
-          msg.content.toolUses.forEach((toolUse: any) => {
-            if (toolUse.name) {
-              toolNames.push(toolUse.name)
-            }
-          })
-        } else if (Array.isArray(msg.content)) {
-          // Fallback: Check direct array format (for other providers)
-          msg.content.forEach((item: any) => {
-            if (item.type === 'tool_use' && item.name) {
-              toolNames.push(item.name)
-            }
-          })
+    const assistantMessages = session.messages.filter(msg => msg.type === 'assistant')
+
+    for (const msg of assistantMessages) {
+      // Parser stores tool uses in msg.content.toolUses array
+      if (isStructuredMessageContent(msg.content)) {
+        for (const toolUse of msg.content.toolUses) {
+          if (toolUse.name) {
+            toolNames.push(toolUse.name)
+          }
         }
-      })
+      } else if (Array.isArray(msg.content)) {
+        // Fallback: Check direct array format (for other providers)
+        for (const item of msg.content) {
+          if (item.type === 'tool_use' && 'name' in item && item.name) {
+            toolNames.push(item.name as string)
+          }
+        }
+      }
+    }
 
     const assistantActions = toolNames.slice(0, 20).join(', ')
     const toolsUsed = [...new Set(toolNames)].join(', ') || 'None'
@@ -111,7 +127,7 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
     return super.canExecute(context) && !!context.session && context.session.messages.length > 0
   }
 
-  processOutput(output: any, context: ModelTaskContext): string {
+  processOutput(output: unknown, _context: ModelTaskContext): string {
     // Ensure output is a string and trim it
     return String(output).trim()
   }

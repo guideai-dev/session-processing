@@ -1,5 +1,7 @@
+import type { ParsedMessage, QualityMetrics } from '@guideai-dev/types'
+import { extractTextFromMessage, isStructuredMessageContent } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/index.js'
-import type { ParsedSession, SessionMetricsData } from '../../../base/types.js'
+import type { ParsedSession } from '../../../base/types.js'
 import { GeminiParser } from '../parser.js'
 
 export class GeminiQualityProcessor extends BaseMetricProcessor {
@@ -9,7 +11,7 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
 
   private parser = new GeminiParser()
 
-  async process(session: ParsedSession): Promise<SessionMetricsData> {
+  async process(session: ParsedSession): Promise<QualityMetrics> {
     const thinkingAnalysis = this.parser.analyzeThinking(session)
     const tokenStats = this.parser.calculateTotalTokens(session)
 
@@ -20,7 +22,12 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
     const avgMessageLength =
       assistantMessages.length > 0
         ? assistantMessages.reduce((sum, m) => {
-            const text = typeof m.content === 'string' ? m.content : m.content?.text || ''
+            const text =
+              typeof m.content === 'string'
+                ? m.content
+                : isStructuredMessageContent(m.content)
+                  ? m.content.text || ''
+                  : ''
             return sum + text.length
           }, 0) / assistantMessages.length
         : 0
@@ -45,7 +52,7 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
 
     // Overall quality score (0-100)
     // Weighted combination of different quality factors
-    const overallQuality = Math.min(
+    const _overallQuality = Math.min(
       100,
       thinkingDepthScore * 0.3 +
         detailScore * 0.25 +
@@ -112,7 +119,7 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
       const prevMessage = i > 0 ? session.messages[i - 1] : null
       if (!prevMessage || prevMessage.type !== 'assistant') continue
 
-      const content = this.extractContent(message).toLowerCase()
+      const content = extractTextFromMessage(message).toLowerCase()
 
       // Look for refinement/correction patterns
       const refinementPatterns = [
@@ -145,9 +152,9 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
   }
 
   private estimateTaskSuccess(
-    session: ParsedSession,
-    assistantMessages: any[],
-    userMessages: any[]
+    _session: ParsedSession,
+    assistantMessages: ParsedMessage[],
+    userMessages: ParsedMessage[]
   ): number {
     // Simple heuristic: if session ended naturally (not many recent errors)
     // and had reasonable back-and-forth, estimate success
@@ -191,8 +198,8 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
     taskSuccessRate: number,
     iterationCount: number,
     processQuality: number,
-    thinkingAnalysis: any,
-    tokenStats: any
+    thinkingAnalysis: ReturnType<GeminiParser['analyzeThinking']>,
+    tokenStats: ReturnType<GeminiParser['calculateTotalTokens']>
   ): string[] {
     const tips: string[] = []
 

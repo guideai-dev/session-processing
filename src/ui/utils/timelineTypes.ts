@@ -5,8 +5,8 @@
  * These types provide a consistent interface regardless of the underlying provider (Claude, OpenCode, Codex, etc.)
  */
 
-import React from 'react'
-import { BaseSessionMessage } from './sessionTypes.js'
+import type React from 'react'
+import type { BaseSessionMessage } from './sessionTypes.js'
 
 /**
  * Content block types that can appear in a timeline message
@@ -33,21 +33,69 @@ export type TimelineDisplayType = 'single' | 'group'
 export type MessageRole = 'user' | 'assistant' | 'system' | 'tool'
 
 /**
- * A single content block within a timeline message
+ * UI-specific metadata for rendering hints
+ * Explicitly define all fields to avoid index signature
  */
-export interface ContentBlock {
-  type: ContentBlockType
-  content: any
-  metadata?: {
-    language?: string // For code blocks
-    format?: string // For images (png, jpg, etc.)
-    collapsed?: boolean // For json/tool/thinking blocks
-    toolName?: string // For tool blocks
-    toolUseId?: string // For tool result blocks
-    thoughtCount?: number // For thinking blocks
-    [key: string]: any // Additional provider-specific metadata
-  }
+export interface UIContentMetadata {
+  // Code block metadata
+  language?: string
+
+  // Image block metadata
+  format?: string
+
+  // Collapsible block metadata
+  collapsed?: boolean
+
+  // Tool block metadata
+  toolName?: string
+  toolUseId?: string
+
+  // Thinking block metadata
+  thoughtCount?: number
+
+  // Provider-specific fields can be added explicitly as needed
 }
+
+/**
+ * A single content block within a timeline message
+ * UI-specific version for rendering with discriminated union for type safety
+ */
+export type ContentBlock =
+  | {
+      type: 'text'
+      content: string
+      metadata?: UIContentMetadata
+    }
+  | {
+      type: 'code'
+      content: string
+      metadata?: UIContentMetadata & { language?: string }
+    }
+  | {
+      type: 'image'
+      content: string // Base64 or URL
+      metadata?: UIContentMetadata & { format?: string }
+    }
+  | {
+      type: 'json'
+      content: string | unknown // JSON string or parsed object
+      metadata?: UIContentMetadata & { collapsed?: boolean }
+    }
+  | {
+      type: 'tool_use'
+      content: { name: string; input: Record<string, unknown> }
+      metadata?: UIContentMetadata & { collapsed?: boolean; toolName?: string; toolUseId?: string }
+    }
+  | {
+      type: 'tool_result'
+      content: string | Array<string | Record<string, unknown>> | Record<string, unknown>
+      metadata?: UIContentMetadata & { collapsed?: boolean }
+    }
+  | {
+      type: 'thinking'
+      content: Array<{ subject: string; description: string; timestamp: string }>
+      metadata?: UIContentMetadata & { collapsed?: boolean; thoughtCount?: number }
+    }
 
 /**
  * Display metadata for rendering hints
@@ -132,15 +180,57 @@ export function createDisplayMetadata(partial: Partial<DisplayMetadata>): Displa
 
 /**
  * Helper function to create a content block
+ * Type-safe overloads for each content block type
  */
 export function createContentBlock(
+  type: 'text',
+  content: string,
+  metadata?: UIContentMetadata
+): Extract<ContentBlock, { type: 'text' }>
+export function createContentBlock(
+  type: 'code',
+  content: string,
+  metadata?: UIContentMetadata & { language?: string }
+): Extract<ContentBlock, { type: 'code' }>
+export function createContentBlock(
+  type: 'image',
+  content: string,
+  metadata?: UIContentMetadata & { format?: string }
+): Extract<ContentBlock, { type: 'image' }>
+export function createContentBlock(
+  type: 'json',
+  content: string | unknown,
+  metadata?: UIContentMetadata & { collapsed?: boolean }
+): Extract<ContentBlock, { type: 'json' }>
+export function createContentBlock(
+  type: 'tool_use',
+  content: { name: string; input: Record<string, unknown> },
+  metadata?: UIContentMetadata & { collapsed?: boolean; toolName?: string; toolUseId?: string }
+): Extract<ContentBlock, { type: 'tool_use' }>
+export function createContentBlock(
+  type: 'tool_result',
+  content: string | Array<string | Record<string, unknown>> | Record<string, unknown>,
+  metadata?: UIContentMetadata & { collapsed?: boolean }
+): Extract<ContentBlock, { type: 'tool_result' }>
+export function createContentBlock(
+  type: 'thinking',
+  content: Array<{ subject: string; description: string; timestamp: string }>,
+  metadata?: UIContentMetadata & { collapsed?: boolean; thoughtCount?: number }
+): Extract<ContentBlock, { type: 'thinking' }>
+export function createContentBlock(
   type: ContentBlockType,
-  content: any,
-  metadata?: ContentBlock['metadata']
+  content:
+    | string
+    | { name: string; input: Record<string, unknown> }
+    | Array<{ subject: string; description: string; timestamp: string }>
+    | unknown,
+  metadata?: UIContentMetadata
 ): ContentBlock {
+  // The implementation needs to handle all possible combinations
+  // TypeScript will use the overloads for type checking at call sites
   return {
     type,
     content,
     metadata,
-  }
+  } as ContentBlock
 }

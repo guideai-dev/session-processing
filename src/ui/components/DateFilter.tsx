@@ -2,7 +2,7 @@
  * DateFilter - Date range filter component
  */
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export type DateFilterOption =
   | 'all'

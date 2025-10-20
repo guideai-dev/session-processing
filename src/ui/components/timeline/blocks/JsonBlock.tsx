@@ -5,7 +5,7 @@
 import { useState } from 'react'
 
 interface JsonBlockProps {
-  content: any
+  content: unknown
   collapsed?: boolean
 }
 

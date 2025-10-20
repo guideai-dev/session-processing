@@ -3,9 +3,25 @@
  * Wrapper for Anthropic's Claude API
  */
 
+import type { ContentBlock } from '@guideai-dev/types'
+
+/**
+ * Tool definition for Claude API
+ */
+export interface ClaudeTool {
+  name: string
+  description: string
+  input_schema: Record<string, unknown>
+}
+
+/**
+ * Tool choice configuration
+ */
+export type ClaudeToolChoice = { type: 'auto' } | { type: 'any' } | { type: 'tool'; name: string }
+
 export interface ClaudeMessage {
   role: 'user' | 'assistant'
-  content: string | Array<{ type: string; text?: string; [key: string]: any }>
+  content: string | ContentBlock[]
 }
 
 export interface ClaudeRequest {
@@ -14,8 +30,8 @@ export interface ClaudeRequest {
   messages: ClaudeMessage[]
   temperature?: number
   system?: string
-  tools?: any[]
-  tool_choice?: any
+  tools?: ClaudeTool[]
+  tool_choice?: ClaudeToolChoice
 }
 
 export interface ClaudeResponse {
@@ -118,7 +134,7 @@ export class ClaudeAPIClient {
   /**
    * Send a prompt expecting JSON response
    */
-  async promptJSON<T = any>(
+  async promptJSON<T = unknown>(
     prompt: string,
     options?: {
       model?: string
@@ -184,7 +200,7 @@ export class ClaudeAPIClient {
   /**
    * Make a request to the Claude API
    */
-  private async makeRequest(endpoint: string, body: any): Promise<any> {
+  private async makeRequest(endpoint: string, body: unknown): Promise<unknown> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 

@@ -1,28 +1,69 @@
+import { isTextContent, isToolResultContent, isToolUseContent } from '@guideai-dev/types'
+import { getArray, getObject, getString, hasProperty, isObject } from '../../utils/safe-access.js'
 import {
-  BaseSessionMessage,
-  SessionParser,
-  ProviderAdapter,
-  ClaudeMessage,
-  ToolUseContent,
-  ToolResultContent,
+  type BaseSessionMessage,
+  type ClaudeMessage,
+  type ConversationTurn,
+  type ProviderAdapter,
+  type SessionParser,
   TextContent,
-  ConversationTurn,
+  ToolResultContent,
+  ToolUseContent,
 } from './sessionTypes.js'
+
+// Helper types for content parsing
+interface ContentPart {
+  type: string
+  text?: string
+  id?: string
+  name?: string
+  input?: Record<string, unknown>
+  tool_use_id?: string
+  content?: unknown
+}
+
+interface PartsContent {
+  parts: ContentPart[]
+}
+
+type RawMessageContent = string | PartsContent | Record<string, unknown> | unknown[]
+
+// Base type for raw messages from different providers
+interface RawMessage {
+  timestamp: string
+  sessionId?: string
+  type?: string
+  content?: RawMessageContent
+  message?: {
+    role?: string
+    content?: RawMessageContent
+  }
+  // Provider-specific fields
+  uuid?: string
+  id?: string
+  role?: string
+  text?: string
+  callId?: string
+  name?: string
+  arguments?: Record<string, unknown>
+  result?: unknown | { log?: string; type?: string }
+  toolTitle?: string
+  intentionSummary?: string
+  userType?: string
+  requestId?: string
+  isMeta?: boolean
+  parentUuid?: string
+  gemini_model?: string
+  gemini_thoughts?: unknown
+  gemini_tokens?: unknown
+  cwd?: string
+  payload?: Record<string, unknown>
+  messageID?: unknown
+  sessionID?: unknown
+}
 
 class ClaudeAdapter implements ProviderAdapter {
   name = 'claude'
-
-  detect(content: any): boolean {
-    return !!(
-      content &&
-      typeof content === 'object' &&
-      content.uuid &&
-      content.sessionId &&
-      content.type &&
-      content.message &&
-      content.timestamp
-    )
-  }
 
   transform(rawMessage: ClaudeMessage): BaseSessionMessage[] {
     const messageType = this.getMessageType(rawMessage)
@@ -33,13 +74,15 @@ class ClaudeAdapter implements ProviderAdapter {
       const messages: BaseSessionMessage[] = []
 
       // Create assistant response message for text content
-      const textParts = processedContent.parts.filter((p: any) => p.type === 'text')
+      const textParts = processedContent.parts.filter(
+        (p: { type: string; text?: string }) => p.type === 'text'
+      )
       if (textParts.length > 0) {
         messages.push({
           id: rawMessage.uuid,
           timestamp: rawMessage.timestamp,
           type: 'assistant_response',
-          content: { text: textParts.map((p: any) => p.text).join('\n') },
+          content: { text: textParts.map((p: { text?: string }) => p.text || '').join('\n') },
           metadata: {
             sessionId: rawMessage.sessionId,
             userType: rawMessage.userType,
@@ -51,16 +94,16 @@ class ClaudeAdapter implements ProviderAdapter {
       }
 
       // Create separate tool use messages
-      const toolUses = processedContent.parts.filter((p: any) => p.type === 'tool_use')
+      const toolUses = processedContent.parts.filter((p: ContentPart) => p.type === 'tool_use')
       for (const toolUse of toolUses) {
         messages.push({
-          id: `${rawMessage.uuid}-tool-${(toolUse as any).id}`,
+          id: `${rawMessage.uuid}-tool-${toolUse.id || ''}`,
           timestamp: rawMessage.timestamp,
           type: 'tool_use',
           content: toolUse,
           metadata: {
             sessionId: rawMessage.sessionId,
-            toolUseId: (toolUse as any).id,
+            toolUseId: toolUse.id,
           },
           parentId: rawMessage.uuid,
         })
@@ -71,8 +114,10 @@ class ClaudeAdapter implements ProviderAdapter {
 
     // For tool results, link to their tool use
     if (messageType === 'tool_result' && processedContent.parts) {
-      const toolResults = processedContent.parts.filter((p: any) => p.type === 'tool_result')
-      return toolResults.map((result: any) => ({
+      const toolResults = processedContent.parts.filter(
+        (p: ContentPart) => p.type === 'tool_result'
+      )
+      return toolResults.map((result: ContentPart) => ({
         id: `${rawMessage.uuid}-result-${result.tool_use_id}`,
         timestamp: rawMessage.timestamp,
         type: 'tool_result' as const,
@@ -123,13 +168,13 @@ class ClaudeAdapter implements ProviderAdapter {
       if (parsedContent) {
         // Check for interruption in parts structure - ONLY if it's specifically about interruption
         const hasInterruptionText = parsedContent.parts?.some(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.includes('[Request interrupted by user]') ||
               part.text?.includes('Request interrupted by user'))
         )
         const hasOnlyInterruptionText = parsedContent.parts?.every(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.includes('[Request interrupted by user]') ||
               part.text?.includes('Request interrupted by user') ||
@@ -142,12 +187,12 @@ class ClaudeAdapter implements ProviderAdapter {
 
         // Check for commands in parts structure - ONLY if it's specifically a command
         const hasCommandText = parsedContent.parts?.some(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.startsWith('/') || part.text?.includes('<command-name>'))
         )
         const hasOnlyCommandText = parsedContent.parts?.every(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.startsWith('/') ||
               part.text?.includes('<command-name>') ||
@@ -207,18 +252,23 @@ class ClaudeAdapter implements ProviderAdapter {
     return 'meta'
   }
 
-  private parsePartsContent(content: any) {
+  private parsePartsContent(content: RawMessageContent): PartsContent | null {
     // Try to parse the content as a parts structure
     try {
       if (typeof content === 'string') {
         const parsed = JSON.parse(content)
-        if (parsed && parsed.parts && Array.isArray(parsed.parts)) {
+        if (parsed?.parts && Array.isArray(parsed.parts)) {
           return parsed
         }
-      } else if (content && content.parts && Array.isArray(content.parts)) {
-        return content
+      } else if (
+        typeof content === 'object' &&
+        content !== null &&
+        'parts' in content &&
+        Array.isArray((content as { parts: unknown }).parts)
+      ) {
+        return content as PartsContent
       }
-    } catch (error) {
+    } catch (_error) {
       // Not valid JSON or not a parts structure
     }
     return null
@@ -242,7 +292,7 @@ class ClaudeAdapter implements ProviderAdapter {
       // Try to parse as JSON first to check for parts structure
       try {
         const parsed = JSON.parse(content)
-        if (parsed && parsed.parts && Array.isArray(parsed.parts)) {
+        if (parsed?.parts && Array.isArray(parsed.parts)) {
           return parsed
         }
         // If it's JSON but not parts structure, keep it as parsed object
@@ -255,21 +305,23 @@ class ClaudeAdapter implements ProviderAdapter {
 
     if (Array.isArray(content)) {
       const processed = content.map(item => {
+        if (!isObject(item)) return item
+
         if (item.type === 'text') {
-          return { type: 'text', text: item.text }
+          return { type: 'text', text: getString(item, 'text') || '' }
         }
         if (item.type === 'tool_use') {
           return {
             type: 'tool_use',
-            id: (item as any).id || item.tool_use_id,
-            name: (item as any).name,
-            input: (item as any).input,
+            id: getString(item, 'id') || getString(item, 'tool_use_id') || '',
+            name: getString(item, 'name') || '',
+            input: getObject(item, 'input') || {},
           }
         }
         if (item.type === 'tool_result') {
           return {
             type: 'tool_result',
-            tool_use_id: item.tool_use_id,
+            tool_use_id: getString(item, 'tool_use_id') || '',
             content: item.content,
           }
         }
@@ -285,25 +337,11 @@ class ClaudeAdapter implements ProviderAdapter {
 class CodexAdapter implements ProviderAdapter {
   name = 'codex'
 
-  detect(content: any): boolean {
-    return !!(
-      content &&
-      typeof content === 'object' &&
-      content.type &&
-      content.payload &&
-      content.timestamp &&
-      (content.type === 'event_msg' ||
-        content.type === 'response_item' ||
-        content.type === 'session_meta' ||
-        content.type === 'turn_context')
-    )
-  }
-
-  transform(rawMessage: any): BaseSessionMessage[] {
+  transform(rawMessage: Record<string, unknown>): BaseSessionMessage[] {
     return [
       {
-        id: rawMessage.id || Math.random().toString(36).substr(2, 9),
-        timestamp: rawMessage.timestamp,
+        id: getString(rawMessage, 'id') || Math.random().toString(36).substr(2, 9),
+        timestamp: getString(rawMessage, 'timestamp') || new Date().toISOString(),
         type: this.inferType(rawMessage),
         content: rawMessage,
         metadata: {
@@ -314,9 +352,10 @@ class CodexAdapter implements ProviderAdapter {
     ]
   }
 
-  private inferType(message: any): BaseSessionMessage['type'] {
+  private inferType(message: Record<string, unknown>): BaseSessionMessage['type'] {
     // Map Codex message types to standard types
-    const payloadType = message.payload?.type || message.type
+    const payload = getObject(message, 'payload')
+    const payloadType = payload ? getString(payload, 'type') : getString(message, 'type')
 
     if (payloadType === 'user_message') return 'user_input'
     if (payloadType === 'agent_message' || payloadType === 'agent_reasoning')
@@ -332,31 +371,24 @@ class CodexAdapter implements ProviderAdapter {
 class OpenCodeAdapter implements ProviderAdapter {
   name = 'opencode'
 
-  detect(content: any): boolean {
-    // OpenCode uses Claude-like format but with sessionId (lowercase)
-    return !!(
-      content &&
-      typeof content === 'object' &&
-      content.sessionId &&
-      content.timestamp &&
-      content.type &&
-      content.message &&
-      (content.type === 'user' ||
-        content.type === 'assistant' ||
-        content.type === 'tool_use' ||
-        content.type === 'tool_result')
-    )
-  }
-
-  transform(rawMessage: any): BaseSessionMessage[] {
+  transform(rawMessage: RawMessage): BaseSessionMessage[] {
     const messageType = this.getMessageType(rawMessage)
     const processedContent = this.processContent(rawMessage)
 
     // Handle direct tool_use messages (from new format)
     if (messageType === 'tool_use') {
       // Extract the tool use from content array
-      const content = processedContent.parts?.[0] || processedContent
-      const toolUseId = content.id || `tool-${rawMessage.timestamp}`
+      const content =
+        processedContent &&
+        typeof processedContent === 'object' &&
+        'parts' in processedContent &&
+        Array.isArray(processedContent.parts)
+          ? processedContent.parts[0]
+          : processedContent
+      const toolUseId =
+        content && typeof content === 'object' && 'id' in content
+          ? (content.id as string)
+          : `tool-${rawMessage.timestamp}`
 
       return [
         {
@@ -375,8 +407,17 @@ class OpenCodeAdapter implements ProviderAdapter {
     // Handle direct tool_result messages (from new format)
     if (messageType === 'tool_result') {
       // Extract the tool result from content array
-      const content = processedContent.parts?.[0] || processedContent
-      const toolUseId = content.tool_use_id || 'unknown'
+      const content =
+        processedContent &&
+        typeof processedContent === 'object' &&
+        'parts' in processedContent &&
+        Array.isArray(processedContent.parts)
+          ? processedContent.parts[0]
+          : processedContent
+      const toolUseId =
+        content && typeof content === 'object' && 'tool_use_id' in content
+          ? (content.tool_use_id as string)
+          : 'unknown'
 
       return [
         {
@@ -393,17 +434,23 @@ class OpenCodeAdapter implements ProviderAdapter {
     }
 
     // For assistant messages with tool uses, split into separate messages (legacy format)
-    if (messageType === 'assistant_response' && processedContent.parts) {
+    if (
+      messageType === 'assistant_response' &&
+      processedContent &&
+      typeof processedContent === 'object' &&
+      'parts' in processedContent &&
+      Array.isArray(processedContent.parts)
+    ) {
       const messages: BaseSessionMessage[] = []
 
       // Create assistant response message for text content
-      const textParts = processedContent.parts.filter((p: any) => p.type === 'text')
+      const textParts = processedContent.parts.filter((p: ContentPart) => p.type === 'text')
       if (textParts.length > 0) {
         messages.push({
           id: `${rawMessage.sessionId}-${rawMessage.timestamp}`,
           timestamp: rawMessage.timestamp,
           type: 'assistant_response',
-          content: { text: textParts.map((p: any) => p.text).join('\n') },
+          content: { text: textParts.map((p: ContentPart) => p.text || '').join('\n') },
           metadata: {
             sessionId: rawMessage.sessionId,
           },
@@ -411,16 +458,16 @@ class OpenCodeAdapter implements ProviderAdapter {
       }
 
       // Create separate tool use messages
-      const toolUses = processedContent.parts.filter((p: any) => p.type === 'tool_use')
+      const toolUses = processedContent.parts.filter((p: ContentPart) => p.type === 'tool_use')
       for (const toolUse of toolUses) {
         messages.push({
-          id: `${rawMessage.sessionId}-${rawMessage.timestamp}-tool-${(toolUse as any).id}`,
+          id: `${rawMessage.sessionId}-${rawMessage.timestamp}-tool-${toolUse.id || ''}`,
           timestamp: rawMessage.timestamp,
           type: 'tool_use',
           content: toolUse,
           metadata: {
             sessionId: rawMessage.sessionId,
-            toolUseId: (toolUse as any).id,
+            toolUseId: toolUse.id,
           },
         })
       }
@@ -442,34 +489,43 @@ class OpenCodeAdapter implements ProviderAdapter {
     ]
   }
 
-  private getMessageType(message: any): BaseSessionMessage['type'] {
+  private getMessageType(message: RawMessage): BaseSessionMessage['type'] {
     // Handle direct type specification from new format
-    if (message.type === 'tool_use') {
+    const msgType = getString(message, 'type')
+
+    if (msgType === 'tool_use') {
       return 'tool_use'
     }
 
-    if (message.type === 'tool_result') {
+    if (msgType === 'tool_result') {
       return 'tool_result'
     }
 
-    if (message.type === 'user') {
+    if (msgType === 'user') {
       // Check if this is a tool result vs real user input
-      const content = message.message?.content
-      if (Array.isArray(content) && content.some(item => item.type === 'tool_result')) {
+      const messageObj = getObject(message, 'message')
+      const content = messageObj ? messageObj.content : undefined
+      if (
+        Array.isArray(content) &&
+        content.some(item => isObject(item) && item.type === 'tool_result')
+      ) {
         return 'tool_result'
       }
       return 'user_input'
     }
 
-    if (message.type === 'assistant') {
+    if (msgType === 'assistant') {
       return 'assistant_response'
     }
 
     return 'meta'
   }
 
-  private processContent(message: any) {
-    const content = message.message?.content
+  private processContent(
+    message: RawMessage
+  ): PartsContent | { text: string } | null | Record<string, unknown> {
+    const messageObj = getObject(message, 'message')
+    const content = messageObj ? messageObj.content : undefined
 
     if (typeof content === 'string') {
       return { text: content }
@@ -477,21 +533,23 @@ class OpenCodeAdapter implements ProviderAdapter {
 
     if (Array.isArray(content)) {
       const processed = content.map(item => {
+        if (!isObject(item)) return item
+
         if (item.type === 'text') {
-          return { type: 'text', text: item.text }
+          return { type: 'text', text: getString(item, 'text') || '' }
         }
         if (item.type === 'tool_use') {
           return {
             type: 'tool_use',
-            id: item.id || item.tool_use_id,
-            name: item.name,
-            input: item.input,
+            id: getString(item, 'id') || getString(item, 'tool_use_id') || '',
+            name: getString(item, 'name') || '',
+            input: getObject(item, 'input') || {},
           }
         }
         if (item.type === 'tool_result') {
           return {
             type: 'tool_result',
-            tool_use_id: item.tool_use_id,
+            tool_use_id: getString(item, 'tool_use_id') || '',
             content: item.content,
           }
         }
@@ -500,29 +558,19 @@ class OpenCodeAdapter implements ProviderAdapter {
       return { parts: processed }
     }
 
-    return content
+    // Type-safe fallback for unknown content
+    if (content !== null && typeof content === 'object' && !Array.isArray(content)) {
+      return content as Record<string, unknown>
+    }
+
+    return null
   }
 }
 
 class CopilotAdapter implements ProviderAdapter {
   name = 'github-copilot'
 
-  detect(content: any): boolean {
-    // GitHub Copilot timeline format: has timestamp and type (user/copilot/tool_call_*)
-    return !!(
-      content &&
-      typeof content === 'object' &&
-      content.timestamp &&
-      content.type &&
-      (content.type === 'user' ||
-        content.type === 'copilot' ||
-        content.type === 'tool_call_requested' ||
-        content.type === 'tool_call_completed' ||
-        content.type === 'info')
-    )
-  }
-
-  transform(rawMessage: any): BaseSessionMessage[] {
+  transform(rawMessage: RawMessage): BaseSessionMessage[] {
     const messageType = this.getMessageType(rawMessage)
     const processedContent = this.processContent(rawMessage)
 
@@ -593,18 +641,33 @@ class CopilotAdapter implements ProviderAdapter {
           content: {
             type: 'tool_result',
             tool_use_id: rawMessage.callId,
-            content: rawMessage.result?.log || rawMessage.result,
+            content:
+              rawMessage.result &&
+              typeof rawMessage.result === 'object' &&
+              'log' in rawMessage.result
+                ? (rawMessage.result.log as string)
+                : rawMessage.result,
             parts: [
               {
                 type: 'tool_result',
                 tool_use_id: rawMessage.callId,
-                content: rawMessage.result?.log || rawMessage.result,
+                content:
+                  rawMessage.result &&
+                  typeof rawMessage.result === 'object' &&
+                  'log' in rawMessage.result
+                    ? (rawMessage.result.log as string)
+                    : rawMessage.result,
               },
             ],
           },
           metadata: {
             toolName: rawMessage.name,
-            resultType: rawMessage.result?.type,
+            resultType:
+              rawMessage.result &&
+              typeof rawMessage.result === 'object' &&
+              'type' in rawMessage.result
+                ? (rawMessage.result.type as string)
+                : undefined,
           },
           linkedTo: toolUseId,
         },
@@ -625,7 +688,7 @@ class CopilotAdapter implements ProviderAdapter {
     ]
   }
 
-  private getMessageType(message: any): BaseSessionMessage['type'] {
+  private getMessageType(message: RawMessage): BaseSessionMessage['type'] {
     // Map timeline types to message types
     switch (message.type) {
       case 'user':
@@ -642,41 +705,47 @@ class CopilotAdapter implements ProviderAdapter {
     }
   }
 
-  private processContent(message: any) {
+  private processContent(message: RawMessage): PartsContent | { text: string } {
     // For timeline entries, text is directly on the object
-    if (message.text) {
+    const text = getString(message, 'text')
+    if (text) {
       return {
-        text: message.text,
+        text,
         parts: [
           {
             type: 'text',
-            text: message.text,
+            text,
           },
         ],
       }
     }
 
+    const msgType = getString(message, 'type')
+
     // For tool calls, create appropriate structure
-    if (message.type === 'tool_call_requested') {
+    if (msgType === 'tool_call_requested') {
       return {
         parts: [
           {
             type: 'tool_use',
-            id: message.callId,
-            name: message.name,
-            input: message.arguments || {},
+            id: getString(message, 'callId'),
+            name: getString(message, 'name'),
+            input: getObject(message, 'arguments') || {},
           },
         ],
       }
     }
 
-    if (message.type === 'tool_call_completed') {
+    if (msgType === 'tool_call_completed') {
+      const result = getObject(message, 'result')
+      const resultContent = result ? getString(result, 'log') || result : message.result
+
       return {
         parts: [
           {
             type: 'tool_result',
-            tool_use_id: message.callId,
-            content: message.result?.log || message.result,
+            tool_use_id: getString(message, 'callId'),
+            content: resultContent,
           },
         ],
       }
@@ -689,41 +758,34 @@ class CopilotAdapter implements ProviderAdapter {
 class GeminiAdapter implements ProviderAdapter {
   name = 'gemini-code'
 
-  detect(content: any): boolean {
-    // Gemini JSONL format has provider field set to 'gemini-code'
-    return !!(
-      content &&
-      typeof content === 'object' &&
-      content.provider === 'gemini-code' &&
-      content.sessionId &&
-      content.timestamp
-    )
-  }
-
-  transform(rawMessage: any): BaseSessionMessage[] {
+  transform(rawMessage: RawMessage): BaseSessionMessage[] {
     // In the new format, message content is at rawMessage.message
     // and Gemini metadata is at the top level (gemini_thoughts, gemini_tokens, gemini_model)
-    const message = rawMessage.message
-    const messageType = rawMessage.type // 'user' or 'gemini' or 'tool_use' or 'tool_result'
+    const messageObj = getObject(rawMessage, 'message')
+    const messageType = getString(rawMessage, 'type') // 'user' or 'gemini' or 'tool_use' or 'tool_result'
 
-    if (!message) {
+    if (!messageObj) {
       return []
     }
 
+    const messageContent = messageObj.content
+
     // Handle tool_use messages from the new format
-    if (messageType === 'assistant' && Array.isArray(message.content)) {
+    if (messageType === 'assistant' && Array.isArray(messageContent)) {
       // Check if this is a tool use message (content has tool_use type)
-      const toolUse = message.content.find((part: any) => part.type === 'tool_use')
-      if (toolUse) {
+      const toolUse = messageContent.find(
+        (part: unknown) => isObject(part) && part.type === 'tool_use'
+      )
+      if (toolUse && isObject(toolUse)) {
         return [
           {
-            id: rawMessage.uuid,
+            id: getString(rawMessage, 'uuid') || '',
             timestamp: rawMessage.timestamp,
             type: 'tool_use',
             content: toolUse,
             metadata: {
               sessionId: rawMessage.sessionId,
-              toolUseId: toolUse.id,
+              toolUseId: getString(toolUse, 'id'),
             },
           },
         ]
@@ -731,75 +793,87 @@ class GeminiAdapter implements ProviderAdapter {
     }
 
     // Handle tool_result messages from the new format
-    if (messageType === 'tool_result' || (messageType === 'user' && Array.isArray(message.content))) {
-      const toolResult = Array.isArray(message.content)
-        ? message.content.find((part: any) => part.type === 'tool_result')
+    if (
+      messageType === 'tool_result' ||
+      (messageType === 'user' && Array.isArray(messageContent))
+    ) {
+      const toolResult = Array.isArray(messageContent)
+        ? messageContent.find((part: unknown) => isObject(part) && part.type === 'tool_result')
         : null
 
-      if (toolResult) {
+      if (toolResult && isObject(toolResult)) {
         return [
           {
-            id: rawMessage.uuid,
+            id: getString(rawMessage, 'uuid') || '',
             timestamp: rawMessage.timestamp,
             type: 'tool_result',
             content: toolResult,
             metadata: {
               sessionId: rawMessage.sessionId,
             },
-            linkedTo: toolResult.tool_use_id,
+            linkedTo: getString(toolResult, 'tool_use_id'),
           },
         ]
       }
     }
 
     // Get message type from the rawMessage.type field
-    const baseType = this.getMessageType({ type: messageType })
-    const processedContent = this.processContent({
-      type: messageType,
-      content: message.content
-    })
+    const baseType = this.getMessageType(messageType)
+    const processedContent = this.processContent(messageContent)
 
     // Default single message with Gemini-specific metadata
     return [
       {
-        id: rawMessage.uuid,
+        id: getString(rawMessage, 'uuid') || '',
         timestamp: rawMessage.timestamp,
         type: baseType,
         content: processedContent,
         metadata: {
           sessionId: rawMessage.sessionId,
-          model: rawMessage.gemini_model,
+          model: getString(rawMessage, 'gemini_model'),
           thoughts: rawMessage.gemini_thoughts,
           tokens: rawMessage.gemini_tokens,
-          cwd: rawMessage.cwd,
+          cwd: getString(rawMessage, 'cwd'),
         },
       },
     ]
   }
 
-  private getMessageType(message: any): BaseSessionMessage['type'] {
-    if (message.type === 'user') {
+  private getMessageType(messageType: string | undefined): BaseSessionMessage['type'] {
+    if (messageType === 'user') {
       return 'user_input'
     }
 
-    if (message.type === 'gemini') {
+    if (messageType === 'gemini' || messageType === 'assistant') {
       return 'assistant_response'
     }
 
     return 'meta'
   }
 
-  private processContent(message: any) {
-    // For text content, return simple structure
-    if (message.content) {
+  private processContent(content: unknown) {
+    // For text content (string), return simple structure
+    if (typeof content === 'string') {
       return {
-        text: message.content,
+        text: content,
         parts: [
           {
             type: 'text',
-            text: message.content,
+            text: content,
           },
         ],
+      }
+    }
+
+    // For array content, process parts
+    if (Array.isArray(content)) {
+      const textParts = content
+        .filter((part: unknown) => isObject(part) && part.type === 'text')
+        .map((part: unknown) => (isObject(part) ? getString(part, 'text') || '' : ''))
+
+      return {
+        text: textParts.join('\n'),
+        parts: content,
       }
     }
 
@@ -832,31 +906,21 @@ class GenericJSONLParser implements SessionParser {
     }
   }
 
-  parse(content: string, provider?: string): BaseSessionMessage[] {
+  parse(content: string, provider: string): BaseSessionMessage[] {
     const lines = content.split('\n').filter(line => line.trim())
     const messages: BaseSessionMessage[] = []
 
-    // Get the adapter for the known provider (if provided)
-    const adapter = provider ? this.getAdapter(provider) : null
+    // Get the adapter for the known provider
+    const adapter = this.getAdapter(provider)
+    if (!adapter) {
+      throw new Error(`No adapter found for provider: ${provider}`)
+    }
 
     for (const line of lines) {
       try {
         const rawMessage = JSON.parse(line)
-
-        if (adapter) {
-          // Use the known adapter
-          const transformedMessages = adapter.transform(rawMessage)
-          messages.push(...transformedMessages)
-        } else {
-          // Fallback to auto-detection
-          const detectedAdapter = this.findAdapter(rawMessage)
-          if (detectedAdapter) {
-            const transformedMessages = detectedAdapter.transform(rawMessage)
-            messages.push(...transformedMessages)
-          } else {
-            messages.push(this.createGenericMessage(rawMessage))
-          }
-        }
+        const transformedMessages = adapter.transform(rawMessage)
+        messages.push(...transformedMessages)
       } catch (error) {
         console.warn('Failed to parse line:', line, error)
       }
@@ -872,27 +936,7 @@ class GenericJSONLParser implements SessionParser {
     return this.adapters.get(normalized) || null
   }
 
-  private findAdapter(content: any): ProviderAdapter | null {
-    // Fallback auto-detection
-    for (const adapter of this.adapters.values()) {
-      if (adapter.detect(content)) {
-        return adapter
-      }
-    }
-    return null
-  }
-
-  private createGenericMessage(rawMessage: any): BaseSessionMessage {
-    return {
-      id: rawMessage.id || rawMessage.uuid || Math.random().toString(36).substr(2, 9),
-      timestamp: rawMessage.timestamp || rawMessage.createdAt || new Date().toISOString(),
-      type: this.inferType(rawMessage),
-      content: rawMessage,
-      metadata: {},
-    }
-  }
-
-  private inferType(message: any): BaseSessionMessage['type'] {
+  private inferType(message: RawMessage): BaseSessionMessage['type'] {
     if (message.type === 'user' || message.role === 'user') {
       // Check for command or interruption patterns
       const content = message.content || message.message?.content || message.text || ''
@@ -902,13 +946,13 @@ class GenericJSONLParser implements SessionParser {
       if (parsedContent) {
         // Check for interruption in parts structure - ONLY if it's specifically about interruption
         const hasInterruptionText = parsedContent.parts?.some(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.includes('[Request interrupted by user]') ||
               part.text?.includes('Request interrupted by user'))
         )
         const hasOnlyInterruptionText = parsedContent.parts?.every(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.includes('[Request interrupted by user]') ||
               part.text?.includes('Request interrupted by user') ||
@@ -921,12 +965,12 @@ class GenericJSONLParser implements SessionParser {
 
         // Check for commands in parts structure - ONLY if it's specifically a command
         const hasCommandText = parsedContent.parts?.some(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.startsWith('/') || part.text?.includes('<command-name>'))
         )
         const hasOnlyCommandText = parsedContent.parts?.every(
-          (part: any) =>
+          part =>
             part.type === 'text' &&
             (part.text?.startsWith('/') ||
               part.text?.includes('<command-name>') ||
@@ -958,17 +1002,27 @@ class GenericJSONLParser implements SessionParser {
       // Check if this is a simple interruption message (array with only interruption text)
       if (Array.isArray(content)) {
         const hasInterruptionText = content.some(
-          (item: any) =>
+          (item: unknown) =>
+            typeof item === 'object' &&
+            item !== null &&
+            'type' in item &&
             item.type === 'text' &&
-            (item.text?.includes('[Request interrupted by user]') ||
-              item.text?.includes('Request interrupted by user'))
+            'text' in item &&
+            typeof item.text === 'string' &&
+            (item.text.includes('[Request interrupted by user]') ||
+              item.text.includes('Request interrupted by user'))
         )
         const hasOnlyInterruptionText = content.every(
-          (item: any) =>
+          (item: unknown) =>
+            typeof item === 'object' &&
+            item !== null &&
+            'type' in item &&
             item.type === 'text' &&
-            (item.text?.includes('[Request interrupted by user]') ||
-              item.text?.includes('Request interrupted by user') ||
-              !item.text?.trim())
+            (!('text' in item) ||
+              typeof item.text !== 'string' ||
+              item.text.includes('[Request interrupted by user]') ||
+              item.text.includes('Request interrupted by user') ||
+              !item.text.trim())
         )
 
         if (hasInterruptionText && hasOnlyInterruptionText) {
@@ -987,18 +1041,23 @@ class GenericJSONLParser implements SessionParser {
     return 'meta'
   }
 
-  private parsePartsContent(content: any) {
+  private parsePartsContent(content: RawMessageContent): PartsContent | null {
     // Try to parse the content as a parts structure
     try {
       if (typeof content === 'string') {
         const parsed = JSON.parse(content)
-        if (parsed && parsed.parts && Array.isArray(parsed.parts)) {
+        if (parsed?.parts && Array.isArray(parsed.parts)) {
           return parsed
         }
-      } else if (content && content.parts && Array.isArray(content.parts)) {
-        return content
+      } else if (
+        typeof content === 'object' &&
+        content !== null &&
+        'parts' in content &&
+        Array.isArray((content as { parts: unknown }).parts)
+      ) {
+        return content as PartsContent
       }
-    } catch (error) {
+    } catch (_error) {
       // Not valid JSON or not a parts structure
     }
     return null
@@ -1012,7 +1071,7 @@ class SessionParserRegistry {
     return this.parsers.find(parser => parser.canParse(content)) || null
   }
 
-  parseSession(content: string, provider?: string): BaseSessionMessage[] {
+  parseSession(content: string, provider: string): BaseSessionMessage[] {
     const parser = this.findParser(content)
     if (!parser) {
       throw new Error('No suitable parser found for content')
@@ -1027,105 +1086,112 @@ class SessionParserRegistry {
 
 export const sessionRegistry = new SessionParserRegistry()
 
-// Conversation-based parser for better Input/Output display
-export class ConversationParser {
-  static parseConversation(content: string): ConversationTurn[] {
-    const lines = content.split('\n').filter(line => line.trim())
-    const rawMessages: ClaudeMessage[] = []
-
-    // Parse all messages first
-    for (const line of lines) {
-      try {
-        const message = JSON.parse(line)
-        // Only include actual conversation messages, skip meta/system
-        if (message.type === 'user' || message.type === 'assistant') {
-          rawMessages.push(message)
-        }
-      } catch (error) {
-        console.warn('Failed to parse line:', line)
-      }
-    }
-
-    // Group into conversation turns
-    const turns: ConversationTurn[] = []
-    let currentTurn: Partial<ConversationTurn> | null = null
-
-    for (const message of rawMessages) {
-      if (message.type === 'user') {
-        // Skip messages without content (e.g., file-history-snapshot)
-        if (!message.message?.content) {
-          continue
-        }
-
-        // Start new turn with user input
-        if (currentTurn && (currentTurn.userInput || currentTurn.assistantResponse)) {
-          turns.push(currentTurn as ConversationTurn)
-        }
-
-        currentTurn = {
-          id: message.uuid,
-          timestamp: message.timestamp,
-          userInput: {
-            content:
-              typeof message.message.content === 'string'
-                ? message.message.content
-                : JSON.stringify(message.message.content),
-            timestamp: message.timestamp,
-          },
-        }
-      } else if (message.type === 'assistant' && currentTurn) {
-        // Skip messages without content
-        if (!message.message?.content) {
-          continue
-        }
-
-        // Add assistant response to current turn
-        const toolUses = this.extractToolUses(message.message.content)
-
-        currentTurn.assistantResponse = {
-          content: this.extractTextContent(message.message.content),
-          timestamp: message.timestamp,
-          toolUses: toolUses.length > 0 ? toolUses : undefined,
-        }
-      }
-    }
-
-    // Add final turn if exists
-    if (currentTurn && (currentTurn.userInput || currentTurn.assistantResponse)) {
-      turns.push(currentTurn as ConversationTurn)
-    }
-
-    return turns
-  }
-
-  private static extractTextContent(content: any): string {
-    if (typeof content === 'string') {
-      return content
-    }
-
-    if (Array.isArray(content)) {
-      const textParts = content
-        .filter(part => part.type === 'text')
-        .map(part => part.text)
-        .join('\n')
-      return textParts || ''
-    }
-
-    return ''
-  }
-
-  private static extractToolUses(content: any): Array<{ name: string; input: any; result?: any }> {
-    if (!Array.isArray(content)) return []
-
+// Helper functions for conversation parsing
+function extractTextContent(content: unknown): string {
+  if (typeof content === 'string') {
     return content
-      .filter(part => part.type === 'tool_use')
-      .map(part => ({
-        name: part.name,
-        input: part.input,
-        // Tool results come in separate messages, would need to match by ID
-        // For now, just show the tool use
-      }))
   }
+
+  if (Array.isArray(content)) {
+    const textParts = content
+      .filter(
+        (part): part is { type: string; text: string } =>
+          typeof part === 'object' && part !== null && 'type' in part && part.type === 'text'
+      )
+      .map(part => part.text)
+      .join('\n')
+    return textParts || ''
+  }
+
+  return ''
+}
+
+function extractToolUses(
+  content: unknown
+): Array<{ name: string; input: Record<string, unknown>; result?: unknown }> {
+  if (!Array.isArray(content)) return []
+
+  return content
+    .filter(
+      (part): part is { type: string; name: string; input: Record<string, unknown> } =>
+        typeof part === 'object' && part !== null && 'type' in part && part.type === 'tool_use'
+    )
+    .map(part => ({
+      name: part.name,
+      input: part.input,
+      // Tool results come in separate messages, would need to match by ID
+      // For now, just show the tool use
+    }))
+}
+
+// Conversation-based parser for better Input/Output display
+export function parseConversation(content: string): ConversationTurn[] {
+  const lines = content.split('\n').filter(line => line.trim())
+  const rawMessages: ClaudeMessage[] = []
+
+  // Parse all messages first
+  for (const line of lines) {
+    try {
+      const message = JSON.parse(line)
+      // Only include actual conversation messages, skip meta/system
+      if (message.type === 'user' || message.type === 'assistant') {
+        rawMessages.push(message)
+      }
+    } catch (_error) {
+      console.warn('Failed to parse line:', line)
+    }
+  }
+
+  // Group into conversation turns
+  const turns: ConversationTurn[] = []
+  let currentTurn: Partial<ConversationTurn> | null = null
+
+  for (const message of rawMessages) {
+    if (message.type === 'user') {
+      // Skip messages without content (e.g., file-history-snapshot)
+      if (!message.message?.content) {
+        continue
+      }
+
+      // Start new turn with user input
+      if (currentTurn && (currentTurn.userInput || currentTurn.assistantResponse)) {
+        turns.push(currentTurn as ConversationTurn)
+      }
+
+      currentTurn = {
+        id: message.uuid,
+        timestamp: message.timestamp,
+        userInput: {
+          content:
+            typeof message.message.content === 'string'
+              ? message.message.content
+              : JSON.stringify(message.message.content),
+          timestamp: message.timestamp,
+        },
+      }
+    } else if (message.type === 'assistant' && currentTurn) {
+      // Skip messages without content
+      if (!message.message?.content) {
+        continue
+      }
+
+      // Add assistant response to current turn
+      const toolUses = extractToolUses(message.message.content)
+
+      currentTurn.assistantResponse = {
+        content: extractTextContent(message.message.content),
+        timestamp: message.timestamp,
+        toolUses: toolUses.length > 0 ? toolUses : undefined,
+      }
+    }
+  }
+
+  // Add final turn if exists
+  if (currentTurn && (currentTurn.userInput || currentTurn.assistantResponse)) {
+    turns.push(currentTurn as ConversationTurn)
+  }
+
+  return turns
 }
 
 export {

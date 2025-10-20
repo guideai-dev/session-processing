@@ -1,6 +1,8 @@
+import type { ErrorMetrics, ToolResultContent, ToolUseContent } from '@guideai-dev/types'
+
+import { filterErrorResults, isErrorResult } from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { ErrorMetrics } from '@guideai-dev/types'
 import { OpenCodeParser } from '../parser.js'
 
 export class OpenCodeErrorProcessor extends BaseMetricProcessor {
@@ -40,7 +42,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
   }
 
   private extractErrors(
-    toolResults: any[]
+    toolResults: ToolResultContent[]
   ): Array<{ message: string; tool: string; severity: 'warning' | 'error' | 'fatal' }> {
     const errors: Array<{
       message: string
@@ -55,7 +57,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
       if (errorIndicators.hasError) {
         errors.push({
           message: errorIndicators.message || 'Unknown error',
-          tool: result.name || 'unknown',
+          tool: 'unknown',
           severity: errorIndicators.severity,
         })
       }
@@ -66,7 +68,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
 
   private getErrorIndicators(
     resultStr: string,
-    result: any
+    result: ToolResultContent
   ): {
     hasError: boolean
     message?: string
@@ -87,10 +89,11 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
     }
 
     // Check for explicit error in result
-    if (result.error || result.status === 'error') {
+    if (result.is_error) {
       return {
         hasError: true,
-        message: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
+        message:
+          typeof result.content === 'string' ? result.content : JSON.stringify(result.content),
         severity: 'error',
       }
     }
@@ -252,7 +255,7 @@ export class OpenCodeErrorProcessor extends BaseMetricProcessor {
 
   private countFatalErrors(
     errors: Array<{ message: string; tool: string; severity: string }>,
-    toolUses: any[]
+    _toolUses: ToolUseContent[]
   ): number {
     // Fatal errors are those that stop progress
     let fatalCount = 0

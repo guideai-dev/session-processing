@@ -1,6 +1,6 @@
 import type {
-  AssessmentQuestionConfig,
   AssessmentAnswer,
+  AssessmentQuestionConfig,
   AssessmentResponse,
 } from '@guideai-dev/types'
 

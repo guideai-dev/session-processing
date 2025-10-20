@@ -4,8 +4,8 @@
  * Handles GitHub Copilot CLI message format and conventions.
  */
 
+import type { BaseSessionMessage } from '../sessionTypes.js'
 import { BaseMessageProcessor } from './BaseMessageProcessor.js'
-import { BaseSessionMessage } from '../sessionTypes.js'
 
 export class CopilotMessageProcessor extends BaseMessageProcessor {
   name = 'github-copilot'

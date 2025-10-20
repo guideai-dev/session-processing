@@ -1,18 +1,18 @@
-import { useState, useEffect, useCallback } from 'react'
+import type { AssessmentAnswer, AssessmentResponse, AssessmentVersion } from '@guideai-dev/types'
 import {
-  XMarkIcon,
+  CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  CheckIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
-import type { AssessmentModalProps } from './types'
-import type { AssessmentAnswer, AssessmentResponse, AssessmentVersion } from '@guideai-dev/types'
-import { QuestionCard } from './QuestionCard'
+import { useCallback, useEffect, useState } from 'react'
 import { ProgressBar } from './ProgressBar'
+import { QuestionCard } from './QuestionCard'
 import { VersionSelector } from './VersionSelector'
+import type { AssessmentModalProps } from './types'
 
 export function AssessmentModal({
-  sessionId,
+  sessionId: _sessionId,
   isOpen,
   onClose,
   questions,

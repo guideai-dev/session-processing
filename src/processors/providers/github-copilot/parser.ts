@@ -1,4 +1,12 @@
-import type { ParsedSession, ParsedMessage } from '../../base/types.js'
+import type {
+  ContentBlock,
+  StructuredMessageContent,
+  TextContent,
+  ToolResultContent,
+  ToolUseContent,
+} from '@guideai-dev/types'
+import { isStructuredMessageContent, isTextContent } from '@guideai-dev/types'
+import type { ParsedMessage, ParsedSession } from '../../base/types.js'
 
 // Timeline entry types from Copilot
 export interface TimelineEntry {
@@ -7,41 +15,23 @@ export interface TimelineEntry {
   type: string
   text?: string
   // User message fields
-  mentions?: any[]
+  mentions?: unknown[]
   expandedText?: string
-  imageAttachments?: any[]
+  imageAttachments?: unknown[]
   // Tool call fields
   callId?: string
   name?: string
   toolTitle?: string
   intentionSummary?: string
-  arguments?: any
+  arguments?: unknown
   result?: {
     type: string
     log?: string
   }
 }
 
-export interface ToolUseContent {
-  type: 'tool_use'
-  id: string
-  name: string
-  input: Record<string, any>
-}
-
-export interface ToolResultContent {
-  type: 'tool_result'
-  tool_use_id: string
-  content: any
-}
-
-export interface TextContent {
-  type: 'text'
-  text: string
-}
-
 export class GitHubCopilotParser {
-  parseSession(jsonlContent: string): ParsedSession {
+  parseSession(jsonlContent: string, provider: string): ParsedSession {
     const lines = jsonlContent.split('\n').filter(line => line.trim())
     const messages: ParsedMessage[] = []
     let sessionId = ''
@@ -60,7 +50,7 @@ export class GitHubCopilotParser {
         const timestamp = new Date(entry.timestamp)
 
         // Validate timestamp is valid
-        if (isNaN(timestamp.getTime())) {
+        if (Number.isNaN(timestamp.getTime())) {
           continue
         }
 
@@ -132,7 +122,7 @@ export class GitHubCopilotParser {
                 type: 'tool_use' as const,
                 id: entry.callId,
                 name: entry.name,
-                input: entry.arguments || {},
+                input: (entry.arguments || {}) as Record<string, unknown>,
               }
 
               message = {
@@ -209,9 +199,7 @@ export class GitHubCopilotParser {
         if (message) {
           messages.push(message)
         }
-      } catch (error) {
-        continue
-      }
+      } catch (_error) {}
     }
 
     // Calculate duration
@@ -260,7 +248,7 @@ export class GitHubCopilotParser {
     const toolUses: ToolUseContent[] = []
 
     for (const message of session.messages) {
-      if (message.content?.toolUses) {
+      if (isStructuredMessageContent(message.content)) {
         toolUses.push(...message.content.toolUses)
       }
     }
@@ -272,7 +260,7 @@ export class GitHubCopilotParser {
     const toolResults: ToolResultContent[] = []
 
     for (const message of session.messages) {
-      if (message.content?.toolResults) {
+      if (isStructuredMessageContent(message.content)) {
         toolResults.push(...message.content.toolResults)
       }
     }
@@ -309,17 +297,21 @@ export class GitHubCopilotParser {
       return message.content
     }
 
-    if (message.content?.text) {
-      return message.content.text
-    }
-
-    if (Array.isArray(message.content?.structured)) {
+    if (isStructuredMessageContent(message.content)) {
       const textParts: string[] = []
-      for (const part of message.content.structured) {
-        if (part.type === 'text' && part.text) {
-          textParts.push(part.text)
+
+      if (message.content.text) {
+        textParts.push(message.content.text)
+      }
+
+      if (Array.isArray(message.content.structured)) {
+        for (const part of message.content.structured) {
+          if (isTextContent(part)) {
+            textParts.push(part.text)
+          }
         }
       }
+
       return textParts.join('\n')
     }
 

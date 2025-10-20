@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import type { QuestionCardProps } from './types'
+import { ChoiceResponse } from './ChoiceResponse'
 import { LikertScale } from './LikertScale'
 import { TextResponse } from './TextResponse'
-import { ChoiceResponse } from './ChoiceResponse'
+import type { QuestionCardProps } from './types'
 
 export function QuestionCard({ question, value, onChange, onNext, autoFocus }: QuestionCardProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -26,9 +26,9 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
       // Number keys for Likert scales
       if (question.type === 'likert-5' || question.type === 'likert-7') {
         const maxScale = question.type === 'likert-5' ? 5 : 7
-        const num = parseInt(key)
+        const num = Number.parseInt(key)
 
-        if (!isNaN(num) && num >= 1 && num <= maxScale) {
+        if (!Number.isNaN(num) && num >= 1 && num <= maxScale) {
           e.preventDefault()
           handleLikertChange(num)
         }
@@ -39,8 +39,8 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
         let choiceIndex = -1
 
         // Check for number keys (1-9)
-        const num = parseInt(key)
-        if (!isNaN(num) && num >= 1 && num <= question.choices.length) {
+        const num = Number.parseInt(key)
+        if (!Number.isNaN(num) && num >= 1 && num <= question.choices.length) {
           choiceIndex = num - 1
         }
         // Check for letter keys (a-z)
@@ -60,7 +60,8 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [autoFocus, question, onNext])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFocus, question])
 
   const handleLikertChange = (numValue: number) => {
     // Check if this is actually a change

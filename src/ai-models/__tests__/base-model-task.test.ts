@@ -3,7 +3,15 @@ import { BaseModelTask } from '../base/model-task.js'
 import type { ModelTaskConfig, ModelTaskContext } from '../base/types.js'
 import { MOCK_CONTEXT } from './fixtures/mock-sessions.js'
 
-class TestModelTask extends BaseModelTask {
+// Define proper input/output types for test task
+interface TestInput {
+	variable: string
+	sessionId: string
+}
+
+type TestOutput = string
+
+class TestModelTask extends BaseModelTask<TestInput, TestOutput> {
 	readonly taskType = 'test-task'
 	readonly name = 'Test Task'
 	readonly description = 'A test task'
@@ -17,7 +25,7 @@ class TestModelTask extends BaseModelTask {
 		}
 	}
 
-	prepareInput(context: ModelTaskContext): any {
+	prepareInput(context: ModelTaskContext): TestInput {
 		return {
 			variable: 'test-value',
 			sessionId: context.sessionId,
@@ -25,7 +33,14 @@ class TestModelTask extends BaseModelTask {
 	}
 }
 
-class CustomValidationTask extends BaseModelTask {
+// Define types for custom validation task
+interface CustomValidationInput {
+	// Empty input
+}
+
+type CustomValidationOutput = string
+
+class CustomValidationTask extends BaseModelTask<CustomValidationInput, CustomValidationOutput> {
 	readonly taskType = 'custom-validation'
 	readonly name = 'Custom Validation Task'
 	readonly description = 'Task with custom validation'
@@ -39,7 +54,7 @@ class CustomValidationTask extends BaseModelTask {
 		}
 	}
 
-	prepareInput(_context: ModelTaskContext): any {
+	prepareInput(_context: ModelTaskContext): CustomValidationInput {
 		return {}
 	}
 
@@ -48,7 +63,18 @@ class CustomValidationTask extends BaseModelTask {
 	}
 }
 
-class OutputProcessingTask extends BaseModelTask {
+// Define types for output processing task
+interface OutputProcessingInput {
+	// Empty input
+}
+
+interface OutputProcessingOutput {
+	processed: boolean
+	originalOutput: string
+	timestamp: string
+}
+
+class OutputProcessingTask extends BaseModelTask<OutputProcessingInput, OutputProcessingOutput> {
 	readonly taskType = 'output-processing'
 	readonly name = 'Output Processing Task'
 	readonly description = 'Task with custom output processing'
@@ -62,11 +88,11 @@ class OutputProcessingTask extends BaseModelTask {
 		}
 	}
 
-	prepareInput(_context: ModelTaskContext): any {
+	prepareInput(_context: ModelTaskContext): OutputProcessingInput {
 		return {}
 	}
 
-	processOutput(output: any, _context: ModelTaskContext): any {
+	processOutput(output: string, _context: ModelTaskContext): OutputProcessingOutput {
 		return {
 			processed: true,
 			originalOutput: output,
@@ -231,7 +257,15 @@ describe('BaseModelTask', () => {
 
 	describe('Integration', () => {
 		it('should work with different response format types', () => {
-			class JsonTask extends BaseModelTask {
+			interface JsonTaskInput {
+				// Empty input
+			}
+
+			interface JsonTaskOutput {
+				data: unknown
+			}
+
+			class JsonTask extends BaseModelTask<JsonTaskInput, JsonTaskOutput> {
 				readonly taskType = 'json-task'
 				readonly name = 'JSON Task'
 				readonly description = 'Task with JSON response'
@@ -245,7 +279,7 @@ describe('BaseModelTask', () => {
 					}
 				}
 
-				prepareInput(_context: ModelTaskContext) {
+				prepareInput(_context: ModelTaskContext): JsonTaskInput {
 					return {}
 				}
 			}
@@ -257,7 +291,13 @@ describe('BaseModelTask', () => {
 		})
 
 		it('should support recording strategies in config', () => {
-			class RecordingTask extends BaseModelTask {
+			interface RecordingTaskInput {
+				// Empty input
+			}
+
+			type RecordingTaskOutput = string
+
+			class RecordingTask extends BaseModelTask<RecordingTaskInput, RecordingTaskOutput> {
 				readonly taskType = 'recording-task'
 				readonly name = 'Recording Task'
 				readonly description = 'Task with recording strategy'
@@ -273,7 +313,7 @@ describe('BaseModelTask', () => {
 					}
 				}
 
-				prepareInput(_context: ModelTaskContext) {
+				prepareInput(_context: ModelTaskContext): RecordingTaskInput {
 					return {}
 				}
 			}

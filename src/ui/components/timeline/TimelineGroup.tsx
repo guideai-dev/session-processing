@@ -2,7 +2,7 @@
  * TimelineGroup - Renders grouped messages (e.g., tool use + result side-by-side)
  */
 
-import { TimelineGroup as TimelineGroupType } from '../../utils/timelineTypes.js'
+import type { TimelineGroup as TimelineGroupType } from '../../utils/timelineTypes.js'
 import { TimelineMessage } from './TimelineMessage.js'
 
 interface TimelineGroupProps {

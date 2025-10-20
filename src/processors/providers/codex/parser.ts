@@ -1,10 +1,19 @@
-import type { ParsedSession, ParsedMessage } from '../../base/types.js'
+import type {
+  ContentBlock,
+  StructuredMessageContent,
+  TextContent,
+  ToolResultContent,
+  ToolUseContent,
+} from '@guideai-dev/types'
+import { isStructuredMessageContent, isTextContent } from '@guideai-dev/types'
+import { getString, isObject } from '../../../utils/safe-access.js'
+import type { ParsedMessage, ParsedSession } from '../../base/types.js'
 
 // Codex message types from JSONL format
 export interface CodexEntry {
   timestamp: string
   type: 'session_meta' | 'response_item' | 'event_msg' | 'turn_context'
-  payload: any
+  payload: unknown
 }
 
 export interface CodexSessionMeta {
@@ -24,7 +33,7 @@ export interface CodexSessionMeta {
 export interface CodexResponseItem {
   type: 'message' | 'function_call' | 'function_call_output' | 'reasoning'
   role?: 'user' | 'assistant'
-  content?: Array<{ type: string; text?: string }>
+  content?: ContentBlock[]
   // Function call fields
   name?: string
   arguments?: string
@@ -33,26 +42,8 @@ export interface CodexResponseItem {
   output?: string
 }
 
-export interface ToolUseContent {
-  type: 'tool_use'
-  id: string
-  name: string
-  input: Record<string, any>
-}
-
-export interface ToolResultContent {
-  type: 'tool_result'
-  tool_use_id: string
-  content: any
-}
-
-export interface TextContent {
-  type: 'text'
-  text: string
-}
-
 export class CodexParser {
-  parseSession(jsonlContent: string): ParsedSession {
+  parseSession(jsonlContent: string, provider: string): ParsedSession {
     const lines = jsonlContent.split('\n').filter(line => line.trim())
     const messages: ParsedMessage[] = []
     let sessionId = ''
@@ -71,7 +62,7 @@ export class CodexParser {
         const timestamp = new Date(entry.timestamp)
 
         // Validate timestamp is valid
-        if (isNaN(timestamp.getTime())) {
+        if (Number.isNaN(timestamp.getTime())) {
           continue
         }
 
@@ -84,8 +75,9 @@ export class CodexParser {
         }
 
         // Extract session ID from session_meta
-        if (entry.type === 'session_meta' && entry.payload?.id) {
-          sessionId = entry.payload.id
+        if (entry.type === 'session_meta' && isObject(entry.payload)) {
+          const id = getString(entry.payload, 'id')
+          if (id) sessionId = id
         }
 
         // Parse response_item entries
@@ -95,9 +87,7 @@ export class CodexParser {
             messages.push(parsedMessage)
           }
         }
-      } catch (error) {
-        continue
-      }
+      } catch (_error) {}
     }
 
     if (!sessionId) {
@@ -126,12 +116,21 @@ export class CodexParser {
     }
   }
 
+  private isCodexResponseItem(payload: unknown): payload is CodexResponseItem {
+    if (!isObject(payload)) return false
+    if (!('type' in payload) || typeof payload.type !== 'string') return false
+    const validTypes = ['message', 'function_call', 'function_call_output', 'reasoning']
+    return validTypes.includes(payload.type)
+  }
+
   private parseResponseItem(
     entry: CodexEntry,
     timestamp: Date,
     index: number
   ): ParsedMessage | null {
-    const payload = entry.payload as CodexResponseItem
+    if (!this.isCodexResponseItem(entry.payload)) return null
+
+    const payload = entry.payload
 
     // Handle different payload types
     switch (payload.type) {
@@ -170,8 +169,9 @@ export class CodexParser {
     if (Array.isArray(payload.content)) {
       const textParts: string[] = []
       for (const part of payload.content) {
-        if (part.type === 'input_text' && part.text) {
-          textParts.push(part.text)
+        if (isObject(part) && part.type === 'input_text') {
+          const partText = getString(part, 'text')
+          if (partText) textParts.push(partText)
         }
       }
       text = textParts.join('\n')
@@ -196,7 +196,7 @@ export class CodexParser {
   private parseFunctionCall(
     payload: CodexResponseItem,
     timestamp: Date,
-    index: number
+    _index: number
   ): ParsedMessage | null {
     if (!payload.name || !payload.call_id) return null
 
@@ -239,7 +239,7 @@ export class CodexParser {
   private parseFunctionCallOutput(
     payload: CodexResponseItem,
     timestamp: Date,
-    index: number
+    _index: number
   ): ParsedMessage | null {
     if (!payload.call_id) return null
 
@@ -284,7 +284,7 @@ export class CodexParser {
     const toolUses: ToolUseContent[] = []
 
     for (const message of session.messages) {
-      if (message.content?.toolUses) {
+      if (isStructuredMessageContent(message.content)) {
         toolUses.push(...message.content.toolUses)
       }
     }
@@ -299,7 +299,7 @@ export class CodexParser {
     const toolResults: ToolResultContent[] = []
 
     for (const message of session.messages) {
-      if (message.content?.toolResults) {
+      if (isStructuredMessageContent(message.content)) {
         toolResults.push(...message.content.toolResults)
       }
     }
@@ -369,17 +369,21 @@ export class CodexParser {
       return message.content
     }
 
-    if (message.content?.text) {
-      return message.content.text
-    }
-
-    if (Array.isArray(message.content?.structured)) {
+    if (isStructuredMessageContent(message.content)) {
       const textParts: string[] = []
-      for (const part of message.content.structured) {
-        if (part.type === 'input_text' && part.text) {
-          textParts.push(part.text)
+
+      if (message.content.text) {
+        textParts.push(message.content.text)
+      }
+
+      if (Array.isArray(message.content.structured)) {
+        for (const part of message.content.structured) {
+          if (isTextContent(part)) {
+            textParts.push(part.text)
+          }
         }
       }
+
       return textParts.join(' ')
     }
 

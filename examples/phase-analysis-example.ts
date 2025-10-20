@@ -7,8 +7,8 @@
 
 import {
   ClaudeModelAdapter,
-  SessionPhaseAnalysisTask,
   type SessionPhaseAnalysis,
+  SessionPhaseAnalysisTask,
 } from '@guideai-dev/session-processing/ai-models'
 import type { ParsedSession } from '@guideai-dev/session-processing/processors'
 
@@ -57,10 +57,9 @@ async function analyzeSessionPhases(
     console.log(`Cost: $${result.metadata.cost?.toFixed(4)}`)
 
     return phaseAnalysis
-  } else {
-    console.error('❌ Phase analysis failed:', result.metadata.error)
-    return null
   }
+  console.error('❌ Phase analysis failed:', result.metadata.error)
+  return null
 }
 
 /**
@@ -95,7 +94,7 @@ function displayPhaseAnalysis(analysis: SessionPhaseAnalysis): void {
  * Store the analysis in a database (SQLite example)
  */
 async function storePhaseAnalysis(
-  sessionId: string,
+  _sessionId: string,
   analysis: SessionPhaseAnalysis
 ): Promise<void> {
   // Example for SQLite (desktop app)

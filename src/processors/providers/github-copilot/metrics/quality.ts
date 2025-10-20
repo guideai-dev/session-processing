@@ -1,6 +1,16 @@
+import type {
+  ParsedMessage,
+  QualityMetrics,
+  ToolResultContent,
+  ToolUseContent,
+} from '@guideai-dev/types'
+import {
+  extractTextFromMessage,
+  isErrorResult,
+  isStructuredMessageContent,
+} from '@guideai-dev/types'
 import { BaseMetricProcessor } from '../../../base/metric-processor.js'
 import type { ParsedSession } from '../../../base/types.js'
-import type { QualityMetrics } from '@guideai-dev/types'
 import { GitHubCopilotParser } from '../parser.js'
 
 export class CopilotQualityProcessor extends BaseMetricProcessor {
@@ -61,7 +71,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
         // Extra fields for analysis
         cancellations: cancellations,
         average_response_length: avgResponseLength,
-      } as any,
+      },
     }
   }
 
@@ -71,8 +81,8 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
   private detectCancellations(session: ParsedSession): number {
     let count = 0
     for (const message of session.messages) {
-      if (message.metadata?.isInfo && message.content?.text) {
-        const text = message.content.text.toLowerCase()
+      if (message.metadata?.isInfo && isStructuredMessageContent(message.content)) {
+        const text = (message.content.text || '').toLowerCase()
         if (text.includes('cancelled') || text.includes('canceled')) {
           count++
         }
@@ -84,7 +94,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
   /**
    * Calculate average assistant response length (quality indicator)
    */
-  private calculateAverageResponseLength(assistantMessages: any[]): number {
+  private calculateAverageResponseLength(assistantMessages: ParsedMessage[]): number {
     if (assistantMessages.length === 0) return 0
 
     let totalLength = 0
@@ -101,22 +111,11 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     return textMessages > 0 ? Math.round(totalLength / textMessages) : 0
   }
 
-  private hasErrorIndicators(result: any): boolean {
-    const resultStr = JSON.stringify(result).toLowerCase()
-    const errorKeywords = [
-      'error',
-      'failed',
-      'exception',
-      'not found',
-      'permission denied',
-      'invalid',
-      'cannot',
-      'unable',
-    ]
-    return errorKeywords.some(keyword => resultStr.includes(keyword))
+  private hasErrorIndicators(result: ToolResultContent): boolean {
+    return isErrorResult(result)
   }
 
-  private calculateIterations(userMessages: any[], session: ParsedSession): number {
+  private calculateIterations(_userMessages: ParsedMessage[], session: ParsedSession): number {
     // Context-based detection: only count user messages that follow assistant responses
     // and contain actual refinement/correction language
     let iterations = 0
@@ -131,7 +130,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
       const prevMessage = i > 0 ? session.messages[i - 1] : null
       if (!prevMessage || prevMessage.type !== 'assistant') continue
 
-      const content = this.extractContent(message).toLowerCase()
+      const content = extractTextFromMessage(message).toLowerCase()
 
       // More specific refinement patterns that indicate actual iterations
       const refinementPatterns = [
@@ -174,8 +173,8 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
   }
 
   private calculateProcessQuality(
-    toolUses: any[],
-    session: ParsedSession,
+    toolUses: ToolUseContent[],
+    _session: ParsedSession,
     cancellations: number
   ): number {
     let score = 50 // Start at 50 as baseline
@@ -187,7 +186,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     const editCommands = toolUses.filter(
       tool =>
         tool.name === 'str_replace_editor' &&
-        ['str_replace', 'create', 'insert'].includes(tool.input?.command || '')
+        ['str_replace', 'create', 'insert'].includes((tool.input?.command as string) || '')
     )
 
     if (viewCommands.length > 0 && editCommands.length > 0) {
@@ -308,7 +307,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     const assistantMessages = session.messages.filter(m => m.type === 'assistant')
 
     for (const message of assistantMessages) {
-      const content = this.extractContent(message).toLowerCase()
+      const content = extractTextFromMessage(message).toLowerCase()
 
       for (const pattern of affirmationPatterns) {
         const matches = content.match(pattern)

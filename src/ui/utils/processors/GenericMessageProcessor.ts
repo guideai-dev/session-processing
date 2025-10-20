@@ -6,9 +6,14 @@
  * fallback rendering for any session format.
  */
 
-import { BaseMessageProcessor } from './BaseMessageProcessor.js'
-import { BaseSessionMessage } from '../sessionTypes.js'
-import { createDisplayMetadata, ContentBlock, createContentBlock } from '../timelineTypes.js'
+import type { BaseSessionMessage } from '../sessionTypes.js'
+import {
+  type ContentBlock,
+  type MessageRole,
+  createContentBlock,
+  createDisplayMetadata,
+} from '../timelineTypes.js'
+import { BaseMessageProcessor, type MessageContent } from './BaseMessageProcessor.js'
 
 export class GenericMessageProcessor extends BaseMessageProcessor {
   name = 'generic'
@@ -16,7 +21,7 @@ export class GenericMessageProcessor extends BaseMessageProcessor {
   /**
    * Override to provide smarter type detection for unknown formats
    */
-  protected getMessageRole(message: BaseSessionMessage): any {
+  protected getMessageRole(message: BaseSessionMessage): MessageRole {
     // Try to detect role from content hints
     const content = message.content
 
@@ -133,34 +138,44 @@ export class GenericMessageProcessor extends BaseMessageProcessor {
   /**
    * Check if content looks like text
    */
-  private looksLikeText(content: any): boolean {
+  private looksLikeText(content: MessageContent): boolean {
     if (typeof content === 'string') return true
-    if (content?.text && typeof content.text === 'string') return true
-    if (content?.message && typeof content.message === 'string') return true
-    if (content?.content && typeof content.content === 'string') return true
+    if (typeof content === 'object' && content !== null) {
+      if ('text' in content && typeof content.text === 'string') return true
+      if ('message' in content && typeof content.message === 'string') return true
+      if ('content' in content && typeof content.content === 'string') return true
+    }
     return false
   }
 
   /**
    * Extract text from content
    */
-  private extractText(content: any): string | null {
+  private extractText(content: MessageContent): string | null {
     if (typeof content === 'string') return content
-    if (content?.text && typeof content.text === 'string') return content.text
-    if (content?.message && typeof content.message === 'string') return content.message
-    if (content?.content && typeof content.content === 'string') return content.content
+    if (typeof content === 'object' && content !== null) {
+      if ('text' in content && typeof content.text === 'string') return content.text
+      if ('message' in content && typeof content.message === 'string') return content.message
+      if ('content' in content && typeof content.content === 'string') return content.content
+    }
     return null
   }
 
   /**
    * Check if content looks like a tool use
    */
-  private looksLikeToolUse(content: any): boolean {
+  private looksLikeToolUse(content: MessageContent): boolean {
     if (!content || typeof content !== 'object') return false
 
     // Has tool/function/name AND input/arguments/params
-    const hasName = content.tool || content.function || content.name
-    const hasInput = content.input || content.arguments || content.params
+    const hasName =
+      ('tool' in content && content.tool) ||
+      ('function' in content && content.function) ||
+      ('name' in content && content.name)
+    const hasInput =
+      ('input' in content && content.input) ||
+      ('arguments' in content && content.arguments) ||
+      ('params' in content && content.params)
 
     return Boolean(hasName && hasInput)
   }
@@ -168,10 +183,14 @@ export class GenericMessageProcessor extends BaseMessageProcessor {
   /**
    * Check if content looks like a tool result
    */
-  private looksLikeToolResult(content: any): boolean {
+  private looksLikeToolResult(content: MessageContent): boolean {
     if (!content || typeof content !== 'object') return false
 
     // Has output/result/response fields
-    return Boolean(content.output || content.result || content.response)
+    return Boolean(
+      ('output' in content && content.output) ||
+        ('result' in content && content.result) ||
+        ('response' in content && content.response)
+    )
   }
 }

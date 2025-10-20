@@ -1,12 +1,12 @@
-import { BaseProviderProcessor, BaseMetricProcessor } from '../../base/index.js'
+import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
 import { CodexParser } from './parser.js'
 
+import { CodexEngagementProcessor } from './metrics/engagement.js'
+import { CodexErrorProcessor } from './metrics/error.js'
 // Import simplified metric processors
 import { CodexPerformanceProcessor } from './metrics/performance.js'
-import { CodexEngagementProcessor } from './metrics/engagement.js'
 import { CodexQualityProcessor } from './metrics/quality.js'
 import { CodexUsageProcessor } from './metrics/usage.js'
-import { CodexErrorProcessor } from './metrics/error.js'
 
 export class CodexProcessor extends BaseProviderProcessor {
   readonly providerName = 'codex'
@@ -28,9 +28,9 @@ export class CodexProcessor extends BaseProviderProcessor {
     ]
   }
 
-  parseSession(jsonlContent: string) {
+  parseSession(jsonlContent: string, provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent)
+    return this.parser.parseSession(jsonlContent, provider)
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -61,10 +61,7 @@ export class CodexProcessor extends BaseProviderProcessor {
           if (hasCodexFields) {
             return true
           }
-        } catch {
-          // Skip non-JSON lines
-          continue
-        }
+        } catch {}
       }
 
       return false
@@ -111,17 +108,14 @@ export class CodexProcessor extends BaseProviderProcessor {
         if (entry.timestamp && entry.type && entry.payload) {
           // Validate timestamp format
           const timestamp = new Date(entry.timestamp)
-          if (!isNaN(timestamp.getTime())) {
+          if (!Number.isNaN(timestamp.getTime())) {
             validMessageLines++
             if (validMessageLines >= targetValidLines) {
               break
             }
           }
         }
-      } catch (parseError) {
-        // Skip lines that aren't valid JSON
-        continue
-      }
+      } catch (_parseError) {}
     }
 
     if (validMessageLines === 0) {
@@ -153,10 +147,7 @@ export class CodexProcessor extends BaseProviderProcessor {
         if (validJsonLines >= targetValidLines) {
           break
         }
-      } catch {
-        // Skip non-JSON lines
-        continue
-      }
+      } catch {}
     }
 
     if (validJsonLines === 0) {

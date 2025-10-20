@@ -2,7 +2,7 @@
  * MessageHeader - Reusable header component for timeline messages
  */
 
-import { DisplayMetadata } from '../../utils/timelineTypes.js'
+import type { DisplayMetadata } from '../../utils/timelineTypes.js'
 
 interface MessageHeaderProps {
   displayMetadata: DisplayMetadata

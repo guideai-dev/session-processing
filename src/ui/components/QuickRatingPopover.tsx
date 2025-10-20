@@ -7,8 +7,8 @@
  * - Thumbs Down
  */
 
+import { HandThumbDownIcon, HandThumbUpIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef } from 'react'
-import { HandThumbUpIcon, HandThumbDownIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
 import type { SessionRating } from '../../utils/rating.js'
 
 export interface QuickRatingPopoverProps {
