@@ -3,6 +3,7 @@ export * from './components/index.js'
 
 // Export utilities
 export * from './utils/sessionTypes.js'
+export * from './utils/markdown.js'
 
 // Re-export parser registry for convenience (already exported from parsers/index.js)
 export { parserRegistry } from '../parsers/index.js'

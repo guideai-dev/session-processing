@@ -11,6 +11,8 @@ export {
   TimelineGroup,
   MessageHeader,
   ContentRenderer,
+  VirtualizedMessageList,
+  useScrollToMessage,
   TextBlock,
   CodeBlock,
   ImageBlock,
