@@ -6,11 +6,7 @@
 import { CodeBracketIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 import type { TruncationThreshold } from '../../../utils/markdown'
-import {
-  DEFAULT_TRUNCATION_THRESHOLD,
-  parseMarkdown,
-  smartTruncate,
-} from '../../../utils/markdown'
+import { DEFAULT_TRUNCATION_THRESHOLD, parseMarkdown, smartTruncate } from '../../../utils/markdown'
 
 interface TextBlockProps {
   content: string

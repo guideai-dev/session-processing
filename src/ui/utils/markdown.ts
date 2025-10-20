@@ -39,7 +39,7 @@ export interface TruncationThreshold {
 export async function parseMarkdown(
   content: string,
   sanitize = true,
-  enableSyntaxHighlighting = true,
+  enableSyntaxHighlighting = true
 ): Promise<string> {
   // Dynamic import to reduce bundle size
   const { marked } = await import('marked')
@@ -180,7 +180,7 @@ export function getContentSize(content: string): ContentSize {
  */
 export function shouldTruncate(
   content: string,
-  threshold: TruncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
+  threshold: TruncationThreshold = DEFAULT_TRUNCATION_THRESHOLD
 ): boolean {
   const size = getContentSize(content)
   return size.lines > threshold.lines || size.bytes > threshold.bytes
@@ -193,10 +193,7 @@ export function shouldTruncate(
  * @param maxLines - Maximum number of lines to keep
  * @returns Object with truncated content, original content, and truncation flag
  */
-export function truncateContent(
-  content: string,
-  maxLines: number,
-): TruncationResult {
+export function truncateContent(content: string, maxLines: number): TruncationResult {
   const lines = content.split('\n')
   const originalLines = lines.length
 
@@ -231,7 +228,7 @@ export function truncateContent(
  */
 export function smartTruncate(
   content: string,
-  threshold: TruncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
+  threshold: TruncationThreshold = DEFAULT_TRUNCATION_THRESHOLD
 ): TruncationResult {
   if (!shouldTruncate(content, threshold)) {
     const lines = content.split('\n').length
