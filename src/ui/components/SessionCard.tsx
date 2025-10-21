@@ -135,7 +135,7 @@ function SessionCard({
           className="font-mono text-xs"
           title={`Unstaged changes from ${session.firstCommitHash}`}
         >
-          {firstCommit} → <span className="text-warning">UNSTAGED</span>
+          {firstCommit} → <span className="text-base-content/60">UNSTAGED</span>
         </span>
       )
     }
