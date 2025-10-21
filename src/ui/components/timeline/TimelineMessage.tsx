@@ -13,10 +13,11 @@ interface TimelineMessageProps {
 }
 
 export function TimelineMessage({ message }: TimelineMessageProps) {
-  const { displayMetadata, contentBlocks } = message
+  const { displayMetadata, contentBlocks, id } = message
 
   return (
     <div
+      data-message-id={id}
       className={`bg-base-100 border-l-4 ${displayMetadata.borderColor} rounded-r font-mono text-sm shadow-md`}
     >
       <div className="p-3">

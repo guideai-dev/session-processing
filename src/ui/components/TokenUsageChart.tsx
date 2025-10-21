@@ -1,0 +1,266 @@
+/**
+ * TokenUsageChart - Interactive bar chart showing per-message token usage
+ *
+ * Features:
+ * - Stacked bars showing input and output tokens
+ * - In cumulative mode, also shows cache reads (already cumulative from API)
+ * - Toggle between per-message and cumulative views
+ * - Clickable bars that scroll to corresponding messages
+ * - Responsive width (bars auto-thin with more messages)
+ * - DaisyUI themed colors
+ */
+
+import { useCallback, useMemo } from 'react'
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts'
+import type { TimelineItem } from '../utils/timelineTypes.js'
+import {
+  calculatePerMessageTokens,
+  calculateCumulativeTokens,
+  formatForRecharts,
+  type RechartsTokenData,
+} from '../utils/extractTokens.js'
+
+export interface TokenUsageChartProps {
+  /** Timeline items (filtered by current transcript filters) */
+  items: TimelineItem[]
+
+  /** Callback to scroll to a specific message */
+  onMessageClick?: (messageId: string) => void
+}
+
+/**
+ * Custom tooltip showing per-message tokens and current cache total
+ */
+function CustomTooltip({ active, payload }: any) {
+  if (!active || !payload || payload.length === 0) {
+    return null
+  }
+
+  const data = payload[0].payload as RechartsTokenData
+
+  return (
+    <div className="bg-base-100 border border-base-300 rounded-lg shadow-lg p-3 text-sm">
+      <div className="font-semibold mb-2">Message {data.index + 1}</div>
+      <div className="space-y-1">
+        <div className="flex justify-between gap-4">
+          <span className="text-primary">Input:</span>
+          <span className="font-mono">{data.input.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between gap-4">
+          <span className="text-secondary">Output:</span>
+          <span className="font-mono">{data.output.toLocaleString()}</span>
+        </div>
+        {data.cacheRead > 0 && (
+          <>
+            <div className="flex justify-between gap-4 border-t border-base-300 pt-1 mt-1">
+              <span style={{ color: CHART_COLORS.cacheRead }}>Cached Context:</span>
+              <span className="font-mono">{data.cacheRead.toLocaleString()}</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Theme colors that work well in both light and dark modes
+const CHART_COLORS = {
+  primary: '#0891b2', // Cyan - for input tokens
+  secondary: '#a855f7', // Purple - for output tokens
+  cacheRead: '#f59e0b', // Amber/orange - for cache reads line
+}
+
+export function TokenUsageChart({ items, onMessageClick }: TokenUsageChartProps) {
+  // Calculate per-message data with cumulative cache reads for the line
+  const chartData = useMemo(() => {
+    const perMessage = calculatePerMessageTokens(items)
+    const cumulative = calculateCumulativeTokens(items)
+
+    // Combine: per-message bars + cumulative cache line
+    return formatForRecharts(perMessage, 'per-message')
+      .map((d, i) => ({
+        ...d,
+        cacheRead: cumulative[i]?.cacheRead || 0, // Add cumulative cache for line
+      }))
+      .filter((d) => d.total > 0 || d.cacheRead > 0) // Keep if has tokens OR cache
+  }, [items])
+
+  // Handle bar click - scroll to message
+  const handleBarClick = useCallback(
+    (data: RechartsTokenData) => {
+      if (onMessageClick) {
+        onMessageClick(data.messageId)
+      }
+    },
+    [onMessageClick]
+  )
+
+  // If no messages with tokens, don't show the chart
+  const hasTokens = chartData.some((d) => d.total > 0)
+  if (!hasTokens) {
+    return null
+  }
+
+  // Calculate max values for dual Y-axes
+  const maxBarTokens = Math.max(...chartData.map((d) => d.total))
+  const maxCacheTokens = Math.max(...chartData.map((d) => d.cacheRead))
+  const showCacheLine = maxCacheTokens > 0
+
+  // Left Y-axis (bars) - per-message tokens (tight fit to data)
+  // Find the next nice round number above maxBarTokens
+  let barTickInterval: number
+  if (maxBarTokens <= 1000) {
+    barTickInterval = 250 // 0, 250, 500, 750, 1000
+  } else if (maxBarTokens <= 2500) {
+    barTickInterval = 500 // 0, 500, 1000, 1500, 2000, 2500
+  } else if (maxBarTokens <= 5000) {
+    barTickInterval = 1000 // 0, 1k, 2k, 3k, 4k, 5k
+  } else if (maxBarTokens <= 25000) {
+    barTickInterval = 5000 // 0, 5k, 10k, 15k, 20k, 25k
+  } else {
+    barTickInterval = 10000 // 0, 10k, 20k, 30k, etc.
+  }
+
+  // Calculate how many ticks we need to cover the max value
+  const numTicks = Math.ceil(maxBarTokens / barTickInterval) + 1
+  const barYTicks = Array.from({ length: numTicks }, (_, i) => i * barTickInterval)
+  const barYDomain: [number, number] = [0, barTickInterval * (numTicks - 1)]
+
+  // Right Y-axis (line) - cumulative cache
+  const cacheYMax = Math.ceil(maxCacheTokens * 1.15)
+  const cacheTickInterval = Math.ceil(cacheYMax / 4 / 10000) * 10000 // Always 10k for cache
+  const cacheYTicks = Array.from({ length: 5 }, (_, i) => i * cacheTickInterval)
+  const cacheYDomain: [number, number] = [0, Math.max(cacheYMax, cacheTickInterval * 4)]
+  const showReferenceLine = maxCacheTokens > 150000
+
+  return (
+    <div className="bg-base-100 border border-base-300 rounded-lg p-4 mb-4">
+      {/* Header */}
+      <div className="mb-3">
+        <h3 className="text-sm font-semibold">Token Usage</h3>
+        <p className="text-xs text-base-content/60">
+          Per-message tokens and cumulative cache context
+        </p>
+      </div>
+
+      {/* Chart */}
+      <ResponsiveContainer width="100%" height={120}>
+        <ComposedChart
+          data={chartData}
+          margin={{ top: 5, right: 45, left: 25, bottom: 5 }}
+          barCategoryGap="1%"
+        >
+          <XAxis dataKey="index" hide domain={[0, chartData.length - 1]} />
+
+          {/* Left Y-axis for bars (per-message tokens) */}
+          <YAxis
+            yAxisId="left"
+            domain={barYDomain}
+            ticks={barYTicks}
+            tick={{ fontSize: 10, fill: 'currentColor' }}
+            tickFormatter={(value: number) =>
+              value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value.toString()
+            }
+          />
+
+          {/* Right Y-axis for line (cumulative cache) */}
+          {showCacheLine && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={cacheYDomain}
+              ticks={cacheYTicks}
+              tick={{ fontSize: 10, fill: CHART_COLORS.cacheRead }}
+              tickFormatter={(value: number) =>
+                value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value.toString()
+              }
+            />
+          )}
+
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.1)' }} />
+
+          {/* 200k reference line on right axis - only when nearing limit */}
+          {showReferenceLine && (
+            <ReferenceLine
+              yAxisId="right"
+              y={200000}
+              stroke={CHART_COLORS.cacheRead}
+              strokeDasharray="3 3"
+              strokeOpacity={0.3}
+              label={{
+                value: '200k',
+                position: 'right',
+                fontSize: 10,
+                fill: CHART_COLORS.cacheRead,
+                opacity: 0.5,
+              }}
+            />
+          )}
+
+          {/* Stacked bars for input/output (left axis) */}
+          <Bar
+            yAxisId="left"
+            dataKey="input"
+            stackId="tokens"
+            fill={CHART_COLORS.primary}
+            onClick={(data: RechartsTokenData) => handleBarClick(data)}
+            cursor="pointer"
+            isAnimationActive={false}
+          />
+          <Bar
+            yAxisId="left"
+            dataKey="output"
+            stackId="tokens"
+            fill={CHART_COLORS.secondary}
+            onClick={(data: RechartsTokenData) => handleBarClick(data)}
+            cursor="pointer"
+            isAnimationActive={false}
+          />
+
+          {/* Line for cumulative cache reads (right axis) */}
+          {showCacheLine && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="cacheRead"
+              stroke={CHART_COLORS.cacheRead}
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+            />
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+
+      {/* Legend */}
+      <div className="flex justify-center gap-4 mt-2 text-xs">
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.primary }} />
+          <span>Input</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.secondary }} />
+          <span>Output</span>
+        </div>
+        {showCacheLine && (
+          <div className="flex items-center gap-1">
+            <div
+              className="w-3 h-0.5"
+              style={{ backgroundColor: CHART_COLORS.cacheRead }}
+            />
+            <span>Cached Context</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

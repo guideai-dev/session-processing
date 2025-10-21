@@ -5,6 +5,9 @@ export * from './components/index.js'
 export * from './utils/sessionTypes.js'
 export * from './utils/markdown.js'
 
+// Export token extraction utilities
+export * from './utils/extractTokens.js'
+
 // Re-export parser registry for convenience (already exported from parsers/index.js)
 export { parserRegistry } from '../parsers/index.js'
 

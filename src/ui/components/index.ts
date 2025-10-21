@@ -55,6 +55,12 @@ export type { SessionRating } from '../../utils/rating.js'
 export { default as SessionCard } from './SessionCard.js'
 export { SessionDetailHeader, type SessionDetailHeaderProps } from './SessionDetailHeader.js'
 
+// Token Usage Chart - For visualizing token usage in sessions
+export { TokenUsageChart, type TokenUsageChartProps } from './TokenUsageChart.js'
+
+// Scroll to Top Button - Floating button for scrolling to top
+export { ScrollToTopButton, type ScrollToTopButtonProps } from './ScrollToTopButton.js'
+
 // Assessment Components - For session assessment and feedback
 export {
   AssessmentModal,
