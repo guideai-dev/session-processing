@@ -66,6 +66,7 @@ export type UnifiedMessageType =
   | 'command'
   | 'command_output'
   | 'interruption'
+  | 'compact' // Context compaction event
   | 'meta'
 
 /**

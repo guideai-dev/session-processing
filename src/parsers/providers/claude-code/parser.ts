@@ -192,7 +192,7 @@ export class ClaudeCodeParser extends BaseParser {
    * Determine message type from Claude message
    *
    * Transforms raw Claude JSONL message types into unified internal types:
-   * - Raw "user" → 'user_input' (or 'tool_result', 'interruption', 'command' for special cases)
+   * - Raw "user" → 'user_input' (or 'tool_result', 'interruption', 'command', 'compact' for special cases)
    * - Raw "assistant" → 'assistant_response'
    * - Raw "system" → 'meta'
    *
@@ -212,6 +212,11 @@ export class ClaudeCodeParser extends BaseParser {
         )
       ) {
         return 'tool_result'
+      }
+
+      // Check for compact command (context compaction event)
+      if (typeof content === 'string' && this.isCompactContent(content)) {
+        return 'compact'
       }
 
       // Check for interruption in parts structure
@@ -271,6 +276,16 @@ export class ClaudeCodeParser extends BaseParser {
   }
 
   /**
+   * Check if content is a compact command
+   */
+  private isCompactContent(content: string): boolean {
+    return (
+      content.includes('<command-name>/compact</command-name>') ||
+      (content.trim().startsWith('/compact') && content.trim().length < 50) // Short /compact commands
+    )
+  }
+
+  /**
    * Split assistant message with tools into separate text and tool_use messages
    */
   private splitAssistantWithTools(
@@ -282,22 +297,26 @@ export class ClaudeCodeParser extends BaseParser {
 
     // Extract text parts
     const textParts = content.filter(part => isTextContent(part))
-    if (textParts.length > 0) {
-      const textContent = textParts.map(part => (isTextContent(part) ? part.text : '')).join('\n')
-      messages.push({
-        id: message.uuid,
-        timestamp,
-        type: 'assistant_response',
-        content: textContent,
-        metadata: {
-          role: message.message?.role || 'assistant',
-          sessionId: message.sessionId,
-          userType: message.userType,
-          requestId: message.requestId,
-        },
-        parentId: message.parentUuid,
-      })
-    }
+    const textContent = textParts.map(part => (isTextContent(part) ? part.text : '')).join('\n')
+
+    // ALWAYS create the assistant response message to preserve usage data
+    // Even if there's no text (tool-only responses still have token usage!)
+    messages.push({
+      id: message.uuid,
+      timestamp,
+      type: 'assistant_response',
+      content: textContent, // Empty string if no text
+      metadata: {
+        role: message.message?.role || 'assistant',
+        sessionId: message.sessionId,
+        userType: message.userType,
+        requestId: message.requestId,
+        isSidechain: message.isSidechain,
+        // IMPORTANT: Preserve usage data for token tracking
+        usage: message.message?.usage,
+      },
+      parentId: message.parentUuid,
+    })
 
     // Extract tool uses
     const toolUses = content.filter(part => isToolUseContent(part))
@@ -360,8 +379,11 @@ export class ClaudeCodeParser extends BaseParser {
         metadata: {
           role: 'tool',
           sessionId: message.sessionId,
+          isSidechain: message.isSidechain,
           hasToolResults: true,
           resultCount: 1,
+          // IMPORTANT: Preserve usage data for token tracking
+          usage: message.message?.usage,
         },
         parentId: message.parentUuid,
         linkedTo: toolResult.tool_use_id,
@@ -418,10 +440,13 @@ export class ClaudeCodeParser extends BaseParser {
         sessionId: message.sessionId,
         subtype: message.subtype,
         level: message.level,
+        isSidechain: message.isSidechain,
         hasToolUses: typeof content !== 'string' && content.toolUses.length > 0,
         hasToolResults: typeof content !== 'string' && content.toolResults.length > 0,
         toolCount: typeof content !== 'string' ? content.toolUses.length : 0,
         resultCount: typeof content !== 'string' ? content.toolResults.length : 0,
+        // Preserve token usage data for context management metrics
+        usage: message.message?.usage,
       },
       parentId: message.parentUuid,
     }

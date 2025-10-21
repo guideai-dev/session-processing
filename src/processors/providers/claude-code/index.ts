@@ -6,6 +6,7 @@ import {
   GitDiffMetricProcessor,
 } from '../../base/index.js'
 
+import { ClaudeContextProcessor } from './metrics/context.js'
 import { ClaudeEngagementProcessor } from './metrics/engagement.js'
 import { ClaudeErrorProcessor } from './metrics/error.js'
 // Import simplified metric processors
@@ -32,6 +33,7 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
       new ClaudeQualityProcessor(),
       new ClaudeUsageProcessor(),
       new ClaudeErrorProcessor(),
+      new ClaudeContextProcessor(),
     ]
   }
 
@@ -235,4 +237,5 @@ export {
   ClaudeQualityProcessor,
   ClaudeUsageProcessor,
   ClaudeErrorProcessor,
+  ClaudeContextProcessor,
 }
