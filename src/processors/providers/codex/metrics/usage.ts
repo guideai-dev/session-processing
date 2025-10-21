@@ -16,7 +16,7 @@ export class CodexUsageProcessor extends BaseMetricProcessor {
 
   async process(session: ParsedSession): Promise<UsageMetrics> {
     const toolUses = helpers.extractToolUses(session)
-    const userMessages = session.messages.filter(m => m.type === 'user')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
 
     // Calculate Read/Write ratio (key metric for efficiency)
     // Note: Codex might use different tool names - adjust based on actual usage

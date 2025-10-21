@@ -17,7 +17,7 @@ export class ClaudeQualityProcessor extends BaseMetricProcessor {
   async process(session: ParsedSession): Promise<QualityMetrics> {
     const toolUses = helpers.extractToolUses(session)
     const toolResults = helpers.extractToolResults(session)
-    const userMessages = session.messages.filter(m => m.type === 'user')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
 
     // Calculate task success rate (key metric for quality)
     const successfulOperations = toolResults.filter(
@@ -84,11 +84,11 @@ export class ClaudeQualityProcessor extends BaseMetricProcessor {
       const message = session.messages[i]
 
       // Only check user messages
-      if (message.type !== 'user') continue
+      if (message.type !== 'user_input') continue
 
       // Check if this user message follows an assistant response
       const prevMessage = i > 0 ? session.messages[i - 1] : null
-      if (!prevMessage || prevMessage.type !== 'assistant') continue
+      if (!prevMessage || prevMessage.type !== 'assistant_response') continue
 
       const content = extractTextFromMessage(message).toLowerCase()
 
@@ -297,7 +297,7 @@ export class ClaudeQualityProcessor extends BaseMetricProcessor {
     const foundPhrases: string[] = []
 
     // Check assistant messages for over-the-top affirmations
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
 
     for (const message of assistantMessages) {
       const content = this.extractContent(message).toLowerCase()

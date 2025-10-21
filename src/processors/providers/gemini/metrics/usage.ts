@@ -16,8 +16,8 @@ export class GeminiUsageProcessor extends BaseMetricProcessor {
 
     // Calculate message-level statistics
     const messagesWithTokens = session.messages.filter(m => m.metadata?.tokens)
-    const _assistantMessages = session.messages.filter(m => m.type === 'assistant')
-    const userMessages = session.messages.filter(m => m.type === 'user')
+    const _assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
 
     const avgInputTokens =
       messagesWithTokens.length > 0 ? tokenStats.totalInput / messagesWithTokens.length : 0

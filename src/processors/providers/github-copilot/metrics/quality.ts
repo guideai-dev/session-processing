@@ -21,8 +21,8 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
   async process(session: ParsedSession): Promise<QualityMetrics> {
     const toolUses = helpers.extractToolUses(session)
     const toolResults = helpers.extractToolResults(session)
-    const userMessages = session.messages.filter(m => m.type === 'user')
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
 
     // Calculate task success rate (key metric for quality)
     const successfulOperations = toolResults.filter(
@@ -302,7 +302,7 @@ export class CopilotQualityProcessor extends BaseMetricProcessor {
     const foundPhrases: string[] = []
 
     // Check assistant messages for over-the-top affirmations
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
 
     for (const message of assistantMessages) {
       const content = extractTextFromMessage(message).toLowerCase()

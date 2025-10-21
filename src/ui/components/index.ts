@@ -12,7 +12,6 @@ export {
   MessageHeader,
   ContentRenderer,
   VirtualizedMessageList,
-  useScrollToMessage,
   TextBlock,
   CodeBlock,
   ImageBlock,

@@ -190,6 +190,15 @@ export class ClaudeCodeParser extends BaseParser {
 
   /**
    * Determine message type from Claude message
+   *
+   * Transforms raw Claude JSONL message types into unified internal types:
+   * - Raw "user" → 'user_input' (or 'tool_result', 'interruption', 'command' for special cases)
+   * - Raw "assistant" → 'assistant_response'
+   * - Raw "system" → 'meta'
+   *
+   * Note: The raw JSONL format uses "user"/"assistant"/"system" as documented in
+   * provider-docs/claude/claude-jsonl.md, but we transform these into unified types
+   * defined in ParsedMessage['type'] for consistency across all providers.
    */
   private getMessageType(message: ClaudeRawMessage): ParsedMessage['type'] {
     if (message.type === 'user') {

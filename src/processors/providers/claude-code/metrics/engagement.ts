@@ -9,8 +9,8 @@ export class ClaudeEngagementProcessor extends BaseMetricProcessor {
   readonly description = 'Measures interruption rate and session length for user engagement'
 
   async process(session: ParsedSession): Promise<EngagementMetrics> {
-    const userMessages = session.messages.filter(m => m.type === 'user')
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
 
     if (userMessages.length === 0 || assistantMessages.length === 0) {
       return {

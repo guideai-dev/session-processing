@@ -9,8 +9,8 @@ export class GeminiEngagementProcessor extends BaseMetricProcessor {
   readonly description = 'Analyzes user engagement patterns and conversation flow'
 
   async process(session: ParsedSession): Promise<EngagementMetrics> {
-    const userMessages = session.messages.filter(m => m.type === 'user')
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
 
     const totalMessages = session.messages.length
 

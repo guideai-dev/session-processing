@@ -13,8 +13,8 @@ export class GeminiQualityProcessor extends BaseMetricProcessor {
     const thinkingAnalysis = helpers.analyzeThinking(session)
     const tokenStats = helpers.calculateTotalTokens(session)
 
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
-    const userMessages = session.messages.filter(m => m.type === 'user')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
 
     // Base quality metrics
     const avgMessageLength =

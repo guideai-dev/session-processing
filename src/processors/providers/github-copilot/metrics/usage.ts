@@ -16,7 +16,7 @@ export class CopilotUsageProcessor extends BaseMetricProcessor {
 
   async process(session: ParsedSession): Promise<UsageMetrics> {
     const toolUses = helpers.extractToolUses(session)
-    const userMessages = session.messages.filter(m => m.type === 'user')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
 
     // Calculate Read/Write ratio (key metric for efficiency)
     // Copilot uses str_replace_editor for both reading and writing

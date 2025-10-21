@@ -54,7 +54,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
       }
 
       // Check for incomplete responses
-      if (message.type === 'assistant' && this.isIncompleteResponse(text)) {
+      if (message.type === 'assistant_response' && this.isIncompleteResponse(text)) {
         warnings.push({
           messageId: message.id,
           timestamp: message.timestamp,
@@ -64,7 +64,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
       }
 
       // Check for missing token data (could indicate issues)
-      if (message.type === 'assistant' && !message.metadata?.tokens) {
+      if (message.type === 'assistant_response' && !message.metadata?.tokens) {
         warnings.push({
           messageId: message.id,
           timestamp: message.timestamp,
@@ -74,7 +74,7 @@ export class GeminiErrorProcessor extends BaseMetricProcessor {
       }
 
       // Check for missing thoughts (unusual for Gemini)
-      if (message.type === 'assistant' && !message.metadata?.thoughts) {
+      if (message.type === 'assistant_response' && !message.metadata?.thoughts) {
         warnings.push({
           messageId: message.id,
           timestamp: message.timestamp,

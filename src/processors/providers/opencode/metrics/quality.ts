@@ -17,7 +17,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
   async process(session: ParsedSession): Promise<QualityMetrics> {
     const toolUses = helpers.extractToolUses(session)
     const toolResults = helpers.extractToolResults(session)
-    const userMessages = session.messages.filter(m => m.type === 'user')
+    const userMessages = session.messages.filter(m => m.type === 'user_input')
 
     // Calculate task success rate (key metric for quality)
     const successfulOperations = toolResults.filter(
@@ -314,7 +314,7 @@ export class OpenCodeQualityProcessor extends BaseMetricProcessor {
     const foundPhrases: string[] = []
 
     // Check assistant messages for over-the-top affirmations
-    const assistantMessages = session.messages.filter(m => m.type === 'assistant')
+    const assistantMessages = session.messages.filter(m => m.type === 'assistant_response')
 
     for (const message of assistantMessages) {
       const content = extractTextFromMessage(message).toLowerCase()
