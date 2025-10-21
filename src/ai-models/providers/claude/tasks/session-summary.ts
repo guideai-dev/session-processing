@@ -1,5 +1,5 @@
-import type { ContentBlock, TextContent, ToolUseContent } from '@guideai-dev/types'
-import { isStructuredMessageContent } from '@guideai-dev/types'
+import type { ContentBlock, TextContent, ThinkingContent, ToolUseContent } from '@guideai-dev/types'
+import { isStructuredMessageContent, isThinkingContent } from '@guideai-dev/types'
 import { getUserDisplayName } from '../../../../utils/user.js'
 import { BaseModelTask } from '../../../base/model-task.js'
 import type { ModelTaskConfig, ModelTaskContext } from '../../../base/types.js'
@@ -11,6 +11,7 @@ export interface SessionSummaryInput {
   messageCount: number
   toolsUsed: string
   userMessages: string
+  assistantResponses: string
   assistantActions: string
 }
 
@@ -37,7 +38,10 @@ Session Details:
 {{userName}}'s Messages:
 {{userMessages}}
 
-Assistant Actions:
+Assistant Responses:
+{{assistantResponses}}
+
+Assistant Tool Actions:
 {{assistantActions}}
 
 Provide a clear, professional summary in 2-3 sentences. Always refer to the person as {{userName}}, not "the user".`,
@@ -59,9 +63,22 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
     // Get user display name
     const userName = context.user ? getUserDisplayName(context.user) : 'the user'
 
+    // DEBUG: Log session info
+    console.log('[SessionSummary] Session ID:', context.sessionId)
+    console.log('[SessionSummary] Message count:', session.messages.length)
+
+    // Log message type breakdown
+    const typeBreakdown = session.messages.reduce((acc, msg) => {
+      acc[msg.type] = (acc[msg.type] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    console.log('[SessionSummary] Message types:', typeBreakdown)
+
+    console.log('[SessionSummary] First 3 messages:', JSON.stringify(session.messages.slice(0, 3), null, 2))
+
     // Extract user messages - content can be string or structured object
     const userMessages = session.messages
-      .filter(msg => msg.type === 'user')
+      .filter(msg => msg.type === 'user' || msg.type === 'user_input')
       .map(msg => {
         if (typeof msg.content === 'string') {
           return msg.content
@@ -85,12 +102,60 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
       .slice(0, 10)
       .join('\n- ')
 
-    // Extract tool uses from assistant messages
+    // Extract assistant responses and tool uses
     const toolNames: string[] = []
-    const assistantMessages = session.messages.filter(msg => msg.type === 'assistant')
+    const assistantTextParts: string[] = []
+    const assistantMessages = session.messages.filter(
+      msg => msg.type === 'assistant' || msg.type === 'assistant_response'
+    )
+    const toolUseMessages = session.messages.filter(msg => msg.type === 'tool_use')
 
+    // DEBUG: Log filtered counts
+    console.log('[SessionSummary] User messages filtered:', session.messages.filter(msg => msg.type === 'user' || msg.type === 'user_input').length)
+    console.log('[SessionSummary] Assistant messages filtered:', assistantMessages.length)
+    console.log('[SessionSummary] Tool use messages filtered:', toolUseMessages.length)
+
+    // Process assistant text responses
     for (const msg of assistantMessages) {
-      // Parser stores tool uses in msg.content.toolUses array
+      if (isStructuredMessageContent(msg.content)) {
+        // Extract text responses
+        if (msg.content.text) {
+          assistantTextParts.push(msg.content.text)
+        }
+
+        // Extract thinking content
+        for (const block of msg.content.structured) {
+          if (isThinkingContent(block) && block.thinking) {
+            assistantTextParts.push(`[Thinking: ${block.thinking}]`)
+          }
+        }
+
+        // Extract tool uses
+        for (const toolUse of msg.content.toolUses) {
+          if (toolUse.name) {
+            toolNames.push(toolUse.name)
+          }
+        }
+      } else if (Array.isArray(msg.content)) {
+        // Fallback: Extract from content array (for other providers)
+        for (const item of msg.content) {
+          if (item.type === 'text' && 'text' in item && item.text) {
+            assistantTextParts.push(item.text as string)
+          }
+          if (isThinkingContent(item) && item.thinking) {
+            assistantTextParts.push(`[Thinking: ${item.thinking}]`)
+          }
+          if (item.type === 'tool_use' && 'name' in item && item.name) {
+            toolNames.push(item.name as string)
+          }
+        }
+      } else if (typeof msg.content === 'string') {
+        assistantTextParts.push(msg.content)
+      }
+    }
+
+    // Process tool_use messages
+    for (const msg of toolUseMessages) {
       if (isStructuredMessageContent(msg.content)) {
         for (const toolUse of msg.content.toolUses) {
           if (toolUse.name) {
@@ -98,7 +163,6 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
           }
         }
       } else if (Array.isArray(msg.content)) {
-        // Fallback: Check direct array format (for other providers)
         for (const item of msg.content) {
           if (item.type === 'tool_use' && 'name' in item && item.name) {
             toolNames.push(item.name as string)
@@ -107,20 +171,33 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
       }
     }
 
+    const assistantResponses = assistantTextParts.slice(0, 10).join('\n- ') || 'No assistant responses found'
     const assistantActions = toolNames.slice(0, 20).join(', ')
     const toolsUsed = [...new Set(toolNames)].join(', ') || 'None'
 
     const durationMinutes = session.duration ? Math.round(session.duration / 60000) : 'Unknown'
 
-    return {
+    // DEBUG: Log extracted content
+    console.log('[SessionSummary] User messages extracted:', userMessages.substring(0, 200))
+    console.log('[SessionSummary] Assistant responses extracted:', assistantResponses.substring(0, 200))
+    console.log('[SessionSummary] Tool names extracted:', toolsUsed)
+    console.log('[SessionSummary] Assistant text parts count:', assistantTextParts.length)
+
+    const input = {
       userName,
       provider: context.provider,
       durationMinutes,
       messageCount: session.messages.length,
       toolsUsed,
       userMessages: userMessages || 'No user messages found',
+      assistantResponses,
       assistantActions: assistantActions || 'No tool uses found',
     }
+
+    // DEBUG: Log final input object
+    console.log('[SessionSummary] Final input:', JSON.stringify(input, null, 2))
+
+    return input
   }
 
   canExecute(context: ModelTaskContext): boolean {
