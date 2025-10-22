@@ -8,6 +8,9 @@ export * from './utils/markdown.js'
 // Export token extraction utilities
 export * from './utils/extractTokens.js'
 
+// Export todo extraction utilities
+export * from './utils/todos/index.js'
+
 // Re-export parser registry for convenience (already exported from parsers/index.js)
 export { parserRegistry } from '../parsers/index.js'
 

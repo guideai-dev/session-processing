@@ -442,7 +442,7 @@ export function MetricsOverview({
         </MetricSection>
       )}
 
-      {/* Context Management Metrics - Claude Code Only */}
+      {/* Context Management Metrics - Claude Code & Codex */}
       {metrics.context &&
         metrics.context.totalInputTokens !== undefined &&
         metrics.context.totalInputTokens !== null && (
@@ -485,7 +485,7 @@ export function MetricsOverview({
                   label="Context Window"
                   value={metrics.context.contextWindowSize}
                   suffix=" tokens"
-                  tooltip="Model's maximum context capacity (Claude Sonnet 4.5: 200K)"
+                  tooltip="Model's maximum context capacity (200K tokens)"
                 />
                 <MetricCard
                   label="Context Usage"

@@ -92,7 +92,8 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
   private mapCodexType(payloadType: string, payload: MessageContent): BaseSessionMessage['type'] {
     // Handle event_msg types
     if (payloadType === 'token_count') return 'meta'
-    // Note: agent_reasoning and agent_message are filtered out in the parser to avoid duplicates
+    if (payloadType === 'agent_reasoning') return 'assistant_response' // event_msg reasoning
+    if (payloadType === 'agent_message') return 'assistant_response' // event_msg message
     if (payloadType === 'user_message') return 'user_input'
     if (payloadType === 'turn_aborted') return 'interruption'
 
@@ -150,7 +151,27 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
       })
     }
 
-    // Note: agent_reasoning and agent_message are filtered out in parser to avoid duplicates
+    // Agent reasoning (event_msg format - simpler than reasoning response_item)
+    if (payloadType === 'agent_reasoning') {
+      return createDisplayMetadata({
+        icon: 'THK',
+        IconComponent: LightBulbIcon,
+        iconColor: 'text-secondary',
+        title: 'Reasoning',
+        borderColor: 'border-l-secondary',
+      })
+    }
+
+    // Agent message (event_msg format - simpler than message response_item)
+    if (payloadType === 'agent_message') {
+      return createDisplayMetadata({
+        icon: 'AST',
+        IconComponent: CpuChipIcon,
+        iconColor: 'text-success',
+        title: 'Assistant',
+        borderColor: 'border-l-success',
+      })
+    }
 
     // User message
     if (payloadType === 'user_message') {
@@ -259,7 +280,17 @@ export class CodexMessageProcessor extends BaseMessageProcessor {
       return [createContentBlock('json', content, { collapsed: true })]
     }
 
-    // Note: agent_reasoning and agent_message are filtered out in parser to avoid duplicates
+    // Agent reasoning (event_msg format)
+    if (payloadType === 'agent_reasoning') {
+      const text = payload.text || ''
+      return [createContentBlock('text', text)]
+    }
+
+    // Agent message (event_msg format)
+    if (payloadType === 'agent_message') {
+      const text = payload.message || payload.text || ''
+      return [createContentBlock('text', text)]
+    }
 
     // User message
     if (payloadType === 'user_message') {

@@ -1,6 +1,7 @@
 import { CodexParser } from '../../../parsers/index.js'
 import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
 
+import { CodexContextProcessor } from './metrics/context.js'
 import { CodexEngagementProcessor } from './metrics/engagement.js'
 import { CodexErrorProcessor } from './metrics/error.js'
 // Import simplified metric processors
@@ -25,6 +26,7 @@ export class CodexProcessor extends BaseProviderProcessor {
       new CodexQualityProcessor(),
       new CodexUsageProcessor(),
       new CodexErrorProcessor(),
+      new CodexContextProcessor(),
     ]
   }
 
@@ -166,5 +168,6 @@ export {
   CodexQualityProcessor,
   CodexUsageProcessor,
   CodexErrorProcessor,
+  CodexContextProcessor,
   CodexParser,
 }

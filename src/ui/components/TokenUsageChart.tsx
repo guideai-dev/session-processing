@@ -125,36 +125,40 @@ export function TokenUsageChart({ items, onMessageClick }: TokenUsageChartProps)
     return null
   }
 
+  // Shared function to calculate Y-axis ticks and domain
+  const calculateAxisScale = (maxValue: number) => {
+    // Find the appropriate tick interval based on data range
+    let tickInterval: number
+    if (maxValue <= 1000) {
+      tickInterval = 250 // 0, 250, 500, 750, 1000
+    } else if (maxValue <= 2500) {
+      tickInterval = 500 // 0, 500, 1000, 1500, 2000, 2500
+    } else if (maxValue <= 5000) {
+      tickInterval = 1000 // 0, 1k, 2k, 3k, 4k, 5k
+    } else if (maxValue <= 25000) {
+      tickInterval = 5000 // 0, 5k, 10k, 15k, 20k, 25k
+    } else {
+      tickInterval = 10000 // 0, 10k, 20k, 30k, etc.
+    }
+
+    // Calculate how many ticks we need to cover the max value
+    const numTicks = Math.ceil(maxValue / tickInterval) + 1
+    const ticks = Array.from({ length: numTicks }, (_, i) => i * tickInterval)
+    const domain: [number, number] = [0, tickInterval * (numTicks - 1)]
+
+    return { ticks, domain }
+  }
+
   // Calculate max values for dual Y-axes
   const maxBarTokens = Math.max(...chartData.map((d) => d.total))
   const maxCacheTokens = Math.max(...chartData.map((d) => d.cacheRead))
   const showCacheLine = maxCacheTokens > 0
 
-  // Left Y-axis (bars) - per-message tokens (tight fit to data)
-  // Find the next nice round number above maxBarTokens
-  let barTickInterval: number
-  if (maxBarTokens <= 1000) {
-    barTickInterval = 250 // 0, 250, 500, 750, 1000
-  } else if (maxBarTokens <= 2500) {
-    barTickInterval = 500 // 0, 500, 1000, 1500, 2000, 2500
-  } else if (maxBarTokens <= 5000) {
-    barTickInterval = 1000 // 0, 1k, 2k, 3k, 4k, 5k
-  } else if (maxBarTokens <= 25000) {
-    barTickInterval = 5000 // 0, 5k, 10k, 15k, 20k, 25k
-  } else {
-    barTickInterval = 10000 // 0, 10k, 20k, 30k, etc.
-  }
+  // Left Y-axis (bars) - per-message tokens
+  const { ticks: barYTicks, domain: barYDomain } = calculateAxisScale(maxBarTokens)
 
-  // Calculate how many ticks we need to cover the max value
-  const numTicks = Math.ceil(maxBarTokens / barTickInterval) + 1
-  const barYTicks = Array.from({ length: numTicks }, (_, i) => i * barTickInterval)
-  const barYDomain: [number, number] = [0, barTickInterval * (numTicks - 1)]
-
-  // Right Y-axis (line) - cumulative cache
-  const cacheYMax = Math.ceil(maxCacheTokens * 1.15)
-  const cacheTickInterval = Math.ceil(cacheYMax / 4 / 10000) * 10000 // Always 10k for cache
-  const cacheYTicks = Array.from({ length: 5 }, (_, i) => i * cacheTickInterval)
-  const cacheYDomain: [number, number] = [0, Math.max(cacheYMax, cacheTickInterval * 4)]
+  // Right Y-axis (line) - cumulative cache (uses same formula)
+  const { ticks: cacheYTicks, domain: cacheYDomain } = calculateAxisScale(maxCacheTokens)
   const showReferenceLine = maxCacheTokens > 150000
 
   const contextWindowSize = 200000 // Claude Sonnet 4.5 context window

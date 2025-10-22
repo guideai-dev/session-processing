@@ -5,7 +5,7 @@
  * and provides both per-message and cumulative token calculations.
  *
  * Uses the SAME logic as the session-processing metrics to ensure consistency:
- * - Claude: metadata.usage.{input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens}
+ * - Claude Code & Codex: metadata.usage.{input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens}
  * - Gemini: metadata.tokens.{input, output, cached, thoughts, tool}
  * - Excludes sidechain messages from main context calculations
  */
@@ -43,8 +43,9 @@ export interface CumulativeTokenData extends MessageTokenData {
 }
 
 /**
- * Extract token usage from Claude Code message metadata
- * Matches the exact field names from ClaudeContextProcessor.calculateTotals()
+ * Extract token usage from Claude Code and Codex message metadata
+ * Both providers use the same usage schema.
+ * Matches the exact field names from ClaudeContextProcessor and CodexContextProcessor.
  */
 function extractClaudeTokens(metadata: Record<string, unknown>): {
   input: number

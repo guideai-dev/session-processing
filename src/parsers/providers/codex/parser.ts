@@ -13,6 +13,14 @@ export class CodexParser extends BaseParser {
   readonly name = 'codex'
   readonly providerName = 'codex'
 
+  // Track last token usage to attach to next assistant message
+  private lastTokenUsage: {
+    input_tokens: number
+    output_tokens: number
+    cache_creation_input_tokens: number
+    cache_read_input_tokens: number
+  } | null = null
+
   canParse(jsonlContent: string): boolean {
     try {
       const lines = jsonlContent.split('\n').filter(line => line.trim())
@@ -48,17 +56,64 @@ export class CodexParser extends BaseParser {
 
     const payloadType = codexMessage.payload?.type
 
-    // Skip event_msg duplicates - they're simpler versions of the fuller response_items that follow
-    // - agent_reasoning -> followed by 'reasoning' response_item with summary + encrypted content
-    // - agent_message -> followed by 'message' response_item with full content array
-    if (payloadType === 'agent_reasoning' || payloadType === 'agent_message') {
+    // Extract token usage from token_count messages
+    if (payloadType === 'token_count') {
+      const payload = codexMessage.payload as {
+        info?: {
+          total_token_usage?: {
+            input_tokens?: number
+            cached_input_tokens?: number
+            output_tokens?: number
+          }
+          last_token_usage?: {
+            input_tokens?: number
+            cached_input_tokens?: number
+            output_tokens?: number
+          }
+        }
+      }
+
+      // Use last_token_usage (per-turn) NOT total_token_usage (cumulative)
+      // The UI will cumulate these values for the chart
+      const tokenUsage = payload?.info?.last_token_usage
+      if (tokenUsage) {
+        // Convert Codex format to Claude Code format
+        this.lastTokenUsage = {
+          input_tokens: tokenUsage.input_tokens || 0,
+          output_tokens: tokenUsage.output_tokens || 0,
+          cache_creation_input_tokens: 0, // Codex doesn't track cache creation separately
+          cache_read_input_tokens: tokenUsage.cached_input_tokens || 0,
+        }
+      }
+
+      // Don't create a message for token_count events - they'll be attached to assistant responses
       return []
     }
+
+    // NOTE: We used to skip agent_reasoning/agent_message events assuming they were duplicates
+    // of fuller response_item messages. However, in some Codex versions (e.g., 0.45.0) or modes,
+    // these event_msg entries are the ONLY assistant responses - there are no corresponding
+    // response_items. So we need to keep them.
+    // The inferType method will handle classifying them correctly.
 
     const id =
       typeof codexMessage.id === 'string' ? codexMessage.id : this.generateMessageId(0, timestamp)
 
     const messageType = this.inferType(codexMessage)
+
+    // Attach token usage to assistant responses
+    const metadata: ParsedMessage['metadata'] = {
+      messageID: codexMessage.messageID,
+      sessionID: codexMessage.sessionID,
+      payloadType: codexMessage.payload?.type,
+    }
+
+    // If this is an assistant response and we have token usage, attach it
+    if (messageType === 'assistant_response' && this.lastTokenUsage) {
+      metadata.usage = this.lastTokenUsage
+      // Clear lastTokenUsage after attaching (each token_count applies to one response)
+      this.lastTokenUsage = null
+    }
 
     return [
       {
@@ -66,11 +121,7 @@ export class CodexParser extends BaseParser {
         timestamp,
         type: messageType,
         content: codexMessage as unknown as string,
-        metadata: {
-          messageID: codexMessage.messageID,
-          sessionID: codexMessage.sessionID,
-          payloadType: codexMessage.payload?.type,
-        },
+        metadata,
       },
     ]
   }
@@ -182,6 +233,7 @@ export class CodexParser extends BaseParser {
     if (payloadType === 'user_message') return 'user_input'
     if (payloadType === 'agent_message' || payloadType === 'agent_reasoning')
       return 'assistant_response'
+    if (payloadType === 'reasoning') return 'assistant_response' // response_item reasoning messages
     if (payloadType === 'function_call') return 'tool_use'
     if (payloadType === 'function_call_output') return 'tool_result'
     if (payloadType === 'turn_aborted') return 'interruption'
