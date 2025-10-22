@@ -111,10 +111,10 @@ describe('ClaudeCodeProcessor', () => {
   })
 
   describe('getMetricProcessors', () => {
-    it('should return all 5 metric processors', () => {
+    it('should return all 6 metric processors', () => {
       const metricProcessors = processor.getMetricProcessors()
 
-      expect(metricProcessors.length).toBe(5)
+      expect(metricProcessors.length).toBe(6)
 
       const metricTypes = metricProcessors.map(p => p.metricType)
       expect(metricTypes).toContain('performance')
@@ -122,6 +122,7 @@ describe('ClaudeCodeProcessor', () => {
       expect(metricTypes).toContain('quality')
       expect(metricTypes).toContain('usage')
       expect(metricTypes).toContain('error')
+      expect(metricTypes).toContain('context-management')
     })
 
     it('should run all metric processors', async () => {
@@ -217,7 +218,7 @@ describe('ClaudeCodeProcessor', () => {
       expect(info.description).toBeDefined()
       expect(info.metricProcessors).toBeDefined()
       expect(Array.isArray(info.metricProcessors)).toBe(true)
-      expect(info.metricProcessors.length).toBe(5)
+      expect(info.metricProcessors.length).toBe(6)
       expect(info.version).toBe('1.0.0')
 
       for (const mp of info.metricProcessors) {

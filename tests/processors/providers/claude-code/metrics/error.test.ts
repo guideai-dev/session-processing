@@ -4,7 +4,7 @@ import { ClaudeCodeParser } from "../../../../../src/parsers/providers/claude-co
 import { loadSampleSession } from "../../../../helpers/fixtures.js";
 import type { ParsedSession } from "../../../../../src/processors/base/types.js";
 
-describe.only("ClaudeErrorProcessor", () => {
+describe("ClaudeErrorProcessor", () => {
   const processor = new ClaudeErrorProcessor();
   const parser = new ClaudeCodeParser();
   let parsedSession: ParsedSession;
@@ -152,13 +152,22 @@ describe.only("ClaudeErrorProcessor", () => {
       const sessionWithMultipleErrors: ParsedSession = {
         ...parsedSession,
         messages: parsedSession.messages.map((msg, i) => {
-          // Add errors at indices 3 and 7
+          // Add errors at indices 3 and 47
           if (i === 3) {
             return {
               ...msg,
               content: {
-                ...(msg.content as any),
+                text: "",
+                toolUses: [],
                 toolResults: [
+                  {
+                    type: "tool_result" as const,
+                    tool_use_id: "tool-001",
+                    content: "First error occurred",
+                    is_error: true,
+                  },
+                ],
+                structured: [
                   {
                     type: "tool_result" as const,
                     tool_use_id: "tool-001",
@@ -169,12 +178,22 @@ describe.only("ClaudeErrorProcessor", () => {
               },
             };
           }
-          if (i === 47) {
+          // Add error at a later index to ensure it's the last one
+          if (i === parsedSession.messages.length - 1) {
             return {
               ...msg,
               content: {
-                ...(msg.content as any),
+                text: "",
+                toolUses: [],
                 toolResults: [
+                  {
+                    type: "tool_result" as const,
+                    tool_use_id: "tool-002",
+                    content: "Last error occurred",
+                    is_error: true,
+                  },
+                ],
+                structured: [
                   {
                     type: "tool_result" as const,
                     tool_use_id: "tool-002",

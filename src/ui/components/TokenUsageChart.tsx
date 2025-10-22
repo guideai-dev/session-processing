@@ -94,6 +94,21 @@ export function TokenUsageChart({ items, onMessageClick }: TokenUsageChartProps)
       .filter((d) => d.total > 0 || d.cacheRead > 0) // Keep if has tokens OR cache
   }, [items])
 
+  // Calculate current cached context from the most recent message
+  const currentContextLength = useMemo(() => {
+    const cumulative = calculateCumulativeTokens(items)
+    if (cumulative.length === 0) return 0
+    // Get the last message's cached context (cacheRead only)
+    return cumulative[cumulative.length - 1].cacheRead
+  }, [items])
+
+  // Get color based on context length thresholds
+  const getContextColor = (contextLength: number): string => {
+    if (contextLength < 100000) return '#22C55E' // Green: < 100k
+    if (contextLength < 150000) return '#F59E0B' // Orange: 100k-150k
+    return '#EF4444' // Red: > 150k
+  }
+
   // Handle bar click - scroll to message
   const handleBarClick = useCallback(
     (data: RechartsTokenData) => {
@@ -142,6 +157,10 @@ export function TokenUsageChart({ items, onMessageClick }: TokenUsageChartProps)
   const cacheYDomain: [number, number] = [0, Math.max(cacheYMax, cacheTickInterval * 4)]
   const showReferenceLine = maxCacheTokens > 150000
 
+  const contextWindowSize = 200000 // Claude Sonnet 4.5 context window
+  const contextPercent = Math.min((currentContextLength / contextWindowSize) * 100, 100)
+  const contextColor = getContextColor(currentContextLength)
+
   return (
     <div className="bg-base-100 border border-base-300 rounded-lg p-4 mb-4">
       {/* Header */}
@@ -152,13 +171,16 @@ export function TokenUsageChart({ items, onMessageClick }: TokenUsageChartProps)
         </p>
       </div>
 
-      {/* Chart */}
-      <ResponsiveContainer width="100%" height={120}>
-        <ComposedChart
-          data={chartData}
-          margin={{ top: 5, right: 45, left: 25, bottom: 5 }}
-          barCategoryGap="1%"
-        >
+      {/* Desktop: Chart and Context Indicator Container */}
+      <div className="hidden md:flex items-stretch">
+        {/* Chart Section - explicit height for ResponsiveContainer flex fix */}
+        <div className="flex-1 min-w-0" style={{ height: '120px' }}>
+          <ResponsiveContainer width="99%" height="100%">
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+              barCategoryGap="1%"
+            >
           <XAxis dataKey="index" hide domain={[0, chartData.length - 1]} />
 
           {/* Left Y-axis for bars (per-message tokens) */}
@@ -238,11 +260,11 @@ export function TokenUsageChart({ items, onMessageClick }: TokenUsageChartProps)
               isAnimationActive={false}
             />
           )}
-        </ComposedChart>
-      </ResponsiveContainer>
+            </ComposedChart>
+          </ResponsiveContainer>
 
-      {/* Legend */}
-      <div className="flex justify-center gap-4 mt-2 text-xs">
+          {/* Legend */}
+          <div className="flex justify-center gap-4 mt-2 text-xs">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.primary }} />
           <span>Input</span>
@@ -260,7 +282,75 @@ export function TokenUsageChart({ items, onMessageClick }: TokenUsageChartProps)
             <span>Cached Context</span>
           </div>
         )}
+          </div>
+        </div>
+
+        {/* Context Length Indicator */}
+        {currentContextLength > 0 && (
+          <div className="flex flex-col items-center justify-center" style={{ width: '90px' }}>
+            {/* Vertical Bar */}
+            <div className="relative w-8 bg-base-200 border border-base-300 rounded overflow-hidden" style={{ height: '120px' }}>
+              {/* Fill */}
+              <div
+                className="absolute bottom-0 w-full transition-all duration-300"
+                style={{
+                  height: `${contextPercent}%`,
+                  backgroundColor: contextColor,
+                }}
+              />
+              {/* Threshold markers */}
+              <div className="absolute left-0 bottom-1/2 w-full h-px bg-base-content/10" /> {/* 100k at 50% */}
+              <div className="absolute left-0 w-full h-px bg-base-content/10" style={{ bottom: '75%' }} /> {/* 150k at 75% */}
+            </div>
+
+            {/* Values Below */}
+            <div className="mt-2 text-center">
+              <div className="text-xs font-semibold" style={{ color: contextColor }}>
+                {(currentContextLength / 1000).toFixed(0)}k
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Mobile: Horizontal Context Bar */}
+      {currentContextLength > 0 && (
+        <div className="block md:hidden">
+          {/* Horizontal Bar Container */}
+          <div className="space-y-2">
+            {/* Label and Stats */}
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-base-content/60">Cached Context</span>
+              <span className="font-semibold" style={{ color: contextColor }}>
+                {(currentContextLength / 1000).toFixed(0)}k / 200k ({contextPercent.toFixed(0)}%)
+              </span>
+            </div>
+
+            {/* Horizontal Progress Bar */}
+            <div className="relative w-full h-6 bg-base-200 border border-base-300 rounded overflow-hidden">
+              {/* Fill */}
+              <div
+                className="absolute left-0 h-full transition-all duration-300"
+                style={{
+                  width: `${contextPercent}%`,
+                  backgroundColor: contextColor,
+                }}
+              />
+              {/* Threshold markers */}
+              <div className="absolute left-1/2 top-0 w-px h-full bg-base-content/10" />
+              <div className="absolute left-3/4 top-0 w-px h-full bg-base-content/10" />
+            </div>
+
+            {/* Threshold Labels */}
+            <div className="flex justify-between text-xs text-base-content/40">
+              <span>0k</span>
+              <span>100k</span>
+              <span>150k</span>
+              <span>200k</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

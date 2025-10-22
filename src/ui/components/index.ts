@@ -54,6 +54,7 @@ export type { SessionRating } from '../../utils/rating.js'
 // Session Components - For displaying session cards
 export { default as SessionCard } from './SessionCard.js'
 export { SessionDetailHeader, type SessionDetailHeaderProps } from './SessionDetailHeader.js'
+export { SessionTodosTab } from './SessionTodosTab.js'
 
 // Token Usage Chart - For visualizing token usage in sessions
 export { TokenUsageChart, type TokenUsageChartProps } from './TokenUsageChart.js'
