@@ -260,7 +260,7 @@ export function formatForRecharts(
   tokenData: MessageTokenData[] | CumulativeTokenData[],
   mode: 'per-message' | 'cumulative'
 ): RechartsTokenData[] {
-  return tokenData.map((data) => {
+  return tokenData.map(data => {
     if (mode === 'cumulative' && 'cumulativeInput' in data) {
       return {
         index: data.messageIndex,

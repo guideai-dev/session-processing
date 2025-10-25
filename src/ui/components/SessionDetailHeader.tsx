@@ -452,7 +452,7 @@ export function SessionDetailHeader({
           onRate) && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
             {/* Repository Info */}
-            {session.project && session.project.gitRemoteUrl && (
+            {session.project?.gitRemoteUrl && (
               <div className="stat bg-base-200 rounded-lg p-2.5">
                 <div className="flex flex-col gap-1">
                   <div className="text-xs text-base-content/60">Repository:</div>

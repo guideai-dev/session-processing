@@ -205,7 +205,7 @@ export class ClaudeContextProcessor extends BaseMetricProcessor {
    */
   private generateImprovementTips(
     compactEvents: { count: number; steps: number[]; firstCompactStep: number | null },
-    totals: {
+    _totals: {
       totalInputTokens: number
       totalOutputTokens: number
       totalCacheCreated: number
@@ -221,7 +221,9 @@ export class ClaudeContextProcessor extends BaseMetricProcessor {
       tips.push(
         `⚠️ Context compaction occurred ${compactEvents.count} time(s) - this negatively impacts quality`
       )
-      tips.push('Break complex tasks into smaller, focused sessions to avoid hitting context limits')
+      tips.push(
+        'Break complex tasks into smaller, focused sessions to avoid hitting context limits'
+      )
       tips.push('Provide more specific prompts with clear scope to reduce context usage')
     }
 
@@ -232,7 +234,9 @@ export class ClaudeContextProcessor extends BaseMetricProcessor {
       )
       tips.push('Consider /compact command proactively before reaching limits')
     } else if (contextUtilization > 60) {
-      tips.push(`Moderate context usage (${contextUtilization.toFixed(1)}%) - monitor token consumption`)
+      tips.push(
+        `Moderate context usage (${contextUtilization.toFixed(1)}%) - monitor token consumption`
+      )
     }
 
     // First compact timing

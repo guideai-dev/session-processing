@@ -53,7 +53,8 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check src",
+    "lint": "biome check src --diagnostic-level=error",
+    "lint:all": "biome check src",
     "lint:fix": "biome check --write src"
   },
   "dependencies": {

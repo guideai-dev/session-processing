@@ -91,11 +91,45 @@ const components: Partial<Components> = { ... }
 ### Quick Type Check Command
 
 ```bash
-# Run all quality checks in sequence
+# Run all quality checks in sequence (from packages/session-processing/)
 pnpm typecheck && pnpm lint && pnpm build
 ```
 
 If this fails, your code MUST NOT be committed. Fix all errors before proceeding.
+
+### Local Workflow Examples
+
+When working on this package:
+
+```bash
+# 1. Navigate to the package
+cd packages/session-processing
+
+# 2. Make your changes to source files
+
+# 3. Run quality checks locally (fast feedback)
+pnpm typecheck  # Check types
+pnpm lint       # Check code style
+pnpm build      # Verify build works
+
+# 4. If tests exist, run them
+pnpm test
+
+# 5. Only then commit your changes
+```
+
+### From Workspace Root
+
+To check this package from the workspace root:
+
+```bash
+pnpm --filter @guideai-dev/session-processing typecheck
+pnpm --filter @guideai-dev/session-processing lint
+pnpm --filter @guideai-dev/session-processing build
+pnpm --filter @guideai-dev/session-processing test
+```
+
+**Remember**: After building this package, rebuild dependent packages (server, desktop) that import it.
 
 ---
 

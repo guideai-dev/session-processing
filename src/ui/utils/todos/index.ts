@@ -14,10 +14,7 @@ import type { TodoExtractor, TodoUpdate } from './types.js'
 /**
  * Registry of available todo extractors
  */
-const extractors: TodoExtractor[] = [
-  new ClaudeCodeTodoExtractor(),
-  new CodexTodoExtractor(),
-]
+const extractors: TodoExtractor[] = [new ClaudeCodeTodoExtractor(), new CodexTodoExtractor()]
 
 /**
  * Auto-detect provider and extract todos

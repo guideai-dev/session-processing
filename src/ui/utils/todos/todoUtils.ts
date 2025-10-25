@@ -11,7 +11,7 @@ export function simpleHash(str: string): string {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
+    hash = (hash << 5) - hash + char
     hash = hash & hash // Convert to 32bit integer
   }
   return Math.abs(hash).toString(36)
@@ -63,9 +63,8 @@ export function enrichTodosWithTiming(
     }
 
     // Calculate duration if both times exist
-    const durationMs = startTime && endTime
-      ? new Date(endTime).getTime() - new Date(startTime).getTime()
-      : undefined
+    const durationMs =
+      startTime && endTime ? new Date(endTime).getTime() - new Date(startTime).getTime() : undefined
 
     enrichedTodos.push({
       ...latestTodo,
@@ -92,9 +91,11 @@ export function groupTodoLists(allUpdates: TodoUpdate[]): TodoListGroup[] {
     if (!latestByListId.has(listId)) {
       latestByListId.set(listId, { update, allMatches: [update] })
     } else {
-      const existing = latestByListId.get(listId)!
-      existing.allMatches.push(update)
-      existing.update = update // Keep the latest one
+      const existing = latestByListId.get(listId)
+      if (existing) {
+        existing.allMatches.push(update)
+        existing.update = update // Keep the latest one
+      }
     }
   }
 
@@ -115,9 +116,7 @@ export function groupTodoLists(allUpdates: TodoUpdate[]): TodoListGroup[] {
   }
 
   // Sort by last seen (most recent first when showing all)
-  return groups.sort((a, b) =>
-    new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime()
-  )
+  return groups.sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime())
 }
 
 /**

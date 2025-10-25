@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
 import { CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { ListBulletIcon } from '@heroicons/react/24/solid'
+import { useEffect, useMemo, useState } from 'react'
 import {
+  type EnrichedTodoItem,
+  type TodoListGroup,
   extractTodosAuto,
   formatDuration,
   groupTodoLists,
-  type EnrichedTodoItem,
-  type TodoListGroup,
 } from '../utils/todos/index.js'
 
 interface SessionTodosTabProps {
@@ -38,7 +38,7 @@ export function SessionTodosTab({ fileContent }: SessionTodosTabProps) {
   const stats = useMemo(() => {
     const todos = showAll
       ? todoGroups.flatMap(g => g.enrichedTodos)
-      : (latestGroup?.enrichedTodos || [])
+      : latestGroup?.enrichedTodos || []
 
     const total = todos.length
     const completed = todos.filter(t => t.status === 'completed').length
@@ -78,9 +78,7 @@ export function SessionTodosTab({ fileContent }: SessionTodosTabProps) {
                 </div>
               )}
               {stats.pending > 0 && (
-                <div className="badge badge-ghost badge-lg">
-                  {stats.pending} pending
-                </div>
+                <div className="badge badge-ghost badge-lg">{stats.pending} pending</div>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -130,10 +128,7 @@ export function SessionTodosTab({ fileContent }: SessionTodosTabProps) {
               {/* Todos in this group */}
               <div className="space-y-2">
                 {group.enrichedTodos.map((todo, todoIdx) => (
-                  <TodoCard
-                    key={`${group.id}-${todoIdx}`}
-                    todo={todo}
-                  />
+                  <TodoCard key={`${group.id}-${todoIdx}`} todo={todo} />
                 ))}
               </div>
             </div>
@@ -144,10 +139,7 @@ export function SessionTodosTab({ fileContent }: SessionTodosTabProps) {
         latestGroup && (
           <div className="space-y-2">
             {latestGroup.enrichedTodos.map((todo, todoIdx) => (
-              <TodoCard
-                key={`${latestGroup.id}-${todoIdx}`}
-                todo={todo}
-              />
+              <TodoCard key={`${latestGroup.id}-${todoIdx}`} todo={todo} />
             ))}
           </div>
         )
@@ -186,9 +178,7 @@ function TodoCard({ todo }: { todo: EnrichedTodoItem }) {
     <div className={`card border ${statusColors[todo.status]}`}>
       <div className="card-body p-3">
         <div className="flex items-start gap-3">
-          <StatusIcon
-            className={`w-5 h-5 flex-shrink-0 mt-0.5 ${iconColors[todo.status]}`}
-          />
+          <StatusIcon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${iconColors[todo.status]}`} />
           <div className="flex-1 min-w-0">
             <p
               className={`text-sm ${textColors[todo.status]} ${
@@ -206,11 +196,12 @@ function TodoCard({ todo }: { todo: EnrichedTodoItem }) {
               <div className="flex items-center gap-2 mt-2 text-xs text-base-content opacity-50">
                 <ClockIcon className="w-3 h-3" />
                 <span>{formatDuration(todo.durationMs)}</span>
-                {todo.startTime && (
+                {todo.startTime && todo.endTime && (
                   <>
                     <span>•</span>
                     <span>
-                      {new Date(todo.startTime).toLocaleTimeString()} → {new Date(todo.endTime!).toLocaleTimeString()}
+                      {new Date(todo.startTime).toLocaleTimeString()} →{' '}
+                      {new Date(todo.endTime).toLocaleTimeString()}
                     </span>
                   </>
                 )}
