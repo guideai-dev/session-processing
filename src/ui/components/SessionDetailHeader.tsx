@@ -44,6 +44,7 @@ export interface SessionDetailHeaderProps {
   onDeleteSession?: () => void
   onCwdClick?: (path: string) => void | Promise<void> // Desktop only
   onViewDiff?: () => void | Promise<void> // Desktop only - opens Session Changes tab
+  onProjectClick?: () => void | Promise<void> // Optional click handler for project name
 
   // Status states
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed'
@@ -79,6 +80,7 @@ export function SessionDetailHeader({
   onDeleteSession,
   onCwdClick,
   onViewDiff,
+  onProjectClick,
   processingStatus = 'pending',
   isProcessing = false,
   assessmentStatus = 'not_started',
@@ -156,7 +158,17 @@ export function SessionDetailHeader({
                   <span className="text-base-content/50 text-sm">•</span>
                 </>
               )}
-              <span className="font-medium text-base md:text-lg">{session.projectName}</span>
+              {onProjectClick ? (
+                <button
+                  type="button"
+                  onClick={onProjectClick}
+                  className="font-medium text-base md:text-lg hover:text-primary hover:underline transition-colors cursor-pointer"
+                >
+                  {session.projectName}
+                </button>
+              ) : (
+                <span className="font-medium text-base md:text-lg">{session.projectName}</span>
+              )}
               <span className="text-base-content/50 text-sm">•</span>
               <span className="text-sm text-base-content/70">
                 {formatDate(session.sessionStartTime)}
