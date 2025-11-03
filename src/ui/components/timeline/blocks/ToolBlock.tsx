@@ -66,17 +66,15 @@ export function ToolBlock({ content, collapsed: initialCollapsed = true }: ToolB
 
   return (
     <div>
-      <div className="flex items-center gap-2">
-        <span className="font-medium">{name}</span>
-        {input && (
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="text-xs text-secondary hover:text-primary"
-          >
-            {showDetails ? '▲' : '▼'}
-          </button>
-        )}
-      </div>
+      {input && (
+        <button
+          onClick={() => setShowDetails(!showDetails)}
+          className="text-xs text-secondary hover:text-primary flex items-center gap-1 mb-1"
+        >
+          <span>{showDetails ? 'Hide' : 'Show'}</span>
+          <span>{showDetails ? '▲' : '▼'}</span>
+        </button>
+      )}
       {displayProperty && (
         <div className="mt-1 p-3 bg-base-200 rounded-md overflow-x-auto">
           <code className="font-mono text-xs text-primary whitespace-nowrap">

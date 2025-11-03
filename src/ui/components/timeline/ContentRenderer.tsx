@@ -104,6 +104,7 @@ export function ContentRenderer({ blocks }: ContentRendererProps) {
                 key={key}
                 content={block.content}
                 collapsed={block.metadata?.collapsed}
+                toolName={block.metadata?.toolName}
               />
             )
 

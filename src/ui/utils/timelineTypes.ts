@@ -89,7 +89,7 @@ export type ContentBlock =
   | {
       type: 'tool_result'
       content: string | Array<string | Record<string, unknown>> | Record<string, unknown>
-      metadata?: UIContentMetadata & { collapsed?: boolean }
+      metadata?: UIContentMetadata & { collapsed?: boolean; toolName?: string }
     }
   | {
       type: 'thinking'

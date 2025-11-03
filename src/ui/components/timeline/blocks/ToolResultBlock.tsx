@@ -11,13 +11,24 @@ type ToolResultContent = string | Array<string | Record<string, unknown>> | Reco
 interface ToolResultBlockProps {
   content: ToolResultContent
   collapsed?: boolean
+  toolName?: string
 }
 
 export function ToolResultBlock({
   content,
   collapsed: initialCollapsed = true,
+  toolName,
 }: ToolResultBlockProps) {
   const [showDetails, setShowDetails] = useState(!initialCollapsed)
+
+  // Process escape sequences in string content
+  const unescapeString = (str: string): string => {
+    return str
+      .replace(/\\n/g, '\n')
+      .replace(/\\t/g, '\t')
+      .replace(/\\r/g, '\r')
+      .replace(/\\\\/g, '\\')
+  }
 
   const renderContent = () => {
     if (typeof content === 'string') {
@@ -34,13 +45,19 @@ export function ToolResultBlock({
               </span>
             </div>
             <div className="whitespace-pre-wrap font-mono text-xs">
-              {highlightClaudeMd(content)}
+              {highlightClaudeMd(unescapeString(content))}
             </div>
           </div>
         )
       }
 
-      return <div className="break-words overflow-wrap-anywhere">{content}</div>
+      return (
+        <div className="mt-1 p-3 bg-base-200 rounded-md overflow-auto max-h-96">
+          <pre className="font-mono text-xs text-primary whitespace-pre-wrap">
+            <code>{unescapeString(content)}</code>
+          </pre>
+        </div>
+      )
     }
 
     if (Array.isArray(content)) {
@@ -54,11 +71,13 @@ export function ToolResultBlock({
                 : `item-${index}-${JSON.stringify(item).substring(0, 30)}`
 
             return (
-              <div key={itemKey} className="p-2 bg-base-200 rounded text-sm">
+              <div key={itemKey} className="p-3 bg-base-200 rounded-md">
                 {typeof item === 'string' ? (
-                  <div className="break-words overflow-wrap-anywhere">{item}</div>
+                  <pre className="font-mono text-xs text-primary whitespace-pre-wrap overflow-auto">
+                    <code>{unescapeString(item)}</code>
+                  </pre>
                 ) : (
-                  <pre className="text-xs overflow-auto">
+                  <pre className="font-mono text-xs text-primary overflow-auto">
                     <code>{JSON.stringify(item, null, 2)}</code>
                   </pre>
                 )}
@@ -70,9 +89,11 @@ export function ToolResultBlock({
     }
 
     return (
-      <pre className="text-sm overflow-auto max-h-48 bg-base-200 p-2 rounded font-mono">
-        <code>{JSON.stringify(content, null, 2)}</code>
-      </pre>
+      <div className="mt-1 p-3 bg-base-200 rounded-md overflow-auto max-h-48">
+        <pre className="font-mono text-xs text-primary">
+          <code>{JSON.stringify(content, null, 2)}</code>
+        </pre>
+      </div>
     )
   }
 
@@ -96,17 +117,22 @@ export function ToolResultBlock({
 
   return (
     <div>
+      <button
+        onClick={() => setShowDetails(!showDetails)}
+        className="text-xs text-secondary hover:text-primary flex items-center gap-1 mb-1"
+      >
+        <span>{showDetails ? 'Hide' : 'Show'}</span>
+        <span>{showDetails ? '▲' : '▼'}</span>
+      </button>
       {showDetails ? (
         renderContent()
       ) : (
-        <div className="text-sm text-base-content/70">{getSummary()}</div>
+        <div className="mt-1 p-3 bg-base-200 rounded-md overflow-x-auto">
+          <code className="font-mono text-xs text-primary whitespace-nowrap">
+            {getSummary()}
+          </code>
+        </div>
       )}
-      <button
-        onClick={() => setShowDetails(!showDetails)}
-        className="ml-2 text-xs text-secondary hover:text-primary"
-      >
-        {showDetails ? '▲' : '▼'}
-      </button>
     </div>
   )
 }
