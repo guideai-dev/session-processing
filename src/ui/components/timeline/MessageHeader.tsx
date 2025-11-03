@@ -15,9 +15,7 @@ export function MessageHeader({ displayMetadata, onIconClick }: MessageHeaderPro
   const iconElement = IconComponent ? (
     <IconComponent className={`w-5 h-5 ${iconColor || 'text-primary'}`} />
   ) : (
-    <span className="text-xs px-1 py-0.5 bg-primary/20 rounded text-primary font-bold">
-      {icon}
-    </span>
+    <span className="text-xs px-1 py-0.5 bg-primary/20 rounded text-primary font-bold">{icon}</span>
   )
 
   return (

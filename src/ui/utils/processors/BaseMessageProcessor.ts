@@ -216,14 +216,17 @@ export abstract class BaseMessageProcessor {
         })
       }
 
-      case 'tool_result':
+      case 'tool_result': {
+        const toolName = message.metadata?.toolName
+        const title = toolName ? `${toolName} Result` : 'Tool Result'
         return createDisplayMetadata({
           icon: 'RESULT',
           IconComponent: CheckCircleIcon,
           iconColor: 'text-secondary',
-          title: 'Tool Result',
+          title,
           borderColor: 'border-l-secondary',
         })
+      }
 
       case 'command':
         return createDisplayMetadata({

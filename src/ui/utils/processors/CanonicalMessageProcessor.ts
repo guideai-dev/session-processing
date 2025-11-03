@@ -257,7 +257,7 @@ export class CanonicalMessageProcessor extends BaseMessageProcessor {
    */
   protected getCanonicalConversationBlocks(message: BaseSessionMessage): ContentBlock[] {
     const blocks: ContentBlock[] = []
-    const metadata = message.metadata?.providerMetadata as ProviderMetadata | undefined
+    const _metadata = message.metadata?.providerMetadata as ProviderMetadata | undefined
 
     // Note: Gemini thoughts are now split into separate messages by the parser
     // (with metadata.isThinking = true), so we don't process them here from metadata

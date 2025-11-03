@@ -17,7 +17,7 @@ interface ToolResultBlockProps {
 export function ToolResultBlock({
   content,
   collapsed: initialCollapsed = true,
-  toolName,
+  toolName: _toolName,
 }: ToolResultBlockProps) {
   const [showDetails, setShowDetails] = useState(!initialCollapsed)
 
@@ -128,9 +128,7 @@ export function ToolResultBlock({
         renderContent()
       ) : (
         <div className="mt-1 p-3 bg-base-200 rounded-md overflow-x-auto">
-          <code className="font-mono text-xs text-primary whitespace-nowrap">
-            {getSummary()}
-          </code>
+          <code className="font-mono text-xs text-primary whitespace-nowrap">{getSummary()}</code>
         </div>
       )}
     </div>

@@ -137,9 +137,9 @@ export class CanonicalParser extends BaseParser {
     // Special case: Multiple thinking blocks (Gemini extended thinking)
     // Create a separate message for each thinking block
     if (blocks.length > 1 && blocks.every(b => b.type === 'thinking')) {
-      return blocks.map((block, index) =>
-        this.createThinkingMessage(canonical, block, timestamp, index)
-      ).filter((msg): msg is ParsedMessage => msg !== null)
+      return blocks
+        .map((block, index) => this.createThinkingMessage(canonical, block, timestamp, index))
+        .filter((msg): msg is ParsedMessage => msg !== null)
     }
 
     // Standard case: Single content block
@@ -202,7 +202,10 @@ export class CanonicalParser extends BaseParser {
 
     // Build metadata based on message type
     const metadata: ParsedMessage['metadata'] = {
-      role: messageType === 'tool_use' || messageType === 'tool_result' ? 'tool' : canonical.message.role,
+      role:
+        messageType === 'tool_use' || messageType === 'tool_result'
+          ? 'tool'
+          : canonical.message.role,
       sessionId: canonical.sessionId,
       provider: canonical.provider,
       cwd: canonical.cwd,

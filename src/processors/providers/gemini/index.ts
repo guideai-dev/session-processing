@@ -121,16 +121,19 @@ export class GeminiProcessor extends BaseProviderProcessor {
         }
       } catch (_error) {
         // Skip lines that fail to parse
-        continue
       }
     }
 
     if (!hasValidMessage) {
-      throw new Error('No valid canonical messages found with required fields (uuid, timestamp, type, message)')
+      throw new Error(
+        'No valid canonical messages found with required fields (uuid, timestamp, type, message)'
+      )
     }
 
     if (!hasGeminiFields) {
-      throw new Error('No Gemini-specific fields found in messages (provider=gemini-code or providerMetadata)')
+      throw new Error(
+        'No Gemini-specific fields found in messages (provider=gemini-code or providerMetadata)'
+      )
     }
   }
 }

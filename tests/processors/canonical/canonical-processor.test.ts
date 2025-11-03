@@ -57,17 +57,17 @@ describe('CanonicalSessionProcessor', () => {
     it('should parse structured content with tool uses', () => {
       const session = processor.parseSession(SAMPLE_SESSION_1, 'claude-code')
 
-      // Find a message with structured content
+      // Find a message with structured content (canonical format uses singular toolUse)
       const structuredMessages = session.messages.filter(m =>
-        typeof m.content === 'object' && 'toolUses' in m.content
+        typeof m.content === 'object' && 'toolUse' in m.content
       )
 
       expect(structuredMessages.length).toBeGreaterThan(0)
 
       if (structuredMessages.length > 0) {
         const firstStructured = structuredMessages[0]
-        if (typeof firstStructured.content === 'object' && 'toolUses' in firstStructured.content) {
-          expect(firstStructured.content.toolUses).toBeDefined()
+        if (typeof firstStructured.content === 'object' && 'toolUse' in firstStructured.content) {
+          expect(firstStructured.content.toolUse).toBeDefined()
         }
       }
     })
@@ -75,9 +75,9 @@ describe('CanonicalSessionProcessor', () => {
     it('should parse structured content with tool results', () => {
       const session = processor.parseSession(SAMPLE_SESSION_1, 'claude-code')
 
-      // Find a message with tool results
+      // Find a message with tool results (canonical format uses singular toolResult)
       const messagesWithResults = session.messages.filter(m =>
-        typeof m.content === 'object' && 'toolResults' in m.content
+        typeof m.content === 'object' && 'toolResult' in m.content
       )
 
       expect(messagesWithResults.length).toBeGreaterThan(0)

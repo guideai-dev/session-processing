@@ -243,10 +243,38 @@ Always refer to the person as {{userName}} in your summaries.`,
 
         // Add tool use information for assistant messages
         let toolInfo = ''
-        if (msg.type === 'assistant' && isStructuredMessageContent(msg.content) && msg.content.toolUse) {
-          const toolName = msg.content.toolUse.name
-          if (toolName) {
-            toolInfo = `\n  [Tools used: ${toolName}]`
+        if (msg.type === 'assistant') {
+          const toolNames: string[] = []
+
+          // Check structured message content
+          if (isStructuredMessageContent(msg.content)) {
+            // Canonical format - single toolUse
+            if (msg.content.toolUse?.name) {
+              toolNames.push(msg.content.toolUse.name)
+            }
+
+            // Handle old format with toolUses array (during migration)
+            const contentWithToolUses = msg.content as typeof msg.content & {
+              toolUses?: ToolUseContent[]
+            }
+            if (contentWithToolUses.toolUses && Array.isArray(contentWithToolUses.toolUses)) {
+              for (const tool of contentWithToolUses.toolUses) {
+                if (tool.name) {
+                  toolNames.push(tool.name)
+                }
+              }
+            }
+          } else if (Array.isArray(msg.content)) {
+            // Extract tool uses from array format
+            for (const item of msg.content) {
+              if (item.type === 'tool_use' && 'name' in item && item.name) {
+                toolNames.push(item.name as string)
+              }
+            }
+          }
+
+          if (toolNames.length > 0) {
+            toolInfo = `\n  [Tools used: ${toolNames.join(', ')}]`
           }
         }
 

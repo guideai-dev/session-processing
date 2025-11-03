@@ -115,9 +115,21 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
         // Note: StructuredMessageContent only has text/toolUse/toolResult
         // Thinking content would appear in Array format (handled below)
 
-        // Extract tool use (single item)
-        if (msg.content.toolUse && msg.content.toolUse.name) {
+        // Extract tool use (canonical format - single item)
+        if (msg.content.toolUse?.name) {
           toolNames.push(msg.content.toolUse.name)
+        }
+
+        // Handle old format with toolUses array (during migration)
+        const contentWithToolUses = msg.content as typeof msg.content & {
+          toolUses?: ToolUseContent[]
+        }
+        if (contentWithToolUses.toolUses && Array.isArray(contentWithToolUses.toolUses)) {
+          for (const tool of contentWithToolUses.toolUses) {
+            if (tool.name) {
+              toolNames.push(tool.name)
+            }
+          }
         }
       } else if (Array.isArray(msg.content)) {
         // Fallback: Extract from content array (for other providers)
@@ -139,9 +151,22 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
 
     // Process tool_use messages
     for (const msg of toolUseMessages) {
-      if (isStructuredMessageContent(msg.content) && msg.content.toolUse) {
-        if (msg.content.toolUse.name) {
+      if (isStructuredMessageContent(msg.content)) {
+        // Canonical format - single toolUse
+        if (msg.content.toolUse?.name) {
           toolNames.push(msg.content.toolUse.name)
+        }
+
+        // Handle old format with toolUses array (during migration)
+        const contentWithToolUses = msg.content as typeof msg.content & {
+          toolUses?: ToolUseContent[]
+        }
+        if (contentWithToolUses.toolUses && Array.isArray(contentWithToolUses.toolUses)) {
+          for (const tool of contentWithToolUses.toolUses) {
+            if (tool.name) {
+              toolNames.push(tool.name)
+            }
+          }
         }
       } else if (Array.isArray(msg.content)) {
         for (const item of msg.content) {

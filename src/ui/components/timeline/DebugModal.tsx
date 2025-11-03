@@ -41,10 +41,14 @@ export function DebugModal({ isOpen, onClose, message, messageDisplayType }: Deb
           <div>
             <h2 className="text-lg md:text-xl font-bold">Debug: Raw JSONL Message</h2>
             <div className="text-sm text-base-content/60 mt-1">
-              Message ID: <code className="text-xs bg-base-200 px-1 py-0.5 rounded">{message.id}</code>
+              Message ID:{' '}
+              <code className="text-xs bg-base-200 px-1 py-0.5 rounded">{message.id}</code>
               {messageDisplayType && (
                 <span className="ml-3">
-                  Display Type: <code className="text-xs bg-base-200 px-1 py-0.5 rounded">{messageDisplayType}</code>
+                  Display Type:{' '}
+                  <code className="text-xs bg-base-200 px-1 py-0.5 rounded">
+                    {messageDisplayType}
+                  </code>
                 </span>
               )}
             </div>
@@ -76,19 +80,29 @@ export function DebugModal({ isOpen, onClose, message, messageDisplayType }: Deb
 
         {/* JSON Content */}
         <div className="flex-1 overflow-auto bg-base-200 rounded-lg p-4">
-          <pre className="text-xs font-mono whitespace-pre-wrap break-words">
-            {jsonString}
-          </pre>
+          <pre className="text-xs font-mono whitespace-pre-wrap break-words">{jsonString}</pre>
         </div>
 
         {/* Footer Info */}
         <div className="mt-4 p-3 bg-info/10 rounded-lg text-xs text-info flex-shrink-0">
           <p className="font-semibold mb-1">💡 Debugging Tips:</p>
           <ul className="list-disc list-inside space-y-1 text-info/80">
-            <li>Check the <code className="bg-base-200 px-1 rounded">type</code> field to understand message classification</li>
-            <li>Verify <code className="bg-base-200 px-1 rounded">content</code> structure matches expected format</li>
-            <li>Look for <code className="bg-base-200 px-1 rounded">metadata</code> to debug provider-specific issues</li>
-            <li>Compare <code className="bg-base-200 px-1 rounded">timestamp</code> values to identify ordering issues</li>
+            <li>
+              Check the <code className="bg-base-200 px-1 rounded">type</code> field to understand
+              message classification
+            </li>
+            <li>
+              Verify <code className="bg-base-200 px-1 rounded">content</code> structure matches
+              expected format
+            </li>
+            <li>
+              Look for <code className="bg-base-200 px-1 rounded">metadata</code> to debug
+              provider-specific issues
+            </li>
+            <li>
+              Compare <code className="bg-base-200 px-1 rounded">timestamp</code> values to identify
+              ordering issues
+            </li>
           </ul>
         </div>
       </div>

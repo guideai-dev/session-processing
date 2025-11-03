@@ -105,10 +105,22 @@ Respond with a JSON object containing:
     const assistantMessages = session.messages.filter(msg => msg.type === 'assistant')
 
     for (const msg of assistantMessages) {
-      // Parser stores tool uses in msg.content.toolUse (single item)
-      if (isStructuredMessageContent(msg.content) && msg.content.toolUse) {
-        if (msg.content.toolUse.name) {
+      if (isStructuredMessageContent(msg.content)) {
+        // Canonical format - single toolUse
+        if (msg.content.toolUse?.name) {
           toolNames.push(msg.content.toolUse.name)
+        }
+
+        // Handle old format with toolUses array (during migration)
+        const contentWithToolUses = msg.content as typeof msg.content & {
+          toolUses?: ToolUseContent[]
+        }
+        if (contentWithToolUses.toolUses && Array.isArray(contentWithToolUses.toolUses)) {
+          for (const tool of contentWithToolUses.toolUses) {
+            if (tool.name) {
+              toolNames.push(tool.name)
+            }
+          }
         }
       } else if (Array.isArray(msg.content)) {
         // Fallback: Check direct array format (for other providers)
