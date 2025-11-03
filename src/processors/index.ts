@@ -4,12 +4,20 @@ export * from './base/index.js'
 // Export registry
 export { ProcessorRegistry, processorRegistry } from './registry.js'
 
-// Export Claude Code processor
+// Export provider processors
+export { ClaudeCodeProcessor } from './providers/claude-code/index.js'
+export { CodexProcessor } from './providers/codex/index.js'
+export { GitHubCopilotProcessor } from './providers/github-copilot/index.js'
+export { OpenCodeProcessor } from './providers/opencode/index.js'
+export { GeminiProcessor } from './providers/gemini/index.js'
+
+// Export canonical metrics processors
 export {
-  ClaudeCodeProcessor,
-  ClaudePerformanceProcessor,
-  ClaudeEngagementProcessor,
-  ClaudeQualityProcessor,
-  ClaudeUsageProcessor,
-  ClaudeErrorProcessor,
-} from './providers/claude-code/index.js'
+  CanonicalSessionProcessor,
+  CanonicalEngagementProcessor,
+  CanonicalUsageProcessor,
+  CanonicalQualityProcessor,
+  CanonicalPerformanceProcessor,
+  CanonicalErrorProcessor,
+  CanonicalContextProcessor,
+} from './canonical/index.js'

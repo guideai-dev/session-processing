@@ -17,6 +17,7 @@ export const MOCK_SESSION: ParsedSession = {
 			id: 'msg-2',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: "I'll help you create a user authentication system. Let me start by creating the necessary files.",
 				toolUses: [
 					{
@@ -52,6 +53,7 @@ export const MOCK_SESSION: ParsedSession = {
 			id: 'msg-4',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: 'I will add password hashing functionality.',
 				toolUses: [
 					{
@@ -103,6 +105,7 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			id: 'msg-2',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: 'Let me analyze the requirements and create a plan.',
 				toolUses: [],
 				toolResults: [],
@@ -119,6 +122,7 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			id: 'msg-3',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: 'Here is my proposed approach: 1. Create models 2. Add routes 3. Add validation',
 				toolUses: [],
 				toolResults: [],
@@ -141,6 +145,7 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			id: 'msg-5',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: 'Creating the blog post model.',
 				toolUses: [
 					{
@@ -170,6 +175,7 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			id: 'msg-6',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: 'Adding API routes.',
 				toolUses: [
 					{
@@ -205,6 +211,7 @@ export const MOCK_SESSION_WITH_PHASES: ParsedSession = {
 			id: 'msg-8',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: 'I will fix the failing tests.',
 				toolUses: [
 					{

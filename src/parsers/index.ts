@@ -1,8 +1,9 @@
 /**
- * Unified Parser System
+ * Unified Parser System - Phase 2 Complete
  *
- * Single parsing layer for all AI provider session logs.
- * Replaces duplicate parsing logic from UI and backend.
+ * Single canonical parser for all AI provider session logs.
+ * All providers now output canonical JSONL format, eliminating
+ * the need for provider-specific parsers.
  */
 
 // Base classes and types
@@ -18,19 +19,15 @@ export type {
   UnifiedMessageType,
 } from './base/types.js'
 
-// Provider-specific parsers
-export { ClaudeCodeParser } from './providers/claude-code/index.js'
-export { GeminiParser } from './providers/gemini/index.js'
-export { CopilotParser } from './providers/github-copilot/index.js'
-export { CodexParser } from './providers/codex/index.js'
-export { OpenCodeParser } from './providers/opencode/index.js'
-
-// Provider types
-export type { ClaudeRawMessage } from './providers/claude-code/types.js'
-export type { GeminiRawMessage } from './providers/gemini/types.js'
-export type { CopilotRawMessage } from './providers/github-copilot/types.js'
-export type { CodexRawMessage } from './providers/codex/types.js'
-export type { OpenCodeRawMessage } from './providers/opencode/types.js'
+// Canonical parser (handles all providers)
+export { CanonicalParser } from './canonical/index.js'
+export type {
+  CanonicalContentBlock,
+  CanonicalMessage,
+  CanonicalMessageType,
+  ContentValue,
+  TokenUsage,
+} from './canonical/index.js'
 
 // Registry
 export { ParserRegistry, parserRegistry } from './registry.js'

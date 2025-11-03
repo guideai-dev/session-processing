@@ -125,6 +125,7 @@ export const VALID_SESSION: ParsedSession = {
 			id: 'msg-4',
 			type: 'assistant',
 			content: {
+				type: 'structured',
 				text: 'I am doing well, thank you!',
 				toolUses: [],
 				toolResults: [],

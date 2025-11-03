@@ -158,11 +158,11 @@ export abstract class BaseMessageProcessor {
    */
   protected getMessageRole(message: BaseSessionMessage): TimelineMessage['role'] {
     switch (message.type) {
-      case 'user_input':
+      case 'user':
       case 'command':
       case 'interruption':
         return 'user'
-      case 'assistant_response':
+      case 'assistant':
         return 'assistant'
       case 'tool_use':
       case 'tool_result':
@@ -180,7 +180,7 @@ export abstract class BaseMessageProcessor {
     message: BaseSessionMessage
   ): ReturnType<typeof createDisplayMetadata> {
     switch (message.type) {
-      case 'user_input':
+      case 'user':
         return createDisplayMetadata({
           icon: this.hasImageContent(message) ? 'IMG' : 'USR',
           IconComponent: this.hasImageContent(message) ? PhotoIcon : UserIcon,
@@ -189,7 +189,7 @@ export abstract class BaseMessageProcessor {
           borderColor: 'border-l-info',
         })
 
-      case 'assistant_response':
+      case 'assistant':
         return createDisplayMetadata({
           icon: 'AST',
           IconComponent: CpuChipIcon,
@@ -283,8 +283,8 @@ export abstract class BaseMessageProcessor {
         return this.getCommandOutputBlocks(message)
       case 'interruption':
         return this.getInterruptionBlocks(message)
-      case 'user_input':
-      case 'assistant_response':
+      case 'user':
+      case 'assistant':
         return this.getConversationBlocks(message)
       default:
         return this.getGenericBlocks(message)
@@ -479,8 +479,21 @@ export abstract class BaseMessageProcessor {
             )
           }
         }
+        // Skip tool_use and tool_result blocks - these should be in separate messages
+        // If they appear here, they've already been split by the parser and shouldn't be displayed
+        else if (part.type === 'tool_use' || part.type === 'tool_result') {
+          // Skip - don't add to blocks
+        }
+        // Unknown block types - could be thinking, system_reminder, etc.
+        else {
+          blocks.push(createContentBlock('json', part, { collapsed: true }))
+        }
       }
-      return blocks
+      // Only return early if we found actual content blocks
+      // If blocks is empty (only had tool blocks), fall through to other content handling
+      if (blocks.length > 0) {
+        return blocks
+      }
     }
 
     // Fallback: Try to extract text or JSON

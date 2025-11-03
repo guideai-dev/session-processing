@@ -1,45 +1,46 @@
 import type { ProcessorContext, ProcessorResult } from '@guideai-dev/types'
-import { ClaudeCodeParser } from '../../../parsers/index.js'
+import { CanonicalParser } from '../../../parsers/index.js'
 import {
   type BaseMetricProcessor,
   BaseProviderProcessor,
   GitDiffMetricProcessor,
 } from '../../base/index.js'
-
-import { ClaudeContextProcessor } from './metrics/context.js'
-import { ClaudeEngagementProcessor } from './metrics/engagement.js'
-import { ClaudeErrorProcessor } from './metrics/error.js'
-// Import simplified metric processors
-import { ClaudePerformanceProcessor } from './metrics/performance.js'
-import { ClaudeQualityProcessor } from './metrics/quality.js'
-import { ClaudeUsageProcessor } from './metrics/usage.js'
+import {
+  CanonicalContextProcessor,
+  CanonicalEngagementProcessor,
+  CanonicalErrorProcessor,
+  CanonicalPerformanceProcessor,
+  CanonicalQualityProcessor,
+  CanonicalUsageProcessor,
+} from '../../canonical/index.js'
 
 export class ClaudeCodeProcessor extends BaseProviderProcessor {
   readonly providerName = 'claude-code'
-  readonly description = 'Processes Claude Code session logs with comprehensive metrics analysis'
+  readonly description = 'Processes Claude Code session logs (uses canonical metrics)'
 
-  private parser = new ClaudeCodeParser()
+  private parser = new CanonicalParser()
   private metricProcessors: BaseMetricProcessor[]
   private gitDiffProcessor = new GitDiffMetricProcessor()
 
   constructor() {
     super()
 
-    // Initialize simplified metric processors
-    // NOTE: Git diff processor is NOT included here - it runs separately AFTER these
+    // Use canonical metrics processors - no provider-specific logic needed
     this.metricProcessors = [
-      new ClaudePerformanceProcessor(),
-      new ClaudeEngagementProcessor(),
-      new ClaudeQualityProcessor(),
-      new ClaudeUsageProcessor(),
-      new ClaudeErrorProcessor(),
-      new ClaudeContextProcessor(),
+      new CanonicalPerformanceProcessor(),
+      new CanonicalEngagementProcessor(),
+      new CanonicalQualityProcessor(),
+      new CanonicalUsageProcessor(),
+      new CanonicalErrorProcessor(),
+      new CanonicalContextProcessor(),
     ]
   }
 
   parseSession(jsonlContent: string, _provider: string) {
     this.validateJsonlContent(jsonlContent)
-    return this.parser.parseSession(jsonlContent)
+    const session = this.parser.parseSession(jsonlContent)
+    session.provider = this.providerName // Override to keep real provider
+    return session
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -230,12 +231,5 @@ export class ClaudeCodeProcessor extends BaseProviderProcessor {
   }
 }
 
-// Export individual processors for testing
-export {
-  ClaudePerformanceProcessor,
-  ClaudeEngagementProcessor,
-  ClaudeQualityProcessor,
-  ClaudeUsageProcessor,
-  ClaudeErrorProcessor,
-  ClaudeContextProcessor,
-}
+// ClaudeCodeProcessor now uses canonical metrics
+// All metric processors are from the canonical implementation

@@ -74,7 +74,7 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
 
     // Extract user messages - content can be string or structured object
     const userMessages = session.messages
-      .filter(msg => msg.type === 'user' || msg.type === 'user_input')
+      .filter(msg => msg.type === 'user')
       .map(msg => {
         if (typeof msg.content === 'string') {
           return msg.content
@@ -101,9 +101,7 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
     // Extract assistant responses and tool uses
     const toolNames: string[] = []
     const assistantTextParts: string[] = []
-    const assistantMessages = session.messages.filter(
-      msg => msg.type === 'assistant' || msg.type === 'assistant_response'
-    )
+    const assistantMessages = session.messages.filter(msg => msg.type === 'assistant')
     const toolUseMessages = session.messages.filter(msg => msg.type === 'tool_use')
 
     // Process assistant text responses

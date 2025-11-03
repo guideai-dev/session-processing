@@ -210,7 +210,7 @@ export function createContentBlock(
 export function createContentBlock(
   type: 'tool_result',
   content: string | Array<string | Record<string, unknown>> | Record<string, unknown>,
-  metadata?: UIContentMetadata & { collapsed?: boolean }
+  metadata?: UIContentMetadata & { collapsed?: boolean; toolUseId?: string }
 ): Extract<ContentBlock, { type: 'tool_result' }>
 export function createContentBlock(
   type: 'thinking',

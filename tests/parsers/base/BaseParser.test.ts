@@ -31,7 +31,7 @@ class TestParser extends BaseParser {
 			{
 				id: this.generateMessageId(0, timestamp),
 				timestamp,
-				type: rawMessage.type === 'user' ? 'user_input' : 'assistant_response',
+				type: rawMessage.type === 'user' ? 'user' : 'assistant',
 				content,
 				metadata: {},
 			},

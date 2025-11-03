@@ -1,42 +1,36 @@
 /**
  * Unified Parser Registry
  *
- * Centralized registry for all provider parsers. Replaces the multiple
- * registries that existed in UI and backend code.
+ * Phase 2: Simplified to use only CanonicalParser for all providers.
+ * All providers now write canonical JSONL format, eliminating the need
+ * for provider-specific parsers.
  */
 
 import type { SessionParser } from './base/types.js'
-import { ClaudeCodeParser } from './providers/claude-code/index.js'
-import { CodexParser } from './providers/codex/index.js'
-import { GeminiParser } from './providers/gemini/index.js'
-import { CopilotParser } from './providers/github-copilot/index.js'
-import { OpenCodeParser } from './providers/opencode/index.js'
+import { CanonicalParser } from './canonical/index.js'
 
 export class ParserRegistry {
   private parsers = new Map<string, SessionParser>()
 
   constructor() {
-    // Register all built-in parsers
-    this.register(new ClaudeCodeParser())
-    this.register(new GeminiParser())
-    this.register(new CopilotParser())
-    this.register(new CodexParser())
-    this.register(new OpenCodeParser())
+    // Register the canonical parser (handles all providers)
+    const canonicalParser = new CanonicalParser()
+    this.register(canonicalParser)
 
-    // Add aliases for common provider names
-    const claudeParser = this.parsers.get('claude-code')
-    if (claudeParser) {
-      this.parsers.set('claude', claudeParser)
-    }
+    // Add aliases for all provider names to use canonical parser
+    const providerAliases = [
+      'claude-code',
+      'claude',
+      'gemini-code',
+      'gemini',
+      'github-copilot',
+      'copilot',
+      'codex',
+      'opencode',
+    ]
 
-    const geminiParser = this.parsers.get('gemini-code')
-    if (geminiParser) {
-      this.parsers.set('gemini', geminiParser)
-    }
-
-    const copilotParser = this.parsers.get('github-copilot')
-    if (copilotParser) {
-      this.parsers.set('copilot', copilotParser)
+    for (const alias of providerAliases) {
+      this.parsers.set(alias, canonicalParser)
     }
   }
 

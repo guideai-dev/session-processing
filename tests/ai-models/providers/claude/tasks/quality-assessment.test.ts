@@ -147,6 +147,7 @@ describe('QualityAssessmentTask', () => {
 						id: 'msg-1',
 						type: 'assistant' as const,
 						content: {
+							type: 'structured',
 							text: 'Using write',
 							toolUses: [{ type: 'tool_use', id: 'tool-1', name: 'write', input: {} }],
 							toolResults: [],
@@ -158,6 +159,7 @@ describe('QualityAssessmentTask', () => {
 						id: 'msg-2',
 						type: 'assistant' as const,
 						content: {
+							type: 'structured',
 							text: 'Using write again',
 							toolUses: [{ type: 'tool_use', id: 'tool-2', name: 'write', input: {} }],
 							toolResults: [],

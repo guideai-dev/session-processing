@@ -11,11 +11,17 @@ export {
   ProcessorRegistry,
   processorRegistry,
   ClaudeCodeProcessor,
-  ClaudePerformanceProcessor,
-  ClaudeEngagementProcessor,
-  ClaudeQualityProcessor,
-  ClaudeUsageProcessor,
-  ClaudeErrorProcessor,
+  CodexProcessor,
+  GitHubCopilotProcessor,
+  OpenCodeProcessor,
+  GeminiProcessor,
+  CanonicalSessionProcessor,
+  CanonicalEngagementProcessor,
+  CanonicalUsageProcessor,
+  CanonicalQualityProcessor,
+  CanonicalPerformanceProcessor,
+  CanonicalErrorProcessor,
+  CanonicalContextProcessor,
 } from './processors/index.js'
 
 // Export AI models

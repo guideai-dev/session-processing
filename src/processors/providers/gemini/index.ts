@@ -1,37 +1,42 @@
-import { GeminiParser } from '../../../parsers/index.js'
+import { CanonicalParser } from '../../../parsers/index.js'
 import { type BaseMetricProcessor, BaseProviderProcessor } from '../../base/index.js'
-
-import { GeminiEngagementProcessor } from './metrics/engagement.js'
-import { GeminiErrorProcessor } from './metrics/error.js'
-// Import simplified metric processors
-import { GeminiPerformanceProcessor } from './metrics/performance.js'
-import { GeminiQualityProcessor } from './metrics/quality.js'
-import { GeminiUsageProcessor } from './metrics/usage.js'
+import {
+  CanonicalContextProcessor,
+  CanonicalEngagementProcessor,
+  CanonicalErrorProcessor,
+  CanonicalPerformanceProcessor,
+  CanonicalQualityProcessor,
+  CanonicalUsageProcessor,
+} from '../../canonical/index.js'
 
 export class GeminiProcessor extends BaseProviderProcessor {
   readonly providerName = 'gemini-code'
-  readonly description =
-    'Processes Gemini Code session logs with thinking analysis and cache metrics'
+  readonly description = 'Processes Gemini Code session logs (uses canonical metrics)'
 
-  private parser = new GeminiParser()
+  private parser = new CanonicalParser()
   private metricProcessors: BaseMetricProcessor[]
 
   constructor() {
     super()
 
-    // Initialize simplified metric processors
+    // Use canonical metrics processors - no provider-specific logic needed
     this.metricProcessors = [
-      new GeminiPerformanceProcessor(),
-      new GeminiEngagementProcessor(),
-      new GeminiQualityProcessor(),
-      new GeminiUsageProcessor(),
-      new GeminiErrorProcessor(),
+      new CanonicalPerformanceProcessor(),
+      new CanonicalEngagementProcessor(),
+      new CanonicalQualityProcessor(),
+      new CanonicalUsageProcessor(),
+      new CanonicalErrorProcessor(),
+      new CanonicalContextProcessor(),
     ]
   }
 
   parseSession(jsonContent: string, _provider: string) {
-    this.validateJsonContent(jsonContent)
-    return this.parser.parseSession(jsonContent)
+    this.validateJsonlContent(jsonContent)
+    // Parser returns canonical format with provider='canonical'
+    // We preserve the real provider name for data storage
+    const session = this.parser.parseSession(jsonContent)
+    session.provider = this.providerName // Override to keep real provider
+    return session
   }
 
   getMetricProcessors(): BaseMetricProcessor[] {
@@ -40,7 +45,7 @@ export class GeminiProcessor extends BaseProviderProcessor {
 
   canProcess(content: string): boolean {
     try {
-      // Gemini sessions are JSONL format (like Claude Code)
+      // Gemini sessions are JSONL format in canonical format (camelCase)
       if (!content.includes('\n')) {
         return false
       }
@@ -50,17 +55,17 @@ export class GeminiProcessor extends BaseProviderProcessor {
         return false
       }
 
-      // Check for Gemini-specific fields in any line
+      // Check for Gemini-specific markers in canonical format (camelCase)
       for (const line of lines) {
         try {
           const data = JSON.parse(line)
 
-          // Look for Gemini-specific markers
+          // Look for canonical format with Gemini provider
           if (
-            data.type === 'gemini' ||
-            data.gemini_thoughts ||
-            data.gemini_tokens ||
-            data.gemini_model
+            data.provider === 'gemini-code' ||
+            data.providerMetadata?.gemini_type ||
+            data.providerMetadata?.has_thoughts === true ||
+            data.providerMetadata?.has_tool_calls === true
           ) {
             return true
           }
@@ -74,37 +79,14 @@ export class GeminiProcessor extends BaseProviderProcessor {
   }
 
   /**
-   * Get processor information for debugging and monitoring
+   * Validate Gemini JSONL format (canonical format)
    */
-  getProcessorInfo() {
-    return {
-      providerName: this.providerName,
-      description: this.description,
-      metricProcessors: this.metricProcessors.map(processor => ({
-        name: processor.name,
-        metricType: processor.metricType,
-        description: processor.description,
-      })),
-      version: '1.0.0',
-      features: [
-        'Thinking analysis',
-        'Cache efficiency metrics',
-        'Token usage tracking',
-        'Response time analysis',
-        'Quality assessment with thinking depth',
-      ],
-    }
-  }
-
-  /**
-   * Override parent validation to handle JSONL format
-   */
-  protected validateJsonContent(content: string): void {
+  protected validateJsonlContent(content: string): void {
     if (!content || content.trim().length === 0) {
       throw new Error('Content is empty')
     }
 
-    // Gemini uses JSONL format like Claude Code
+    // Gemini uses canonical JSONL format (camelCase)
     const lines = content.split('\n').filter(line => line.trim())
 
     if (lines.length === 0) {
@@ -113,58 +95,44 @@ export class GeminiProcessor extends BaseProviderProcessor {
 
     let hasValidMessage = false
     let hasGeminiFields = false
-    let sessionId = ''
 
-    for (let i = 0; i < lines.length; i++) {
+    // Validate a few lines to ensure proper format
+    const targetValidLines = Math.min(3, lines.length)
+    let validatedLines = 0
+
+    for (let i = 0; i < lines.length && validatedLines < targetValidLines; i++) {
       try {
         const data = JSON.parse(lines[i])
 
-        // Track session ID
-        if (data.sessionId && !sessionId) {
-          sessionId = data.sessionId
-        }
-
-        // Check for valid message structure
-        if (data.uuid && data.timestamp && data.type) {
+        // Check for valid canonical message structure (camelCase fields)
+        if (data.uuid && data.timestamp && data.type && data.message) {
           hasValidMessage = true
+          validatedLines++
         }
 
-        // Check for Gemini-specific fields
+        // Check for Gemini-specific fields in canonical format (camelCase)
         if (
-          data.type === 'gemini' ||
-          data.gemini_thoughts ||
-          data.gemini_tokens ||
-          data.gemini_model
+          data.provider === 'gemini-code' ||
+          data.providerMetadata?.gemini_type ||
+          data.providerMetadata?.has_thoughts === true ||
+          data.providerMetadata?.has_tool_calls === true
         ) {
           hasGeminiFields = true
         }
       } catch (_error) {
-        throw new Error(`Invalid JSON on line ${i + 1}`)
+        // Skip lines that fail to parse
+        continue
       }
     }
 
-    if (!sessionId) {
-      throw new Error('No sessionId found in JSONL content')
-    }
-
     if (!hasValidMessage) {
-      throw new Error('No valid messages found with required fields')
+      throw new Error('No valid canonical messages found with required fields (uuid, timestamp, type, message)')
     }
 
     if (!hasGeminiFields) {
-      throw new Error('No Gemini-specific fields found in messages')
+      throw new Error('No Gemini-specific fields found in messages (provider=gemini-code or providerMetadata)')
     }
   }
 }
 
-// Export helpers for testing
-export * as GeminiHelpers from './helpers.js'
-
-// Export individual processors for testing
-export {
-  GeminiPerformanceProcessor,
-  GeminiEngagementProcessor,
-  GeminiQualityProcessor,
-  GeminiUsageProcessor,
-  GeminiErrorProcessor,
-}
+// GeminiProcessor uses canonical metrics but preserves gemini-code provider identity

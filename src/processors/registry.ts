@@ -34,6 +34,9 @@ export class ProcessorRegistry {
 
   /**
    * Register default processors
+   *
+   * Each provider has its own processor class that delegates to canonical metrics
+   * but preserves the real provider name for data storage.
    */
   private registerDefaultProcessors(): void {
     this.register(new ClaudeCodeProcessor())

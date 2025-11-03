@@ -57,10 +57,11 @@ export type MessageContent = string | ContentPart[] | PartsContent | Record<stri
 
 /**
  * Message types supported across all providers
+ * Aligned with canonical format: user/assistant instead of user_input/assistant_response
  */
 export type UnifiedMessageType =
-  | 'user_input'
-  | 'assistant_response'
+  | 'user'
+  | 'assistant'
   | 'tool_use'
   | 'tool_result'
   | 'command'
@@ -87,6 +88,7 @@ export interface ParsedMessage {
     hasToolResults?: boolean
     toolCount?: number
     resultCount?: number
+    providerMetadata?: Record<string, unknown> // Provider-specific metadata (e.g., Gemini thinking flags, Copilot intentions)
     [key: string]: unknown
   }
   parentId?: string

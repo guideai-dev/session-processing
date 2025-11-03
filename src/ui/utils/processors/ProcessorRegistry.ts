@@ -2,30 +2,33 @@
  * Processor Registry - Registry for message processors
  *
  * Manages the collection of message processors and provides lookup by provider name.
- * Supports Claude Code, GitHub Copilot, Codex, OpenCode, Gemini Code, and generic fallback processors.
+ * Uses the unified CanonicalMessageProcessor for all providers, as all providers now
+ * output canonical JSONL format with provider-specific features preserved in providerMetadata.
  */
 
 import type { BaseMessageProcessor } from './BaseMessageProcessor.js'
-import { ClaudeMessageProcessor } from './ClaudeMessageProcessor.js'
-import { CodexMessageProcessor } from './CodexMessageProcessor.js'
-import { CopilotMessageProcessor } from './CopilotMessageProcessor.js'
-import { GeminiMessageProcessor } from './GeminiMessageProcessor.js'
+import { CanonicalMessageProcessor } from './CanonicalMessageProcessor.js'
 import { GenericMessageProcessor } from './GenericMessageProcessor.js'
-import { OpenCodeMessageProcessor } from './OpenCodeMessageProcessor.js'
 
 class MessageProcessorRegistry {
   private processors = new Map<string, BaseMessageProcessor>()
   private defaultProcessor: BaseMessageProcessor
+  private canonicalProcessor: BaseMessageProcessor
 
   constructor() {
     this.defaultProcessor = new GenericMessageProcessor()
+    this.canonicalProcessor = new CanonicalMessageProcessor()
 
-    // Register built-in processors
-    this.register(new ClaudeMessageProcessor())
-    this.register(new CopilotMessageProcessor())
-    this.register(new CodexMessageProcessor())
-    this.register(new OpenCodeMessageProcessor())
-    this.register(new GeminiMessageProcessor())
+    // Register canonical processor for all providers
+    // All providers now output canonical format, so we use one universal processor
+    this.processors.set('claude-code', this.canonicalProcessor)
+    this.processors.set('gemini-code', this.canonicalProcessor)
+    this.processors.set('codex', this.canonicalProcessor)
+    this.processors.set('github-copilot', this.canonicalProcessor)
+    this.processors.set('opencode', this.canonicalProcessor)
+    this.processors.set('canonical', this.canonicalProcessor)
+
+    // Keep generic processor as fallback
     this.register(this.defaultProcessor)
   }
 
