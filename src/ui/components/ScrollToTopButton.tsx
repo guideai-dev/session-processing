@@ -26,19 +26,36 @@ export function ScrollToTopButton({
 
   useEffect(() => {
     const container = document.querySelector(scrollContainer)
-    if (!container) return
 
     const handleScroll = () => {
-      const scrollTop = container.scrollTop
+      let scrollTop = 0
+
+      // Try container scroll first
+      if (container && container.scrollTop > 0) {
+        scrollTop = container.scrollTop
+      } else {
+        // Fallback to window scroll
+        scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      }
+
       setIsVisible(scrollTop > threshold)
     }
 
     // Check initial scroll position
     handleScroll()
 
-    // Add scroll listener
-    container.addEventListener('scroll', handleScroll)
-    return () => container.removeEventListener('scroll', handleScroll)
+    // Add scroll listeners to both container (if exists) and window
+    if (container) {
+      container.addEventListener('scroll', handleScroll)
+    }
+    window.addEventListener('scroll', handleScroll)
+
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', handleScroll)
+      }
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [scrollContainer, threshold])
 
   const scrollToTop = () => {

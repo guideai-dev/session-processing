@@ -74,6 +74,15 @@ export class CanonicalParser extends BaseParser {
       return []
     }
 
+    // Skip empty command stdout messages (Claude Code specific)
+    // These are user messages with content like "<local-command-stdout></local-command-stdout>"
+    if (typeof canonical.message.content === 'string') {
+      const content = canonical.message.content.trim()
+      if (content === '<local-command-stdout></local-command-stdout>') {
+        return []
+      }
+    }
+
     // Handle text content (simple case)
     if (typeof canonical.message.content === 'string') {
       return [this.parseTextMessage(canonical, timestamp)]
@@ -153,14 +162,16 @@ export class CanonicalParser extends BaseParser {
     let isThinking = false
 
     if (block.type === 'text') {
-      text = block.text
+      // Trim excessive leading/trailing newlines (keep max 2)
+      text = this.trimExcessiveNewlines(block.text)
       structuredContent = {
         type: 'structured',
-        text: block.text,
+        text,
       }
     } else if (block.type === 'thinking') {
       // Handle thinking blocks (Gemini extended thinking, Claude thinking)
-      text = block.thinking || ''
+      // Trim excessive leading/trailing newlines (keep max 2)
+      text = this.trimExcessiveNewlines(block.thinking || '')
       structuredContent = {
         type: 'structured',
         text,
@@ -317,11 +328,20 @@ export class CanonicalParser extends BaseParser {
         return 'tool_result'
       }
 
-      // Check string content for special patterns
+      // Check for special patterns in both string and structured content
+      let textContent = ''
       if (typeof content === 'string') {
-        if (this.isCompactContent(content)) return 'compact'
-        if (this.isInterruptionContent(content)) return 'interruption'
-        if (this.isCommandContent(content)) return 'command'
+        textContent = content
+      } else if (Array.isArray(content)) {
+        // Extract text from text blocks
+        const textBlocks = content.filter(block => block.type === 'text')
+        textContent = textBlocks.map(block => block.text).join(' ')
+      }
+
+      if (textContent) {
+        if (this.isCompactContent(textContent)) return 'compact'
+        if (this.isInterruptionContent(textContent)) return 'interruption'
+        if (this.isCommandContent(textContent)) return 'command'
       }
 
       return 'user'
@@ -336,6 +356,18 @@ export class CanonicalParser extends BaseParser {
     }
 
     return 'meta'
+  }
+
+  /**
+   * Trim excessive leading/trailing newlines from text content
+   * Removes all leading newlines and keeps max 2 trailing newlines
+   */
+  private trimExcessiveNewlines(text: string): string {
+    // Remove ALL leading newlines
+    let trimmed = text.replace(/^\n+/, '')
+    // Replace 3+ trailing newlines with 2
+    trimmed = trimmed.replace(/\n{3,}$/, '\n\n')
+    return trimmed
   }
 
   /**

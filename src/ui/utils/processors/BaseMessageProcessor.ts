@@ -11,6 +11,7 @@ import {
   CommandLineIcon,
   CpuChipIcon,
   InformationCircleIcon,
+  LightBulbIcon,
   PhotoIcon,
   StopCircleIcon,
   UserIcon,
@@ -195,11 +196,11 @@ export abstract class BaseMessageProcessor {
         const isGemini = message.metadata?.provider?.includes('gemini')
 
         return createDisplayMetadata({
-          icon: isThinking ? '💭' : 'AST',
-          IconComponent: CpuChipIcon,
-          iconColor: isThinking ? 'text-secondary' : 'text-primary',
+          icon: isThinking ? 'THINK' : 'AST',
+          IconComponent: isThinking ? LightBulbIcon : CpuChipIcon,
+          iconColor: isThinking ? 'text-warning' : 'text-primary',
           title: isThinking ? (isGemini ? 'Extended Thinking' : 'Thinking') : 'Assistant',
-          borderColor: isThinking ? 'border-l-secondary' : 'border-l-primary',
+          borderColor: isThinking ? 'border-l-warning' : 'border-l-primary',
         })
       }
 
@@ -458,9 +459,23 @@ export abstract class BaseMessageProcessor {
    * Extract content blocks for interruption messages
    */
   protected getInterruptionBlocks(message: BaseSessionMessage): ContentBlock[] {
-    const text =
-      this.extractTextFromParts(message.content) ||
-      (typeof message.content === 'string' ? message.content : JSON.stringify(message.content))
+    // Try extracting text from parts structure first
+    let text = this.extractTextFromParts(message.content)
+
+    // If no text from parts, check for structured content with text field
+    if (
+      !text &&
+      message.content &&
+      typeof message.content === 'object' &&
+      'text' in message.content
+    ) {
+      text = message.content.text as string
+    }
+
+    // Fallback to string content or JSON stringify
+    if (!text) {
+      text = typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+    }
 
     return [createContentBlock('text', text)]
   }
