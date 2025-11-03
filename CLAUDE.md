@@ -133,6 +133,155 @@ pnpm --filter @guideai-dev/session-processing test
 
 ---
 
+## Canonical Parser Architecture
+
+**Single parser for all AI providers—replaces 5+ provider-specific parsers.**
+
+### Core Concept
+
+**Location:** `src/parsers/canonical/parser.ts`
+
+The canonical parser handles all providers (Claude Code, Gemini, Copilot, Codex, OpenCode) using the universal canonical JSONL format produced by the Rust desktop app. This major simplification replaced individual parser implementations with one unified parser.
+
+**Key Benefits:**
+- One parser instead of 5+ provider parsers
+- Consistent message processing across all providers
+- Provider-specific features preserved via `providerMetadata`
+- Easy to add new providers (no TypeScript parser needed)
+
+### Message Processing
+
+**Format Detection:**
+```typescript
+canParse(jsonlContent: string): boolean {
+    // Checks for canonical structure:
+    // - uuid field
+    // - sessionId field
+    // - message.role field
+    // - type in ['user', 'assistant', 'meta']
+}
+```
+
+**Message Parsing:**
+```typescript
+parseMessage(rawMessage: RawLogMessage): ParsedMessage[] {
+    // Returns array for multi-block messages (e.g., Gemini thinking)
+    // Determines intelligent message types
+    // Handles both text and structured content blocks
+}
+```
+
+### Content Block Types
+
+The parser handles four core content block types:
+
+- **Text** - Simple text messages
+- **ToolUse** - Function calls, commands (`id`, `name`, `input`)
+- **ToolResult** - Function outputs (`tool_use_id`, `content`, `is_error`)
+- **Thinking** - Extended reasoning (Gemini, Claude)
+
+### Message Type Detection
+
+The parser transforms canonical `message_type` into specific UI types:
+
+**User Messages:**
+- `tool_result` - Contains tool result blocks
+- `compact` - Short messages < 100 chars
+- `interruption` - User interruptions
+- `command` - Command outputs (from `<local-command-stdout>`)
+- `user` - Default user messages
+
+**Assistant Messages:**
+- `tool_use` - Contains tool use blocks
+- `assistant` - Default assistant responses
+
+**Meta Messages:**
+- `meta` - System events, metadata
+
+### Provider Metadata Preservation
+
+All provider-specific data is preserved in `metadata.providerMetadata`:
+
+```typescript
+metadata: {
+    role: string,
+    sessionId: string,
+    provider: string, // "claude-code", "gemini-code", etc.
+    providerMetadata: any, // Provider-specific fields
+    // ... standard fields
+}
+```
+
+**Examples:**
+- **Gemini**: Thinking block counts, thought metadata
+- **Copilot**: Intentions for tools, execution status
+- **Codex**: Payload types, event metadata
+- **Claude**: File snapshots, summary blocks
+
+### Parser Registry
+
+**Location:** `src/parsers/registry.ts`
+
+```typescript
+export class ParserRegistry {
+    constructor() {
+        const canonicalParser = new CanonicalParser()
+        this.register(canonicalParser)
+
+        // All providers use the same parser
+        const providerAliases = [
+            'claude-code', 'gemini-code', 'github-copilot',
+            'codex', 'opencode'
+        ]
+
+        for (const alias of providerAliases) {
+            this.parsers.set(alias, canonicalParser)
+        }
+    }
+}
+```
+
+### Session Processing
+
+**Location:** `src/processors/canonical/index.ts`
+
+The canonical session processor uses 6 metric processors:
+
+- **Performance** - Response times, session duration
+- **Engagement** - Turn counts, user interactions
+- **Quality** - Success rates, error handling
+- **Usage** - Token consumption, model usage
+- **Error** - Error detection and categorization
+- **Context** - Context window usage, file tracking
+
+All providers are processed uniformly with provider-specific adaptations in the UI layer.
+
+### Adding New Providers
+
+To support a new provider:
+
+1. **Rust converter** (desktop app) - Implements `ToCanonical` trait
+2. **Registry alias** (here) - Add to `providerAliases` array
+
+**That's it!** The canonical parser automatically handles the new provider.
+
+No provider-specific TypeScript parser needed.
+
+### UI Message Processing
+
+**Location:** `src/ui/utils/processors/CanonicalMessageProcessor.ts`
+
+The UI processor handles provider-specific display features:
+
+- **Gemini** - Thought display with count badges
+- **Copilot** - Intention badges for tools
+- **Codex** - Payload type-based icons
+- **Claude** - Thinking blocks, images, special content
+
+Provider-specific features are read from `providerMetadata` and rendered appropriately.
+
+---
+
 ## Session Phase Analysis Task
 
 The `SessionPhaseAnalysisTask` analyzes complete AI coding session transcripts and breaks them down into meaningful phases based on the flow of conversation.

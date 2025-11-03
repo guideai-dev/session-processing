@@ -1,166 +1,108 @@
 # @guideai-dev/session-processing
 
-Shared session processing, metrics calculation, AI processing, and UI components for GuideAI. This package provides a unified way to process agent sessions, calculate metrics, and display session data across both the server and desktop applications.
+> **The analytics engine that powers GuideAI.**
 
-## Features
+Parses AI coding sessions from any provider and generates actionable insights. One parser for all AI tools.
 
-- **Metric Processing**: Session parsing and metric calculation for various AI coding agents
-- **AI Model Processing**: Summary generation and quality assessment with pluggable AI providers
-- **UI Components**: Session viewer, timeline, and metrics display components
-- **Provider Agnostic**: Supports Claude Code, OpenCode, Codex, and custom providers
-- **Offline-First**: Works without database or network dependencies
-- **Dual Build**: ESM and CommonJS support
+## Why This Matters
+
+**Before:** Each AI tool had different formats → 5+ custom parsers → maintenance nightmare
+
+**Now:** Unified canonical format → 1 parser → consistent analytics for all providers
 
 ## Installation
 
 ```bash
 npm install @guideai-dev/session-processing
-# or
-pnpm add @guideai-dev/session-processing
-# or
-yarn add @guideai-dev/session-processing
 ```
 
 ## Usage
 
-### Metric Processing
+### Parse Any Provider
 
 ```typescript
-import { ClaudeCodeProcessor, ProcessorRegistry } from '@guideai-dev/session-processing/processors'
+import { ParserRegistry } from '@guideai-dev/session-processing/parsers'
 
-// Get processor from registry
-const registry = new ProcessorRegistry()
-const processor = registry.getProcessor('claude-code')
+const registry = new ParserRegistry()
+const parser = registry.getParser('claude-code') // or gemini, copilot, codex, opencode
 
-// Process session metrics
-const context = {
-  sessionId: 'session-123',
-  provider: 'claude-code',
-  userId: 'user-456'
-}
-
-const results = await processor.processMetrics(jsonlContent, context)
-console.log('Metrics:', results)
+const parsed = parser.parse(sessionContent)
+// Works the same for all providers!
 ```
 
-### AI Model Processing
+### Calculate Metrics
 
 ```typescript
-import { ClaudeAdapter } from '@guideai-dev/session-processing/ai-models'
+import { CanonicalSessionProcessor } from '@guideai-dev/session-processing/processors'
 
-// Initialize adapter with user-provided API key
-const adapter = new ClaudeAdapter({
-  apiKey: userApiKey,
-  model: 'claude-3-5-sonnet-20241022'
-})
+const processor = new CanonicalSessionProcessor()
+const metrics = await processor.processMetrics(sessionContent, context)
 
-// Generate session summary
-const summary = await adapter.executeTask('session-summary', {
-  sessionContent: jsonlContent,
-  provider: 'claude-code'
-})
+// Get: performance, usage, quality, engagement, error metrics
 ```
 
-### UI Components
+## Key Features
 
-```typescript
-import { SessionViewer } from '@guideai-dev/session-processing/ui'
+- ✅ **One Parser** - Handles all AI providers (Claude, Gemini, Copilot, Codex, OpenCode)
+- ✅ **Canonical Format** - Universal message structure
+- ✅ **Rich Metrics** - Performance, usage, quality, engagement, errors, context
+- ✅ **Provider Metadata** - Preserves provider-specific features
+- ✅ **UI Components** - React components for session display
 
-function SessionDetailPage({ sessionId }) {
-  const session = useSession(sessionId)
-  const metrics = useSessionMetrics(sessionId)
+## Supported Providers
 
-  return (
-    <SessionViewer
-      session={session}
-      metrics={metrics}
-    />
-  )
-}
-```
+All via the same unified parser:
+- **Claude Code** - Anthropic
+- **Gemini Code** - Google
+- **GitHub Copilot** - GitHub
+- **Codex** - AI assistant
+- **OpenCode** - Open source
 
-## Package Exports
+## For Developers
 
-- `@guideai-dev/session-processing` - Main exports
-- `@guideai-dev/session-processing/processors` - Metric processors
-- `@guideai-dev/session-processing/ai-models` - AI model adapters
-- `@guideai-dev/session-processing/ui` - React components
-
-## Architecture
-
-### Processors
-- **Base Classes**: MetricProcessor, ProviderProcessor
-- **Claude Code**: Performance, Usage, Quality, Engagement, Error metrics
-- **Extensible**: Easy to add new providers and metrics
-
-### AI Models
-- **Adapter Pattern**: Pluggable AI providers (Claude, Gemini)
-- **Tasks**: Session Summary, Quality Assessment, Intent Extraction
-- **User Keys**: Supports user-provided API keys (desktop) or environment keys (server)
-
-### UI Components
-- **SessionViewer**: Main session display component
-- **SessionTimeline**: Message-by-message timeline view
-- **ConversationView**: Conversational message display
-- **MetricsOverview**: Session metrics visualization
-
-## Development
-
-This package is part of the GuideAI monorepo and is automatically synced to this repository.
+### Build from Source
 
 ```bash
-# Install dependencies
+git clone https://github.com/guideai-dev/session-processing.git
+cd session-processing
 pnpm install
-
-# Build package
 pnpm build
-
-# Development mode (watch)
-pnpm dev
-
-# Type check
-pnpm typecheck
-
-# Run tests
-pnpm test
-
-# Clean build artifacts
-pnpm clean
 ```
 
-### Contributing
+**See [CLAUDE.md](CLAUDE.md) for:**
+- Parser architecture details
+- How canonical format works
+- Adding new providers
+- Metrics processor documentation
 
-We welcome contributions! Please:
+### Tech Stack
 
-1. Fork this repository
-2. Create a feature branch
-3. Add features or fix bugs
-4. Submit a pull request
+- TypeScript with strict type safety
+- Unified canonical parser
+- 6 metric processors
+- React UI components
+- Dual build (ESM + CommonJS)
 
-**Note**: All pull requests are reviewed and manually backported to the private GuideAI monorepo.
+## What Gets Analyzed
 
-## Dependencies
-
-- `@guideai-dev/types` - Shared type definitions
-- `@anthropic-ai/sdk` - Claude API client
-- `@google/generative-ai` - Gemini API client
-- `react` - UI components (peer dependency)
-- `tailwindcss` - Styling (optional peer dependency)
-- `daisyui` - UI library (optional peer dependency)
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## Links
-
-- [GuideAI Website](https://guideai.dev)
-- [Documentation](https://docs.guideai.dev)
-- [GitHub Organization](https://github.com/guideai-dev)
-- [npm Package](https://github.com/guideai-dev/session-processing/pkgs/npm/session-processing)
+- **Performance** - Response times, token usage
+- **Usage** - Commands executed, files modified, tools used
+- **Quality** - Success rates, error handling
+- **Engagement** - User interactions, turn counts
+- **Errors** - Error detection and categorization
+- **Context** - Context window usage, file tracking
 
 ## Related Packages
 
-- [@guideai-dev/desktop](https://github.com/guideai-dev/desktop) - Desktop menubar application
-- [@guideai-dev/types](https://github.com/guideai-dev/types) - Shared TypeScript types
-- [@guideai-dev/cli](https://github.com/guideai-dev/cli) - Command-line interface
+- [@guideai-dev/desktop](https://github.com/guideai-dev/desktop) - Converts provider formats to canonical
+- [@guideai-dev/types](https://github.com/guideai-dev/types) - Shared type definitions
+
+## License
+
+MIT License - see [LICENSE](LICENSE)
+
+## Support
+
+- 💬 [**Discussions**](https://github.com/orgs/guideai-dev/discussions) - Ask questions, share ideas
+- 🐛 [**Issues**](https://github.com/guideai-dev/desktop/issues) - Report bugs, request features
+- 📧 **Email**: support@guideai.dev
