@@ -29,6 +29,11 @@ export type CanonicalContentBlock =
       text: string
     }
   | {
+      type: 'thinking'
+      thinking?: string
+      signature?: string // For Claude encrypted thinking
+    }
+  | {
       type: 'tool_use'
       id: string
       name: string

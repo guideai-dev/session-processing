@@ -243,13 +243,10 @@ Always refer to the person as {{userName}} in your summaries.`,
 
         // Add tool use information for assistant messages
         let toolInfo = ''
-        if (msg.type === 'assistant' && isStructuredMessageContent(msg.content)) {
-          const tools = msg.content.toolUses
-            .map((tool: ToolUseContent) => tool.name)
-            .filter(Boolean)
-            .join(', ')
-          if (tools) {
-            toolInfo = `\n  [Tools used: ${tools}]`
+        if (msg.type === 'assistant' && isStructuredMessageContent(msg.content) && msg.content.toolUse) {
+          const toolName = msg.content.toolUse.name
+          if (toolName) {
+            toolInfo = `\n  [Tools used: ${toolName}]`
           }
         }
 

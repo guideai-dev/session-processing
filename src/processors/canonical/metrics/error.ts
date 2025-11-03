@@ -54,8 +54,8 @@ export class CanonicalErrorProcessor extends BaseMetricProcessor {
     const toolResults: ToolResultContent[] = []
 
     for (const message of session.messages) {
-      if (isStructuredMessageContent(message.content)) {
-        toolResults.push(...message.content.toolResults)
+      if (isStructuredMessageContent(message.content) && message.content.toolResult) {
+        toolResults.push(message.content.toolResult)
       }
     }
 

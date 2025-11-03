@@ -112,18 +112,12 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
           assistantTextParts.push(msg.content.text)
         }
 
-        // Extract thinking content
-        for (const block of msg.content.structured) {
-          if (isThinkingContent(block) && block.thinking) {
-            assistantTextParts.push(`[Thinking: ${block.thinking}]`)
-          }
-        }
+        // Note: StructuredMessageContent only has text/toolUse/toolResult
+        // Thinking content would appear in Array format (handled below)
 
-        // Extract tool uses
-        for (const toolUse of msg.content.toolUses) {
-          if (toolUse.name) {
-            toolNames.push(toolUse.name)
-          }
+        // Extract tool use (single item)
+        if (msg.content.toolUse && msg.content.toolUse.name) {
+          toolNames.push(msg.content.toolUse.name)
         }
       } else if (Array.isArray(msg.content)) {
         // Fallback: Extract from content array (for other providers)
@@ -145,11 +139,9 @@ Provide a clear, professional summary in 2-3 sentences. Always refer to the pers
 
     // Process tool_use messages
     for (const msg of toolUseMessages) {
-      if (isStructuredMessageContent(msg.content)) {
-        for (const toolUse of msg.content.toolUses) {
-          if (toolUse.name) {
-            toolNames.push(toolUse.name)
-          }
+      if (isStructuredMessageContent(msg.content) && msg.content.toolUse) {
+        if (msg.content.toolUse.name) {
+          toolNames.push(msg.content.toolUse.name)
         }
       } else if (Array.isArray(msg.content)) {
         for (const item of msg.content) {

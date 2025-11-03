@@ -175,26 +175,8 @@ export class CanonicalMessageProcessor extends BaseMessageProcessor {
       })
     }
 
-    // Handle Gemini assistant with thoughts
-    if (message.type === 'assistant' && metadata?.has_thoughts && metadata.gemini_thoughts) {
-      const thoughts = metadata.gemini_thoughts as GeminiThought[]
-      const thoughtCount = Array.isArray(thoughts) ? thoughts.length : 0
-
-      return createDisplayMetadata({
-        icon: 'GEM',
-        IconComponent: CpuChipIcon,
-        iconColor: 'text-primary',
-        title: 'Gemini',
-        borderColor: 'border-l-primary',
-        badge:
-          thoughtCount > 0
-            ? {
-                text: `${thoughtCount} thought${thoughtCount === 1 ? '' : 's'}`,
-                color: 'badge-primary',
-              }
-            : undefined,
-      })
-    }
+    // Note: Gemini thoughts are now split into separate messages by the parser,
+    // so they'll be handled by the base assistant case with isThinking: true
 
     // Handle thinking in assistant responses (Claude or Codex)
     if (message.type === 'assistant' && this.hasThinkingContent(message)) {
@@ -277,18 +259,8 @@ export class CanonicalMessageProcessor extends BaseMessageProcessor {
     const blocks: ContentBlock[] = []
     const metadata = message.metadata?.providerMetadata as ProviderMetadata | undefined
 
-    // Add Gemini thoughts first if present
-    if (message.type === 'assistant' && metadata?.has_thoughts && metadata.gemini_thoughts) {
-      const thoughts = metadata.gemini_thoughts as GeminiThought[]
-      if (Array.isArray(thoughts) && thoughts.length > 0) {
-        blocks.push(
-          createContentBlock('thinking', thoughts, {
-            collapsed: true,
-            thoughtCount: thoughts.length,
-          })
-        )
-      }
-    }
+    // Note: Gemini thoughts are now split into separate messages by the parser
+    // (with metadata.isThinking = true), so we don't process them here from metadata
 
     // Try to get content array from message (canonical format)
     const contentArray = this.extractContentArray(message)

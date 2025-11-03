@@ -123,289 +123,173 @@ export class CanonicalParser extends BaseParser {
 
   /**
    * Parse canonical message with structured content blocks
-   * Splits into separate messages for text, tool_use, and tool_result
+   *
+   * NOTE: In canonical format, messages are typically single-type.
+   * Exception: Gemini can have multiple thinking blocks in one message.
    */
   private parseStructuredMessage(canonical: CanonicalMessage, timestamp: Date): ParsedMessage[] {
     const blocks = canonical.message.content as CanonicalContentBlock[]
 
-    // Check for tool uses - assistant messages with tool_use blocks
-    const hasToolUses = blocks.some(block => block.type === 'tool_use')
-    if (canonical.type === 'assistant' && hasToolUses) {
-      return this.splitAssistantWithTools(canonical, blocks, timestamp)
+    if (blocks.length === 0) {
+      return []
     }
 
-    // Check for tool results - user messages with tool_result blocks
-    const hasToolResults = blocks.some(block => block.type === 'tool_result')
-    if (canonical.type === 'user' && hasToolResults) {
-      return this.parseToolResultsFromMessage(canonical, blocks, timestamp)
+    // Special case: Multiple thinking blocks (Gemini extended thinking)
+    // Create a separate message for each thinking block
+    if (blocks.length > 1 && blocks.every(b => b.type === 'thinking')) {
+      return blocks.map((block, index) =>
+        this.createThinkingMessage(canonical, block, timestamp, index)
+      ).filter((msg): msg is ParsedMessage => msg !== null)
     }
 
-    // Otherwise, create a single message with correct type
-    // Build structured content for the main message
-    const textBlocks: TextContent[] = []
-    const toolUses: ToolUseContent[] = []
-    const toolResults: ToolResultContent[] = []
+    // Standard case: Single content block
+    const block = blocks[0]
 
-    for (const block of blocks) {
-      if (block.type === 'text') {
-        textBlocks.push({
-          type: 'text' as const,
-          text: block.text,
-        })
-      } else if (block.type === 'tool_use') {
-        toolUses.push({
-          type: 'tool_use' as const,
-          id: block.id,
-          name: block.name,
-          input: block.input,
-        })
-      } else if (block.type === 'tool_result') {
-        // Defensive filtering: skip malformed tool_result blocks
-        // (missing required fields from Rust converter issues)
-        if (block.tool_use_id && block.content !== undefined && block.content !== '') {
-          toolResults.push({
-            type: 'tool_result' as const,
-            tool_use_id: block.tool_use_id,
-            content: block.content,
-            is_error: block.is_error,
-          })
-        }
+    // Build appropriate StructuredMessageContent based on block type
+    let structuredContent: StructuredMessageContent
+    let text: string | undefined
+    let toolUse: ToolUseContent | undefined
+    let toolResult: ToolResultContent | undefined
+    let isThinking = false
+
+    if (block.type === 'text') {
+      text = block.text
+      structuredContent = {
+        type: 'structured',
+        text: block.text,
       }
-    }
-
-    // Create main message with structured content
-    const text = textBlocks.map(t => t.text).join('\n')
-    const structuredContent: StructuredMessageContent = {
-      type: 'structured',
-      text,
-      toolUses,
-      toolResults,
-      structured: blocks
-        .filter(block => {
-          // Filter out malformed tool_result blocks
-          if (block.type === 'tool_result') {
-            return block.tool_use_id && block.content !== undefined && block.content !== ''
-          }
-          return true
-        })
-        .map(block => {
-          if (block.type === 'text') {
-            return { type: 'text' as const, text: block.text }
-          }
-          if (block.type === 'tool_use') {
-            return { type: 'tool_use' as const, id: block.id, name: block.name, input: block.input }
-          }
-          return {
-            type: 'tool_result' as const,
-            tool_use_id: block.tool_use_id,
-            content: block.content,
-            is_error: block.is_error,
-          }
-        }),
+    } else if (block.type === 'thinking') {
+      // Handle thinking blocks (Gemini extended thinking, Claude thinking)
+      text = block.thinking || ''
+      structuredContent = {
+        type: 'structured',
+        text,
+      }
+      isThinking = true
+    } else if (block.type === 'tool_use') {
+      toolUse = {
+        type: 'tool_use' as const,
+        id: block.id,
+        name: block.name,
+        input: block.input,
+      }
+      structuredContent = {
+        type: 'structured',
+        toolUse,
+      }
+    } else if (block.type === 'tool_result') {
+      // Defensive filtering: skip malformed tool_result blocks
+      if (!block.tool_use_id || block.content === undefined || block.content === '') {
+        return []
+      }
+      toolResult = {
+        type: 'tool_result' as const,
+        tool_use_id: block.tool_use_id,
+        content: block.content,
+        is_error: block.is_error,
+      }
+      structuredContent = {
+        type: 'structured',
+        toolResult,
+      }
+    } else {
+      // Unknown block type - skip
+      return []
     }
 
     // Determine correct message type
     const messageType = this.determineMessageType(canonical, blocks)
 
-    // Skip creating message if it has no displayable content
-    // (only tool blocks with no text - these should have been split already)
-    if (
-      !text.trim() &&
-      textBlocks.length === 0 &&
-      (toolUses.length > 0 || toolResults.length > 0)
-    ) {
-      // This shouldn't happen in well-formed canonical data, but handle defensively
-      return []
+    // Build metadata based on message type
+    const metadata: ParsedMessage['metadata'] = {
+      role: messageType === 'tool_use' || messageType === 'tool_result' ? 'tool' : canonical.message.role,
+      sessionId: canonical.sessionId,
+      provider: canonical.provider,
+      cwd: canonical.cwd,
+      gitBranch: canonical.gitBranch,
+      version: canonical.version,
+      model: canonical.message.model,
+      usage: canonical.message.usage,
+      providerMetadata: canonical.providerMetadata,
+      requestId: canonical.requestId,
+      isMeta: canonical.isMeta,
+      isSidechain: canonical.isSidechain,
+      userType: canonical.userType,
+      hasToolUses: toolUse !== undefined,
+      hasToolResults: toolResult !== undefined,
+      toolCount: toolUse !== undefined ? 1 : 0,
+      resultCount: toolResult !== undefined ? 1 : 0,
+      isThinking: isThinking, // Flag for UI to render as thinking block
     }
 
-    const mainMessage: ParsedMessage = {
+    // Add toolUseId for tool_use messages
+    if (toolUse) {
+      metadata.toolUseId = toolUse.id
+    }
+
+    const message: ParsedMessage = {
       id: canonical.uuid,
       timestamp,
-      type: messageType, // Now uses intelligent type detection
+      type: messageType,
       content: structuredContent,
-      metadata: {
-        role: canonical.message.role,
-        sessionId: canonical.sessionId,
-        provider: canonical.provider,
-        cwd: canonical.cwd,
-        gitBranch: canonical.gitBranch,
-        version: canonical.version,
-        model: canonical.message.model,
-        usage: canonical.message.usage,
-        providerMetadata: canonical.providerMetadata,
-        requestId: canonical.requestId,
-        isMeta: canonical.isMeta,
-        isSidechain: canonical.isSidechain,
-        userType: canonical.userType,
-        hasToolUses: toolUses.length > 0,
-        hasToolResults: toolResults.length > 0,
-        toolCount: toolUses.length,
-        resultCount: toolResults.length,
-      },
+      metadata,
       parentId: canonical.parentUuid,
     }
 
-    return [mainMessage]
-  }
-
-  /**
-   * Split assistant message with tool uses into separate messages
-   * Creates one assistant message for text content and separate tool_use messages
-   */
-  private splitAssistantWithTools(
-    canonical: CanonicalMessage,
-    blocks: CanonicalContentBlock[],
-    timestamp: Date
-  ): ParsedMessage[] {
-    const messages: ParsedMessage[] = []
-
-    // Separate content by type
-    const textBlocks = blocks.filter(block => block.type === 'text')
-    const toolUseBlocks = blocks.filter(block => block.type === 'tool_use')
-
-    const textContent = textBlocks
-      .map(block => block.text)
-      .join('\n')
-      .trim()
-
-    // Only create assistant message if there's actual text content
-    // Tool-only responses don't need a separate text message
-    if (textContent) {
-      messages.push({
-        id: canonical.uuid,
-        timestamp,
-        type: 'assistant',
-        content: textContent,
-        metadata: {
-          role: canonical.message.role,
-          sessionId: canonical.sessionId,
-          provider: canonical.provider,
-          cwd: canonical.cwd,
-          gitBranch: canonical.gitBranch,
-          version: canonical.version,
-          model: canonical.message.model,
-          usage: canonical.message.usage, // IMPORTANT: Preserve usage data
-          providerMetadata: canonical.providerMetadata,
-          requestId: canonical.requestId,
-          isMeta: canonical.isMeta,
-          isSidechain: canonical.isSidechain,
-          userType: canonical.userType,
-        },
-        parentId: canonical.parentUuid,
-      })
+    // Link tool results to their tool uses
+    if (toolResult) {
+      message.linkedTo = toolResult.tool_use_id
     }
 
-    // Create separate tool_use messages
-    for (const toolUseBlock of toolUseBlocks) {
-      const toolUse: ToolUseContent = {
-        type: 'tool_use' as const,
-        id: toolUseBlock.id,
-        name: toolUseBlock.name,
-        input: toolUseBlock.input,
-      }
+    return [message]
+  }
 
-      const structuredContent: StructuredMessageContent = {
-        type: 'structured',
-        text: '',
-        toolUses: [toolUse],
-        toolResults: [],
-        structured: [toolUse],
-      }
+  /**
+   * Create a message for a thinking block
+   */
+  private createThinkingMessage(
+    canonical: CanonicalMessage,
+    block: CanonicalContentBlock & { type: 'thinking' },
+    timestamp: Date,
+    index: number
+  ): ParsedMessage | null {
+    const text = block.thinking || ''
+    if (!text) return null // Skip empty thinking blocks
 
-      messages.push({
-        id: `${canonical.uuid}-tool-${toolUseBlock.id}`,
-        timestamp,
-        type: 'tool_use',
-        content: structuredContent,
-        metadata: {
-          role: 'tool',
-          sessionId: canonical.sessionId,
-          provider: canonical.provider,
-          toolUseId: toolUseBlock.id,
-          hasToolUses: true,
-          toolCount: 1,
-        },
-        parentId: canonical.uuid,
-      })
+    const structuredContent: StructuredMessageContent = {
+      type: 'structured',
+      text,
     }
 
-    return messages
-  }
+    const metadata: ParsedMessage['metadata'] = {
+      role: canonical.message.role,
+      sessionId: canonical.sessionId,
+      provider: canonical.provider,
+      cwd: canonical.cwd,
+      gitBranch: canonical.gitBranch,
+      version: canonical.version,
+      model: canonical.message.model,
+      usage: index === 0 ? canonical.message.usage : undefined, // Only first gets usage
+      providerMetadata: canonical.providerMetadata,
+      requestId: canonical.requestId,
+      isMeta: canonical.isMeta,
+      isSidechain: canonical.isSidechain,
+      userType: canonical.userType,
+      hasToolUses: false,
+      hasToolResults: false,
+      toolCount: 0,
+      resultCount: 0,
+      isThinking: true,
+    }
 
-  /**
-   * Type guard to check if a block is a valid tool_result
-   */
-  private isValidToolResultBlock(
-    block: CanonicalContentBlock
-  ): block is { type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean } {
-    return (
-      block.type === 'tool_result' &&
-      'tool_use_id' in block &&
-      'content' in block &&
-      block.tool_use_id !== '' &&
-      block.content !== undefined &&
-      block.content !== ''
-    )
-  }
-
-  /**
-   * Parse tool results from user message
-   * Extracts tool_result blocks as separate messages
-   */
-  private parseToolResultsFromMessage(
-    canonical: CanonicalMessage,
-    blocks: CanonicalContentBlock[],
-    timestamp: Date
-  ): ParsedMessage[] {
-    // Defensive filtering: skip malformed tool_result blocks
-    const toolResultBlocks = blocks.filter((block): block is {
-      type: 'tool_result'
-      tool_use_id: string
-      content: string
-      is_error?: boolean
-    } =>
-      block.type === 'tool_result' &&
-      'tool_use_id' in block &&
-      'content' in block &&
-      block.tool_use_id !== '' &&
-      block.content !== undefined &&
-      block.content !== ''
-    )
-
-    return toolResultBlocks.map(toolResultBlock => {
-      const toolResult: ToolResultContent = {
-        type: 'tool_result' as const,
-        tool_use_id: toolResultBlock.tool_use_id,
-        content: toolResultBlock.content,
-        is_error: toolResultBlock.is_error,
-      }
-
-      const structuredContent: StructuredMessageContent = {
-        type: 'structured',
-        text: '',
-        toolUses: [],
-        toolResults: [toolResult],
-        structured: [toolResult],
-      }
-
-      return {
-        id: `${canonical.uuid}-result-${toolResultBlock.tool_use_id}`,
-        timestamp,
-        type: 'tool_result',
-        content: structuredContent,
-        metadata: {
-          role: 'tool',
-          sessionId: canonical.sessionId,
-          provider: canonical.provider,
-          isSidechain: canonical.isSidechain,
-          hasToolResults: true,
-          resultCount: 1,
-          usage: canonical.message.usage, // IMPORTANT: Preserve usage data
-        },
-        parentId: canonical.parentUuid,
-        linkedTo: toolResultBlock.tool_use_id,
-      }
-    })
+    return {
+      id: `${canonical.uuid}-thinking-${index}`,
+      timestamp,
+      type: 'assistant',
+      content: structuredContent,
+      metadata,
+      parentId: canonical.parentUuid,
+    }
   }
 
   /**
@@ -441,6 +325,10 @@ export class CanonicalParser extends BaseParser {
     }
 
     if (canonical.type === 'assistant') {
+      // Check content blocks for tool uses
+      if (Array.isArray(content) && content.some(block => block.type === 'tool_use')) {
+        return 'tool_use'
+      }
       return 'assistant'
     }
 

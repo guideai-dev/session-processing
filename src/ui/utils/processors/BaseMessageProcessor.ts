@@ -189,14 +189,19 @@ export abstract class BaseMessageProcessor {
           borderColor: 'border-l-info',
         })
 
-      case 'assistant':
+      case 'assistant': {
+        // Check if this is a thinking message
+        const isThinking = message.metadata?.isThinking === true
+        const isGemini = message.metadata?.provider?.includes('gemini')
+
         return createDisplayMetadata({
-          icon: 'AST',
+          icon: isThinking ? '💭' : 'AST',
           IconComponent: CpuChipIcon,
-          iconColor: 'text-primary',
-          title: 'Assistant',
-          borderColor: 'border-l-primary',
+          iconColor: isThinking ? 'text-secondary' : 'text-primary',
+          title: isThinking ? (isGemini ? 'Extended Thinking' : 'Thinking') : 'Assistant',
+          borderColor: isThinking ? 'border-l-secondary' : 'border-l-primary',
         })
+      }
 
       case 'tool_use': {
         const toolName = this.getToolName(message) || 'Tool'
@@ -298,8 +303,8 @@ export abstract class BaseMessageProcessor {
     const content = message.content
 
     // Handle StructuredMessageContent from parsers
-    if (isStructuredMessageContent(content) && content.toolUses.length > 0) {
-      const toolUse = content.toolUses[0]
+    if (isStructuredMessageContent(content) && content.toolUse) {
+      const toolUse = content.toolUse
       return [
         createContentBlock(
           'tool_use',
@@ -333,8 +338,8 @@ export abstract class BaseMessageProcessor {
    */
   protected getToolResultBlocks(message: BaseSessionMessage): ContentBlock[] {
     // Handle StructuredMessageContent from parsers
-    if (isStructuredMessageContent(message.content) && message.content.toolResults.length > 0) {
-      const toolResult = message.content.toolResults[0]
+    if (isStructuredMessageContent(message.content) && message.content.toolResult) {
+      const toolResult = message.content.toolResult
       const resultContent = toolResult.content as
         | string
         | Array<string | Record<string, unknown>>
@@ -506,6 +511,8 @@ export abstract class BaseMessageProcessor {
     ) {
       // StructuredMessageContent has a text field (even if empty)
       // Only show text if it's not empty
+      // Note: text blocks are expanded by default (no collapsed flag)
+      // This includes thinking blocks which will be marked via metadata.isThinking
       if (message.content.text) {
         blocks.push(createContentBlock('text', message.content.text))
       }
@@ -534,8 +541,8 @@ export abstract class BaseMessageProcessor {
    */
   protected getToolName(message: BaseSessionMessage): string | null {
     // Handle StructuredMessageContent from parsers
-    if (isStructuredMessageContent(message.content) && message.content.toolUses.length > 0) {
-      return message.content.toolUses[0].name
+    if (isStructuredMessageContent(message.content) && message.content.toolUse) {
+      return message.content.toolUse.name
     }
 
     // Fallback to legacy format
@@ -547,8 +554,8 @@ export abstract class BaseMessageProcessor {
    */
   protected extractToolUseId(message: BaseSessionMessage): string | null {
     // Handle StructuredMessageContent from parsers
-    if (isStructuredMessageContent(message.content) && message.content.toolUses.length > 0) {
-      return message.content.toolUses[0].id
+    if (isStructuredMessageContent(message.content) && message.content.toolUse) {
+      return message.content.toolUse.id
     }
 
     // Try multiple locations where tool use ID might be (legacy format)
@@ -562,8 +569,8 @@ export abstract class BaseMessageProcessor {
    */
   protected extractToolResultId(message: BaseSessionMessage): string | null {
     // Handle StructuredMessageContent from parsers
-    if (isStructuredMessageContent(message.content) && message.content.toolResults.length > 0) {
-      return message.content.toolResults[0].tool_use_id
+    if (isStructuredMessageContent(message.content) && message.content.toolResult) {
+      return message.content.toolResult.tool_use_id
     }
 
     // Try multiple locations where tool result ID might be (legacy format)
