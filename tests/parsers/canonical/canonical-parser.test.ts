@@ -112,7 +112,7 @@ describe('CanonicalParser', () => {
       })
     })
 
-    it('should parse structured message with text and tool blocks', () => {
+    it('should parse message with single text block', () => {
       const rawMessage = {
         uuid: 'msg-3',
         timestamp: '2025-10-01T00:00:02Z',
@@ -121,8 +121,31 @@ describe('CanonicalParser', () => {
         provider: 'claude-code',
         message: {
           role: 'assistant',
+          content: [{ type: 'text', text: 'Let me help with that.' }],
+        },
+      }
+
+      const result = parser.parseMessage(rawMessage)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].type).toBe('assistant')
+      expect(result[0].id).toBe('msg-3')
+      expect(result[0].content).toMatchObject({
+        type: 'structured',
+        text: 'Let me help with that.',
+      })
+    })
+
+    it('should parse message with single tool_use block', () => {
+      const rawMessage = {
+        uuid: 'msg-3-tool',
+        timestamp: '2025-10-01T00:00:03Z',
+        type: 'assistant',
+        sessionId: 'session-1',
+        provider: 'claude-code',
+        message: {
+          role: 'assistant',
           content: [
-            { type: 'text', text: 'Let me help with that.' },
             { type: 'tool_use', id: 'tool-1', name: 'Read', input: { file_path: '/test.ts' } },
           ],
         },
@@ -130,29 +153,18 @@ describe('CanonicalParser', () => {
 
       const result = parser.parseMessage(rawMessage)
 
-      // Should split into 2 messages: assistant text + tool_use
-      expect(result).toHaveLength(2)
-
-      // First message: assistant with text
-      expect(result[0].type).toBe('assistant')
-      expect(result[0].id).toBe('msg-3')
-      expect(result[0].content).toBe('Let me help with that.')
-
-      // Second message: tool_use
-      expect(result[1].type).toBe('tool_use')
-      expect(result[1].id).toBe('msg-3-tool-tool-1')
-      expect(result[1].content).toMatchObject({
+      expect(result).toHaveLength(1)
+      expect(result[0].type).toBe('tool_use')
+      expect(result[0].id).toBe('msg-3-tool')
+      expect(result[0].content).toMatchObject({
         type: 'structured',
-        toolUses: [
-          {
-            type: 'tool_use',
-            id: 'tool-1',
-            name: 'Read',
-            input: { file_path: '/test.ts' },
-          },
-        ],
+        toolUse: {
+          type: 'tool_use',
+          id: 'tool-1',
+          name: 'Read',
+          input: { file_path: '/test.ts' },
+        },
       })
-      expect(result[1].parentId).toBe('msg-3')
     })
 
     it('should parse message with tool_result block', () => {
@@ -180,18 +192,187 @@ describe('CanonicalParser', () => {
       expect(result).toHaveLength(1)
       // Should have type 'tool_result', not 'user'
       expect(result[0].type).toBe('tool_result')
-      expect(result[0].id).toBe('msg-4-result-tool-1')
+      // Canonical format preserves original ID
+      expect(result[0].id).toBe('msg-4')
       expect(result[0].linkedTo).toBe('tool-1')
+      // Uses singular toolResult property
       expect(result[0].content).toMatchObject({
         type: 'structured',
-        toolResults: [
-          {
-            type: 'tool_result',
-            tool_use_id: 'tool-1',
-            content: 'File content here',
-            is_error: false,
+        toolResult: {
+          type: 'tool_result',
+          tool_use_id: 'tool-1',
+          content: 'File content here',
+          is_error: false,
+        },
+      })
+    })
+
+    it('should parse error tool_result block', () => {
+      const rawMessage = {
+        uuid: 'msg-error',
+        timestamp: '2025-10-01T00:00:04Z',
+        type: 'user',
+        sessionId: 'session-1',
+        provider: 'claude-code',
+        message: {
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'tool-2',
+              content: 'Error: File not found',
+              is_error: true,
+            },
+          ],
+        },
+      }
+
+      const result = parser.parseMessage(rawMessage)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].type).toBe('tool_result')
+      expect(result[0].content).toMatchObject({
+        type: 'structured',
+        toolResult: {
+          type: 'tool_result',
+          tool_use_id: 'tool-2',
+          content: 'Error: File not found',
+          is_error: true,
+        },
+      })
+    })
+
+    it('should parse tool_use with complex nested input', () => {
+      const rawMessage = {
+        uuid: 'msg-complex',
+        timestamp: '2025-10-01T00:00:05Z',
+        type: 'assistant',
+        sessionId: 'session-1',
+        provider: 'claude-code',
+        message: {
+          role: 'assistant',
+          content: [
+            {
+              type: 'tool_use',
+              id: 'tool-complex',
+              name: 'Grep',
+              input: {
+                pattern: 'function.*test',
+                path: '/src',
+                glob: '**/*.ts',
+                options: { recursive: true, ignoreCase: false },
+              },
+            },
+          ],
+        },
+      }
+
+      const result = parser.parseMessage(rawMessage)
+
+      expect(result).toHaveLength(1)
+      expect(result[0].type).toBe('tool_use')
+      expect(result[0].content).toMatchObject({
+        type: 'structured',
+        toolUse: {
+          type: 'tool_use',
+          id: 'tool-complex',
+          name: 'Grep',
+          input: {
+            pattern: 'function.*test',
+            path: '/src',
+            glob: '**/*.ts',
+            options: { recursive: true, ignoreCase: false },
           },
-        ],
+        },
+      })
+    })
+
+    it('should parse thinking block message', () => {
+      const rawMessage = {
+        uuid: 'msg-thinking',
+        timestamp: '2025-10-01T00:00:06Z',
+        type: 'assistant',
+        sessionId: 'session-1',
+        provider: 'claude-code',
+        message: {
+          role: 'assistant',
+          content: [
+            {
+              type: 'thinking',
+              thinking: 'I need to analyze the user request and determine the best approach...',
+            },
+          ],
+        },
+      }
+
+      const result = parser.parseMessage(rawMessage)
+
+      expect(result).toHaveLength(1)
+      // Thinking blocks have type 'assistant' with isThinking flag in metadata
+      expect(result[0].type).toBe('assistant')
+      expect(result[0].metadata.isThinking).toBe(true)
+      expect(result[0].content).toMatchObject({
+        type: 'structured',
+        text: 'I need to analyze the user request and determine the best approach...',
+      })
+    })
+
+    it('should parse Gemini extended thinking (multiple thinking blocks)', () => {
+      // This is the exception to single-block rule - Gemini can have multiple thinking blocks
+      // Each block becomes a separate message
+      const rawMessage = {
+        uuid: 'msg-gemini-thinking',
+        timestamp: '2025-10-01T00:00:07Z',
+        type: 'assistant',
+        sessionId: 'session-1',
+        provider: 'gemini-code',
+        message: {
+          role: 'assistant',
+          content: [
+            {
+              type: 'thinking',
+              thinking: 'First, I need to understand the codebase structure...',
+            },
+            {
+              type: 'thinking',
+              thinking: 'Next, I should identify the relevant files...',
+            },
+            {
+              type: 'thinking',
+              thinking: 'Finally, I can formulate a plan...',
+            },
+          ],
+        },
+      }
+
+      const result = parser.parseMessage(rawMessage)
+
+      // Multiple thinking blocks create separate messages
+      expect(result).toHaveLength(3)
+
+      // Each message is type 'assistant' with isThinking flag
+      expect(result[0].type).toBe('assistant')
+      expect(result[0].metadata.isThinking).toBe(true)
+      expect(result[0].id).toBe('msg-gemini-thinking-thinking-0')
+      expect(result[0].content).toMatchObject({
+        type: 'structured',
+        text: 'First, I need to understand the codebase structure...',
+      })
+
+      expect(result[1].type).toBe('assistant')
+      expect(result[1].metadata.isThinking).toBe(true)
+      expect(result[1].id).toBe('msg-gemini-thinking-thinking-1')
+      expect(result[1].content).toMatchObject({
+        type: 'structured',
+        text: 'Next, I should identify the relevant files...',
+      })
+
+      expect(result[2].type).toBe('assistant')
+      expect(result[2].metadata.isThinking).toBe(true)
+      expect(result[2].id).toBe('msg-gemini-thinking-thinking-2')
+      expect(result[2].content).toMatchObject({
+        type: 'structured',
+        text: 'Finally, I can formulate a plan...',
       })
     })
 
