@@ -1,11 +1,13 @@
 /**
  * MetricCard - Displays a single metric with formatting
  *
- * NOTE: This component imports formatDuration, formatPercentage, and getMetricColor
- * from useSessionMetrics hook. These should be extracted to utility functions.
+ * Uses per-metric threshold configuration for color coding.
+ * See metricThresholds.ts for configuration.
  */
 
-// TODO: Extract these utilities from the hooks file
+import { getMetricColor as getColorFromThresholds } from './metricThresholds.js'
+
+// Utility functions
 function formatDuration(value: number): string {
   if (value < 1000) return `${value}ms`
   if (value < 60000) return `${(value / 1000).toFixed(1)}s`
@@ -17,20 +19,6 @@ function formatPercentage(value: number): string {
   return `${value.toFixed(1)}%`
 }
 
-function getMetricColor(value: number, type: 'percentage' | 'time' | 'score'): string {
-  if (type === 'percentage' || type === 'score') {
-    if (value >= 80) return 'text-success'
-    if (value >= 60) return 'text-warning'
-    return 'text-error'
-  }
-  if (type === 'time') {
-    if (value < 1000) return 'text-success'
-    if (value < 5000) return 'text-warning'
-    return 'text-error'
-  }
-  return 'text-base-content'
-}
-
 interface MetricCardProps {
   label: string
   value: string | number | boolean | null | undefined | unknown[] | Record<string, unknown>
@@ -39,6 +27,8 @@ interface MetricCardProps {
   type?: 'number' | 'percentage' | 'duration' | 'array' | 'object' | 'string'
   tooltip?: string
   size?: 'sm' | 'md' | 'lg'
+  /** Metric identifier for threshold lookup (e.g., 'read-write-ratio', 'response-latency') */
+  metricId?: string
 }
 
 export function MetricCard({
@@ -49,6 +39,7 @@ export function MetricCard({
   type = 'number',
   tooltip,
   size = 'md',
+  metricId,
 }: MetricCardProps) {
   const formatValue = () => {
     if (value === null || value === undefined) return 'N/A'
@@ -76,16 +67,23 @@ export function MetricCard({
   }
 
   const getValueColor = () => {
-    if (type === 'percentage' && typeof value === 'number') {
-      return getMetricColor(value, 'percentage')
+    if (typeof value !== 'number') {
+      return 'text-base-content'
     }
-    if (type === 'duration' && typeof value === 'number') {
-      return getMetricColor(value, 'time')
+
+    // Only apply threshold types when a metricId is provided
+    // This ensures metrics without explicit configuration remain neutral
+    let thresholdType: 'percentage' | 'time' | 'score' | 'number' | undefined
+    if (metricId) {
+      if (type === 'percentage' || type === 'duration') {
+        thresholdType = type === 'duration' ? 'time' : 'percentage'
+      } else if (type === 'number' && value >= 0 && value <= 100) {
+        thresholdType = 'score'
+      }
     }
-    if (type === 'number' && typeof value === 'number' && value >= 0 && value <= 100) {
-      return getMetricColor(value, 'score')
-    }
-    return 'text-base-content'
+
+    // Use the new threshold system with metric ID
+    return getColorFromThresholds(value, metricId, thresholdType)
   }
 
   const cardSizeClasses = {

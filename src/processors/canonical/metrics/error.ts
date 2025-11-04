@@ -23,7 +23,7 @@ export class CanonicalErrorProcessor extends BaseMetricProcessor {
       return {
         error_count: 0,
         error_types: [],
-        last_error_message: undefined,
+        last_error_message: '',
         recovery_attempts: 0,
         fatal_errors: 0,
       }
@@ -38,7 +38,7 @@ export class CanonicalErrorProcessor extends BaseMetricProcessor {
     return {
       error_count: errors.length,
       error_types: Array.from(new Set(errorTypes)),
-      last_error_message: errors.length > 0 ? errors[errors.length - 1].message : undefined,
+      last_error_message: '', // Kept for backwards compatibility, not displayed
       recovery_attempts: recoveryAttempts,
       fatal_errors: fatalErrors,
       metadata: {

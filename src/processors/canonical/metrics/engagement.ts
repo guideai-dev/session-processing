@@ -21,6 +21,7 @@ export class CanonicalEngagementProcessor extends BaseMetricProcessor {
     if (userMessages.length === 0 || assistantMessages.length === 0) {
       return {
         interruption_rate: 0,
+        total_interruptions: 0,
         session_length_minutes: 0,
       }
     }
@@ -34,9 +35,9 @@ export class CanonicalEngagementProcessor extends BaseMetricProcessor {
 
     return {
       interruption_rate: interruptionRate,
+      total_interruptions: interruptions.length,
       session_length_minutes: sessionLengthMinutes,
       metadata: {
-        total_interruptions: interruptions.length,
         total_responses: assistantMessages.length,
         improvement_tips: this.generateImprovementTips(interruptionRate, sessionLengthMinutes),
       },
@@ -46,23 +47,38 @@ export class CanonicalEngagementProcessor extends BaseMetricProcessor {
   /**
    * Find interruption messages
    * An interruption is when:
-   * 1. User sends consecutive messages (without assistant response in between)
-   * 2. User message contains interruption keywords (stop, wait, actually, no)
+   * 1. Message has canonical type 'interruption'
+   * 2. User sends consecutive messages (without assistant response in between)
+   * 3. User message contains interruption keywords (stop, wait, actually, no)
    */
   private findInterruptions(messages: ParsedMessage[]): ParsedMessage[] {
     const interruptions: ParsedMessage[] = []
+    const interruptionIds = new Set<string>() // Prevent duplicates
 
     for (let i = 1; i < messages.length; i++) {
       const current = messages[i]
       const previous = messages[i - 1]
 
-      // Type 1: Consecutive user messages
-      if (current.type === 'user' && previous.type === 'user') {
-        interruptions.push(current)
+      // Skip if already marked as interruption
+      if (interruptionIds.has(current.id)) {
         continue
       }
 
-      // Type 2: User message with interruption keywords
+      // Type 1: Canonical interruption message type
+      if (current.type === 'interruption') {
+        interruptions.push(current)
+        interruptionIds.add(current.id)
+        continue
+      }
+
+      // Type 2: Consecutive user messages
+      if (current.type === 'user' && previous.type === 'user') {
+        interruptions.push(current)
+        interruptionIds.add(current.id)
+        continue
+      }
+
+      // Type 3: User message with interruption keywords
       if (current.type === 'user') {
         const content = this.extractTextContent(current).toLowerCase()
         const hasInterruptionKeyword =
@@ -74,6 +90,7 @@ export class CanonicalEngagementProcessor extends BaseMetricProcessor {
 
         if (hasInterruptionKeyword) {
           interruptions.push(current)
+          interruptionIds.add(current.id)
         }
       }
     }

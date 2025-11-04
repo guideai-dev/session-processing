@@ -6,7 +6,7 @@ interface MetricSectionProps {
   title: string
   subtitle?: string
   children: React.ReactNode
-  icon?: string
+  icon?: React.ReactNode
 }
 
 export function MetricSection({ title, subtitle, children, icon }: MetricSectionProps) {
@@ -14,7 +14,7 @@ export function MetricSection({ title, subtitle, children, icon }: MetricSection
     <div className="card bg-base-200 shadow-sm border border-base-300">
       <div className="card-body">
         <div className="flex items-center gap-3">
-          {icon && <span className="text-xl">{icon}</span>}
+          {icon && <div className="w-5 h-5 text-base-content/70">{icon}</div>}
           <div>
             <h3 className="card-title text-lg">{title}</h3>
             {subtitle && <p className="text-sm text-base-content/70 mt-1">{subtitle}</p>}

@@ -35,6 +35,10 @@ export class CanonicalUsageProcessor extends BaseMetricProcessor {
     // Calculate total lines read
     const totalLinesRead = this.calculateLinesRead(toolUses, toolResults)
 
+    // Interpret Read/Write ratio (lower is better - AI knows where to go)
+    const ratioQuality =
+      readWriteRatio <= 2 ? 'excellent' : readWriteRatio <= 5 ? 'acceptable' : 'poor'
+
     return {
       read_write_ratio: readWriteRatio,
       input_clarity_score: inputClarityScore,
@@ -43,6 +47,7 @@ export class CanonicalUsageProcessor extends BaseMetricProcessor {
         write_operations: writeCount,
         total_user_messages: userMessages.length,
         total_lines_read: totalLinesRead,
+        ratio_quality: ratioQuality, // 'excellent' | 'acceptable' | 'poor' (lower ratio is better)
         improvement_tips: this.generateImprovementTips(readWriteRatio, inputClarityScore),
       },
     }
@@ -96,9 +101,18 @@ export class CanonicalUsageProcessor extends BaseMetricProcessor {
       const technicalTerms = this.countTechnicalTerms(content)
       const codeSnippets = this.countCodeSnippets(content)
       const fileReferences = this.countFileReferences(content)
+      const specificityMarkers = this.countSpecificityMarkers(content)
+      const atReferences = this.countAtReferences(content)
+      const imageAttachments = this.countImageAttachments(message)
 
-      // Weighted score
-      const messageScore = technicalTerms + codeSnippets * 2 + fileReferences
+      // Weighted score (reduced code snippet bias from ×2 to ×1.5)
+      const messageScore =
+        technicalTerms +
+        codeSnippets * 1.5 +
+        fileReferences +
+        specificityMarkers * 2 +
+        atReferences * 2 +
+        imageAttachments * 3
       totalScore += messageScore
     }
 
@@ -127,38 +141,85 @@ export class CanonicalUsageProcessor extends BaseMetricProcessor {
    */
   private countTechnicalTerms(content: string): number {
     const technicalKeywords = [
+      // Programming concepts
       'function',
       'variable',
       'class',
       'method',
       'api',
-      'database',
-      'query',
-      'component',
       'interface',
       'type',
       'import',
       'export',
       'async',
       'await',
+      'const',
+      'let',
+      'enum',
+      'struct',
+      'trait',
+      // Languages & frameworks
       'typescript',
       'javascript',
+      'python',
+      'rust',
+      'go',
+      'java',
       'react',
+      'vue',
+      'svelte',
+      'angular',
+      'next.js',
+      'nextjs',
+      'astro',
       'node',
-      'npm',
-      'pnpm',
-      'package',
+      'deno',
+      'bun',
+      // Database & backend
+      'database',
+      'query',
       'schema',
       'table',
       'column',
       'index',
       'migration',
+      'sql',
+      'postgres',
+      'postgresql',
+      'mongodb',
+      'redis',
+      'drizzle',
+      'prisma',
+      // Frontend & styling
+      'component',
+      'tailwind',
+      'css',
+      'html',
+      'dom',
+      'jsx',
+      'tsx',
+      // Tools & packages
+      'npm',
+      'pnpm',
+      'yarn',
+      'package',
       'build',
       'test',
       'lint',
       'format',
+      'webpack',
+      'vite',
+      'esbuild',
+      // Architecture
       'server',
       'client',
+      'endpoint',
+      'route',
+      'middleware',
+      'hook',
+      'provider',
+      'context',
+      'state',
     ]
 
     const contentLower = content.toLowerCase()
@@ -185,6 +246,74 @@ export class CanonicalUsageProcessor extends BaseMetricProcessor {
     const paths = (content.match(pathPatterns) || []).length
 
     return extensions + paths
+  }
+
+  /**
+   * Count specificity markers: line numbers, function names, concrete examples
+   */
+  private countSpecificityMarkers(content: string): number {
+    let count = 0
+
+    // Line number references (e.g., "file.ts:123", "line 45")
+    const lineNumberPatterns = [
+      /:\d+/g, // file.ts:123
+      /line\s+\d+/gi, // line 45
+      /lines?\s+\d+-\d+/gi, // lines 10-20
+    ]
+    for (const pattern of lineNumberPatterns) {
+      count += (content.match(pattern) || []).length
+    }
+
+    // Function/method references (e.g., "calculateTotal()", "UserService.login")
+    const functionPatterns = [
+      /\w+\(\)/g, // functionName()
+      /\w+\.\w+\(/g, // object.method(
+    ]
+    for (const pattern of functionPatterns) {
+      count += (content.match(pattern) || []).length
+    }
+
+    // Specific identifiers in camelCase or PascalCase
+    const identifierPattern = /\b[A-Z][a-z]+([A-Z][a-z]+)+\b/g // PascalCase
+    count += (content.match(identifierPattern) || []).length
+
+    return count
+  }
+
+  /**
+   * Count @ file references (e.g., @src/file.ts, @components/Button.tsx)
+   */
+  private countAtReferences(content: string): number {
+    const atReferencePattern = /@[\w\-\.\/]+/g
+    return (content.match(atReferencePattern) || []).length
+  }
+
+  /**
+   * Count image attachments in message
+   */
+  private countImageAttachments(message: ParsedMessage): number {
+    let count = 0
+
+    // Check for image content blocks in array content
+    if (typeof message.content !== 'string' && Array.isArray(message.content)) {
+      count += message.content.filter((block: any) => block.type === 'image').length
+    }
+
+    // Check metadata for image attachments
+    if (message.metadata?.attachments) {
+      const attachments = Array.isArray(message.metadata.attachments)
+        ? message.metadata.attachments
+        : [message.metadata.attachments]
+
+      count += attachments.filter((att: any) => {
+        if (typeof att === 'string') {
+          return att.toLowerCase().match(/\.(png|jpg|jpeg|gif|webp|svg)$/i)
+        }
+        return att?.type?.startsWith('image/')
+      }).length
+    }
+
+    return count
   }
 
   /**
