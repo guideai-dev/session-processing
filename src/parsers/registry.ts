@@ -27,6 +27,7 @@ export class ParserRegistry {
       'copilot',
       'codex',
       'opencode',
+      'cursor',
     ]
 
     for (const alias of providerAliases) {
