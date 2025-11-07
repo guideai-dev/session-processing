@@ -26,6 +26,7 @@ class MessageProcessorRegistry {
     this.processors.set('codex', this.canonicalProcessor)
     this.processors.set('github-copilot', this.canonicalProcessor)
     this.processors.set('opencode', this.canonicalProcessor)
+    this.processors.set('cursor', this.canonicalProcessor)
     this.processors.set('canonical', this.canonicalProcessor)
 
     // Keep generic processor as fallback

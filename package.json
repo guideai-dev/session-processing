@@ -35,6 +35,11 @@
       "types": "./dist/esm/ui/index.d.ts",
       "import": "./dist/esm/ui/index.js",
       "require": "./dist/cjs/ui/index.js"
+    },
+    "./validation": {
+      "types": "./dist/esm/validation/index.d.ts",
+      "import": "./dist/esm/validation/index.js",
+      "require": "./dist/cjs/validation/index.js"
     }
   },
   "files": [

@@ -27,6 +27,9 @@ export {
 // Export AI models
 export * from './ai-models/index.js'
 
+// Export validation
+export * from './validation/index.js'
+
 // Export UI (re-exports parserRegistry, but that's okay)
 export * from './ui/index.js'
 

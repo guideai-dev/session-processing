@@ -1,6 +1,7 @@
 import type { BaseProviderProcessor } from './base/index.js'
 import { ClaudeCodeProcessor } from './providers/claude-code/index.js'
 import { CodexProcessor } from './providers/codex/index.js'
+import { CursorProcessor } from './providers/cursor/index.js'
 import { GeminiProcessor } from './providers/gemini/index.js'
 import { GitHubCopilotProcessor } from './providers/github-copilot/index.js'
 import { OpenCodeProcessor } from './providers/opencode/index.js'
@@ -42,6 +43,7 @@ export class ProcessorRegistry {
     this.register(new ClaudeCodeProcessor())
     this.register(new GitHubCopilotProcessor())
     this.register(new CodexProcessor())
+    this.register(new CursorProcessor())
     this.register(new OpenCodeProcessor())
     this.register(new GeminiProcessor())
   }
