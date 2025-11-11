@@ -28,6 +28,7 @@ export class GeminiModelAdapter extends BaseModelAdapter {
       maxOutputTokens: config.maxTokens || 8192,
       temperature: config.temperature ?? 1.0,
       timeout: config.timeout,
+      fetch: config.fetch,
     })
   }
 

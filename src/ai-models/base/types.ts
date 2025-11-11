@@ -70,6 +70,7 @@ export interface ModelAdapterConfig {
   maxTokens?: number
   temperature?: number
   timeout?: number
+  fetch?: typeof fetch
 }
 
 /**

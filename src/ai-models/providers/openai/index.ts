@@ -6,25 +6,25 @@ import type {
   ModelTaskContext,
   ModelTaskResult,
 } from '../../base/types.js'
-import { ClaudeAPIClient } from './client.js'
+import { OpenAIAPIClient } from './client.js'
 
 /**
- * Claude Model Adapter
- * Integrates Anthropic's Claude API for AI processing tasks
+ * OpenAI Model Adapter
+ * Integrates OpenAI's GPT models for AI processing tasks
  */
-export class ClaudeModelAdapter extends BaseModelAdapter {
-  readonly name = 'claude'
-  readonly description = 'Anthropic Claude API adapter for AI model tasks'
+export class OpenAIModelAdapter extends BaseModelAdapter {
+  readonly name = 'openai'
+  readonly description = 'OpenAI GPT API adapter for AI model tasks'
 
-  private client: ClaudeAPIClient
+  private client: OpenAIAPIClient
   private tasks: BaseModelTask[] = []
 
   constructor(config: ModelAdapterConfig) {
     super(config)
 
-    this.client = new ClaudeAPIClient({
+    this.client = new OpenAIAPIClient({
       apiKey: config.apiKey,
-      model: config.model || 'claude-3-5-sonnet-20241022',
+      model: config.model || 'gpt-4o-mini',
       maxTokens: config.maxTokens || 4096,
       temperature: config.temperature ?? 1.0,
       timeout: config.timeout,
@@ -47,7 +47,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
   }
 
   /**
-   * Execute a task using Claude
+   * Execute a task using OpenAI
    */
   async executeTask(task: BaseModelTask, context: ModelTaskContext): Promise<ModelTaskResult> {
     const startTime = Date.now()
@@ -103,7 +103,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
         success: true,
         output,
         metadata: {
-          modelUsed: this.config.model || 'claude-3-5-sonnet-20241022',
+          modelUsed: this.config.model || 'gpt-4o-mini',
           tokensUsed,
           processingTime,
           cost,
@@ -119,7 +119,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
         success: false,
         output: null,
         metadata: {
-          modelUsed: this.config.model || 'claude-3-5-sonnet-20241022',
+          modelUsed: this.config.model || 'gpt-4o-mini',
           processingTime,
           error: error instanceof Error ? error.message : 'Unknown error',
         },
@@ -128,7 +128,7 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
   }
 
   /**
-   * Health check using Claude API
+   * Health check using OpenAI API
    */
   async healthCheck(): Promise<ModelHealthCheck> {
     // First check config
@@ -152,18 +152,18 @@ export class ClaudeModelAdapter extends BaseModelAdapter {
   }
 
   /**
-   * Calculate cost for Claude API usage
-   * Based on Claude 3.5 Sonnet pricing (as of 2024)
-   * Input: $3 per million tokens
-   * Output: $15 per million tokens
+   * Calculate cost for OpenAI API usage
+   * Based on GPT-4o-mini pricing (as of 2024)
+   * Input: $0.15 per million tokens
+   * Output: $0.60 per million tokens
    */
   protected calculateCost(tokensUsed: number): number {
     // Rough estimate: assume 50/50 split between input and output
     const inputTokens = Math.floor(tokensUsed * 0.5)
     const outputTokens = Math.ceil(tokensUsed * 0.5)
 
-    const inputCost = (inputTokens / 1_000_000) * 3.0
-    const outputCost = (outputTokens / 1_000_000) * 15.0
+    const inputCost = (inputTokens / 1_000_000) * 0.15
+    const outputCost = (outputTokens / 1_000_000) * 0.6
 
     return inputCost + outputCost
   }

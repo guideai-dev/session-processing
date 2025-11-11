@@ -1,56 +1,54 @@
 /**
- * Claude API Client
- * Wrapper for Anthropic's Claude API
+ * OpenAI API Client
+ * Wrapper for OpenAI's Chat Completions API
  */
 
-import type { ContentBlock } from '@guideai-dev/types'
-
-/**
- * Tool definition for Claude API
- */
-export interface ClaudeTool {
-  name: string
-  description: string
-  input_schema: Record<string, unknown>
+export interface OpenAIMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
 }
 
-/**
- * Tool choice configuration
- */
-export type ClaudeToolChoice = { type: 'auto' } | { type: 'any' } | { type: 'tool'; name: string }
-
-export interface ClaudeMessage {
-  role: 'user' | 'assistant'
-  content: string | ContentBlock[]
-}
-
-export interface ClaudeRequest {
+export interface OpenAIRequest {
   model: string
-  max_tokens: number
-  messages: ClaudeMessage[]
+  messages: OpenAIMessage[]
   temperature?: number
-  system?: string
-  tools?: ClaudeTool[]
-  tool_choice?: ClaudeToolChoice
+  max_tokens?: number
+  response_format?: { type: 'json_object' | 'text' }
 }
 
-export interface ClaudeResponse {
+export interface OpenAIResponse {
   id: string
-  type: 'message'
-  role: 'assistant'
-  content: Array<{
-    type: 'text'
-    text: string
-  }>
+  object: 'chat.completion'
+  created: number
   model: string
-  stop_reason: string
+  choices: Array<{
+    index: number
+    message: {
+      role: 'assistant'
+      content: string
+    }
+    finish_reason: string
+  }>
   usage: {
-    input_tokens: number
-    output_tokens: number
+    prompt_tokens: number
+    completion_tokens: number
+    total_tokens: number
   }
 }
 
-export interface ClaudeClientConfig {
+export interface OpenAIModel {
+  id: string
+  object: 'model'
+  created: number
+  owned_by: string
+}
+
+export interface OpenAIModelsResponse {
+  object: 'list'
+  data: OpenAIModel[]
+}
+
+export interface OpenAIClientConfig {
   apiKey: string
   model?: string
   maxTokens?: number
@@ -59,18 +57,18 @@ export interface ClaudeClientConfig {
   fetch?: typeof fetch
 }
 
-export class ClaudeAPIClient {
+export class OpenAIAPIClient {
   private apiKey: string
-  private baseUrl = 'https://api.anthropic.com/v1'
+  private baseUrl = 'https://api.openai.com/v1'
   private defaultModel: string
   private defaultMaxTokens: number
   private defaultTemperature: number
   private timeout: number
   private fetchFn: typeof fetch
 
-  constructor(config: ClaudeClientConfig) {
+  constructor(config: OpenAIClientConfig) {
     this.apiKey = config.apiKey
-    this.defaultModel = config.model || 'claude-3-5-sonnet-20241022'
+    this.defaultModel = config.model || 'gpt-4o-mini'
     this.defaultMaxTokens = config.maxTokens || 4096
     this.defaultTemperature = config.temperature ?? 1.0
     this.timeout = config.timeout || 60000 // 60 seconds
@@ -78,27 +76,29 @@ export class ClaudeAPIClient {
   }
 
   /**
-   * Send a message to Claude and get a response
+   * Send messages to OpenAI and get a response
    */
-  async sendMessage(
-    messages: ClaudeMessage[],
+  async chat(
+    messages: OpenAIMessage[],
     options?: {
       model?: string
       maxTokens?: number
       temperature?: number
-      system?: string
+      responseFormat?: 'json_object' | 'text'
     }
-  ): Promise<ClaudeResponse> {
-    const request: ClaudeRequest = {
+  ): Promise<OpenAIResponse> {
+    const request: OpenAIRequest = {
       model: options?.model || this.defaultModel,
-      max_tokens: options?.maxTokens || this.defaultMaxTokens,
       messages,
       temperature: options?.temperature ?? this.defaultTemperature,
-      ...(options?.system && { system: options.system }),
+      max_tokens: options?.maxTokens || this.defaultMaxTokens,
+      ...(options?.responseFormat && {
+        response_format: { type: options.responseFormat },
+      }),
     }
 
-    const response = await this.makeRequest('/messages', request)
-    return response as ClaudeResponse
+    const response = await this.makeRequest('/chat/completions', request)
+    return response as OpenAIResponse
   }
 
   /**
@@ -113,24 +113,37 @@ export class ClaudeAPIClient {
       system?: string
     }
   ): Promise<{ text: string; usage: { input_tokens: number; output_tokens: number } }> {
-    const messages: ClaudeMessage[] = [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ]
+    const messages: OpenAIMessage[] = []
 
-    const response = await this.sendMessage(messages, options)
+    // Add system message if provided
+    if (options?.system) {
+      messages.push({
+        role: 'system',
+        content: options.system,
+      })
+    }
+
+    // Add user message
+    messages.push({
+      role: 'user',
+      content: prompt,
+    })
+
+    const response = await this.chat(messages, {
+      model: options?.model,
+      maxTokens: options?.maxTokens,
+      temperature: options?.temperature,
+    })
 
     // Extract text from response
-    const text = response.content
-      .filter(block => block.type === 'text')
-      .map(block => block.text)
-      .join('\n')
+    const text = response.choices[0]?.message.content || ''
 
     return {
       text,
-      usage: response.usage,
+      usage: {
+        input_tokens: response.usage.prompt_tokens,
+        output_tokens: response.usage.completion_tokens,
+      },
     }
   }
 
@@ -180,6 +193,36 @@ export class ClaudeAPIClient {
   }
 
   /**
+   * List available models
+   */
+  async listModels(): Promise<OpenAIModel[]> {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+
+    try {
+      const response = await this.fetchFn(`${this.baseUrl}/models`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models (${response.status})`)
+      }
+
+      const data = (await response.json()) as OpenAIModelsResponse
+      return data.data
+    } catch (error) {
+      clearTimeout(timeoutId)
+      throw error
+    }
+  }
+
+  /**
    * Test the API connection
    */
   async healthCheck(): Promise<{ healthy: boolean; latency: number; error?: string }> {
@@ -201,9 +244,9 @@ export class ClaudeAPIClient {
   }
 
   /**
-   * Make a request to the Claude API
+   * Make a request to the OpenAI API
    */
-  private async makeRequest(endpoint: string, body: unknown): Promise<unknown> {
+  private async makeRequest(endpoint: string, body: OpenAIRequest): Promise<unknown> {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
@@ -212,9 +255,7 @@ export class ClaudeAPIClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': this.apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(body),
         signal: controller.signal,
@@ -224,7 +265,25 @@ export class ClaudeAPIClient {
 
       if (!response.ok) {
         const errorText = await response.text()
-        throw new Error(`Claude API error (${response.status}): ${errorText}`)
+
+        // Try to parse JSON error response
+        let errorMessage = errorText
+        try {
+          const errorJson = JSON.parse(errorText)
+          // Extract meaningful error message from OpenAI API error format
+          if (errorJson.error?.message) {
+            errorMessage = errorJson.error.message
+          } else if (errorJson.error?.type) {
+            errorMessage = errorJson.error.type
+          }
+        } catch {
+          // If not JSON, use raw text (truncate if too long)
+          if (errorText.length > 200) {
+            errorMessage = `${errorText.substring(0, 200)}...`
+          }
+        }
+
+        throw new Error(`OpenAI API error (${response.status}): ${errorMessage}`)
       }
 
       return await response.json()

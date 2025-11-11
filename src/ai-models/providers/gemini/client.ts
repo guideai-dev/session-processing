@@ -38,12 +38,24 @@ export interface GeminiResponse {
   }
 }
 
+export interface GeminiModel {
+  name: string
+  displayName: string
+  description: string
+  supportedGenerationMethods: string[]
+}
+
+export interface GeminiModelsResponse {
+  models: GeminiModel[]
+}
+
 export interface GeminiClientConfig {
   apiKey: string
   model?: string
   maxOutputTokens?: number
   temperature?: number
   timeout?: number
+  fetch?: typeof fetch
 }
 
 export class GeminiAPIClient {
@@ -53,6 +65,7 @@ export class GeminiAPIClient {
   private defaultMaxOutputTokens: number
   private defaultTemperature: number
   private timeout: number
+  private fetchFn: typeof fetch
 
   constructor(config: GeminiClientConfig) {
     this.apiKey = config.apiKey
@@ -60,6 +73,7 @@ export class GeminiAPIClient {
     this.defaultMaxOutputTokens = config.maxOutputTokens || 8192
     this.defaultTemperature = config.temperature ?? 1.0
     this.timeout = config.timeout || 60000 // 60 seconds
+    this.fetchFn = config.fetch || fetch
   }
 
   /**
@@ -177,6 +191,35 @@ export class GeminiAPIClient {
   }
 
   /**
+   * List available models
+   */
+  async listModels(): Promise<GeminiModel[]> {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+
+    try {
+      const url = `${this.baseUrl}/models?key=${this.apiKey}`
+
+      const response = await this.fetchFn(url, {
+        method: 'GET',
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models (${response.status})`)
+      }
+
+      const data = (await response.json()) as GeminiModelsResponse
+      return data.models
+    } catch (error) {
+      clearTimeout(timeoutId)
+      throw error
+    }
+  }
+
+  /**
    * Test the API connection
    */
   async healthCheck(): Promise<{ healthy: boolean; latency: number; error?: string }> {
@@ -208,7 +251,7 @@ export class GeminiAPIClient {
       const endpoint = `${this.baseUrl}/models/${model}:generateContent`
       const url = `${endpoint}?key=${this.apiKey}`
 
-      const response = await fetch(url, {
+      const response = await this.fetchFn(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
