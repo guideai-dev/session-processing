@@ -491,7 +491,10 @@ export function SessionDetailHeader({
             )}
 
             {/* Git Information */}
-            {(session.gitBranch || session.firstCommitHash || session.latestCommitHash || workingDirectory) && (
+            {(session.gitBranch ||
+              session.firstCommitHash ||
+              session.latestCommitHash ||
+              workingDirectory) && (
               <div className="stat bg-base-200 rounded-lg p-2.5">
                 <div className="space-y-1 text-xs">
                   {/* Branch */}
@@ -571,11 +574,13 @@ export function SessionDetailHeader({
                         </>
                       )}
                     </div>
-                  ) : workingDirectory && (
-                    // Historical session - no git commit data available
-                    <div className="flex items-center h-full text-base-content/60 italic">
-                      Git info unavailable (historical session)
-                    </div>
+                  ) : (
+                    workingDirectory && (
+                      // Historical session - no git commit data available
+                      <div className="flex items-center h-full text-base-content/60 italic">
+                        Git info unavailable (historical session)
+                      </div>
+                    )
                   )}
                 </div>
               </div>
