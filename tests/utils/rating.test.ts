@@ -2,28 +2,18 @@ import { describe, it, expect } from 'vitest'
 import {
 	calculateRating,
 	getRatingDisplayInfo,
+	ratingToNpsScore,
 	type AssessmentResponse,
 	type SessionRating,
 } from '../../src/utils/rating.js'
 
 describe('calculateRating', () => {
-	describe('Thumbs Down (1-3)', () => {
-		it('should return thumbs_down for score of 1', () => {
+	describe('Thumbs Down (Detractors 0-6)', () => {
+		it('should return thumbs_down for score of 0', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 1 },
-					timestamp: '2025-01-01T00:00:00Z',
-				},
-			]
-			expect(calculateRating(responses)).toBe('thumbs_down')
-		})
-
-		it('should return thumbs_down for score of 2', () => {
-			const responses: AssessmentResponse[] = [
-				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 2 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 0 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -33,8 +23,19 @@ describe('calculateRating', () => {
 		it('should return thumbs_down for score of 3', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'likert', value: 3 },
+					timestamp: '2025-01-01T00:00:00Z',
+				},
+			]
+			expect(calculateRating(responses)).toBe('thumbs_down')
+		})
+
+		it('should return thumbs_down for score of 6', () => {
+			const responses: AssessmentResponse[] = [
+				{
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 6 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -42,12 +43,23 @@ describe('calculateRating', () => {
 		})
 	})
 
-	describe('Meh (4)', () => {
-		it('should return meh for score of 4', () => {
+	describe('Meh (Passives 7-8)', () => {
+		it('should return meh for score of 7', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 4 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 7 },
+					timestamp: '2025-01-01T00:00:00Z',
+				},
+			]
+			expect(calculateRating(responses)).toBe('meh')
+		})
+
+		it('should return meh for score of 8', () => {
+			const responses: AssessmentResponse[] = [
+				{
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 8 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -55,34 +67,23 @@ describe('calculateRating', () => {
 		})
 	})
 
-	describe('Thumbs Up (5-7)', () => {
-		it('should return thumbs_up for score of 5', () => {
+	describe('Thumbs Up (Promoters 9-10)', () => {
+		it('should return thumbs_up for score of 9', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 5 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 9 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
 			expect(calculateRating(responses)).toBe('thumbs_up')
 		})
 
-		it('should return thumbs_up for score of 6', () => {
+		it('should return thumbs_up for score of 10', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 6 },
-					timestamp: '2025-01-01T00:00:00Z',
-				},
-			]
-			expect(calculateRating(responses)).toBe('thumbs_up')
-		})
-
-		it('should return thumbs_up for score of 7', () => {
-			const responses: AssessmentResponse[] = [
-				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 7 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 10 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -91,22 +92,11 @@ describe('calculateRating', () => {
 	})
 
 	describe('Invalid Scores', () => {
-		it('should return null for score of 0', () => {
+		it('should return null for score of 11', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 0 },
-					timestamp: '2025-01-01T00:00:00Z',
-				},
-			]
-			expect(calculateRating(responses)).toBeNull()
-		})
-
-		it('should return null for score of 8', () => {
-			const responses: AssessmentResponse[] = [
-				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 8 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 11 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -116,7 +106,7 @@ describe('calculateRating', () => {
 		it('should return null for negative score', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'likert', value: -1 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
@@ -127,7 +117,7 @@ describe('calculateRating', () => {
 		it('should return null for very large score', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'likert', value: 100 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
@@ -136,12 +126,12 @@ describe('calculateRating', () => {
 		})
 	})
 
-	describe('Missing Usefulness Question', () => {
-		it('should return null when usefulness-1 question not found', () => {
+	describe('Missing NPS Question', () => {
+		it('should return null when nps_score question not found', () => {
 			const responses: AssessmentResponse[] = [
 				{
 					questionId: 'other-question',
-					answer: { type: 'likert', value: 5 },
+					answer: { type: 'likert', value: 9 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -152,21 +142,21 @@ describe('calculateRating', () => {
 			expect(calculateRating([])).toBeNull()
 		})
 
-		it('should find usefulness-1 among multiple responses', () => {
+		it('should find nps_score among multiple responses', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'question-1',
-					answer: { type: 'likert', value: 3 },
+					questionId: 'task_helpfulness',
+					answer: { type: 'likert', value: 5 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 7 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 9 },
 					timestamp: '2025-01-01T00:00:01Z',
 				},
 				{
-					questionId: 'question-3',
-					answer: { type: 'text', value: 'feedback' },
+					questionId: 'best_contribution',
+					answer: { type: 'text', value: 'Great feedback!' },
 					timestamp: '2025-01-01T00:00:02Z',
 				},
 			]
@@ -178,7 +168,7 @@ describe('calculateRating', () => {
 		it('should return null for text answer', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'text', value: 'very helpful' },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
@@ -189,7 +179,7 @@ describe('calculateRating', () => {
 		it('should return null for choice answer', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'choice', value: 'option-a' },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
@@ -200,7 +190,7 @@ describe('calculateRating', () => {
 		it('should return null for skipped answer', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'skipped' },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
@@ -213,8 +203,8 @@ describe('calculateRating', () => {
 		it('should return null when value is string', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: '5' as unknown as number },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: '9' as unknown as number },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -224,7 +214,7 @@ describe('calculateRating', () => {
 		it('should return null when value is undefined', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'likert', value: undefined as unknown as number },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
@@ -235,7 +225,7 @@ describe('calculateRating', () => {
 		it('should return null when value is null', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
+					questionId: 'nps_score',
 					answer: { type: 'likert', value: null as unknown as number },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
@@ -248,22 +238,22 @@ describe('calculateRating', () => {
 		it('should handle complete assessment with multiple questions', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'clarity-1',
+					questionId: 'task_helpfulness',
 					answer: { type: 'likert', value: 6 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 7 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 9 },
 					timestamp: '2025-01-01T00:00:01Z',
 				},
 				{
-					questionId: 'speed-1',
+					questionId: 'cognitive_load',
 					answer: { type: 'likert', value: 5 },
 					timestamp: '2025-01-01T00:00:02Z',
 				},
 				{
-					questionId: 'feedback',
+					questionId: 'best_contribution',
 					answer: { type: 'text', value: 'Great experience!' },
 					timestamp: '2025-01-01T00:00:03Z',
 				},
@@ -274,8 +264,8 @@ describe('calculateRating', () => {
 		it('should ignore questions parameter (not used in current implementation)', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 5 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 9 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -285,32 +275,32 @@ describe('calculateRating', () => {
 	})
 
 	describe('Edge Cases', () => {
-		it('should handle decimal scores by treating as invalid', () => {
+		it('should handle decimal scores', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 5.5 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 9.5 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
-			// Decimal 5.5 is >= 5 and <= 7, so should be thumbs_up
+			// Decimal 9.5 is >= 9 and <= 10, so should be thumbs_up
 			expect(calculateRating(responses)).toBe('thumbs_up')
 		})
 
-		it('should use first matching usefulness-1 response if duplicates exist', () => {
+		it('should use first matching nps_score response if duplicates exist', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 2 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 3 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 7 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 10 },
 					timestamp: '2025-01-01T00:00:01Z',
 				},
 			]
-			// Should use the first one found (score 2 = thumbs_down)
+			// Should use the first one found (score 3 = thumbs_down)
 			expect(calculateRating(responses)).toBe('thumbs_down')
 		})
 	})
@@ -448,8 +438,8 @@ describe('getRatingDisplayInfo', () => {
 		it('should work with calculated thumbs_up rating', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 7 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 9 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -463,8 +453,8 @@ describe('getRatingDisplayInfo', () => {
 		it('should work with calculated meh rating', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 4 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 7 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -478,8 +468,8 @@ describe('getRatingDisplayInfo', () => {
 		it('should work with calculated thumbs_down rating', () => {
 			const responses: AssessmentResponse[] = [
 				{
-					questionId: 'usefulness-1',
-					answer: { type: 'likert', value: 1 },
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: 3 },
 					timestamp: '2025-01-01T00:00:00Z',
 				},
 			]
@@ -497,6 +487,179 @@ describe('getRatingDisplayInfo', () => {
 
 			expect(info.label).toBe('Not Rated')
 			expect(info.color).toBe('neutral')
+		})
+	})
+})
+
+describe('ratingToNpsScore', () => {
+	describe('Thumbs Down → NPS 5', () => {
+		it('should convert thumbs_down to NPS score 5', () => {
+			const score = ratingToNpsScore('thumbs_down')
+			expect(score).toBe(5)
+		})
+
+		it('should be in detractor range (0-6)', () => {
+			const score = ratingToNpsScore('thumbs_down')
+			expect(score).toBeGreaterThanOrEqual(0)
+			expect(score).toBeLessThanOrEqual(6)
+		})
+	})
+
+	describe('Meh → NPS 7', () => {
+		it('should convert meh to NPS score 7', () => {
+			const score = ratingToNpsScore('meh')
+			expect(score).toBe(7)
+		})
+
+		it('should be in passive range (7-8)', () => {
+			const score = ratingToNpsScore('meh')
+			expect(score).toBeGreaterThanOrEqual(7)
+			expect(score).toBeLessThanOrEqual(8)
+		})
+	})
+
+	describe('Thumbs Up → NPS 9', () => {
+		it('should convert thumbs_up to NPS score 9', () => {
+			const score = ratingToNpsScore('thumbs_up')
+			expect(score).toBe(9)
+		})
+
+		it('should be in promoter range (9-10)', () => {
+			const score = ratingToNpsScore('thumbs_up')
+			expect(score).toBeGreaterThanOrEqual(9)
+			expect(score).toBeLessThanOrEqual(10)
+		})
+	})
+
+	describe('Null Rating', () => {
+		it('should return null for null rating', () => {
+			const score = ratingToNpsScore(null)
+			expect(score).toBeNull()
+		})
+	})
+
+	describe('Bidirectional Mapping Consistency', () => {
+		it('thumbs_down → 5 → thumbs_down should be consistent', () => {
+			// Start with thumbs_down
+			const npsScore = ratingToNpsScore('thumbs_down')
+			expect(npsScore).toBe(5)
+
+			// Convert back to rating
+			const responses: AssessmentResponse[] = [
+				{
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: npsScore as number },
+					timestamp: '2025-01-01T00:00:00Z',
+				},
+			]
+			const rating = calculateRating(responses)
+			expect(rating).toBe('thumbs_down')
+		})
+
+		it('meh → 7 → meh should be consistent', () => {
+			// Start with meh
+			const npsScore = ratingToNpsScore('meh')
+			expect(npsScore).toBe(7)
+
+			// Convert back to rating
+			const responses: AssessmentResponse[] = [
+				{
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: npsScore as number },
+					timestamp: '2025-01-01T00:00:00Z',
+				},
+			]
+			const rating = calculateRating(responses)
+			expect(rating).toBe('meh')
+		})
+
+		it('thumbs_up → 9 → thumbs_up should be consistent', () => {
+			// Start with thumbs_up
+			const npsScore = ratingToNpsScore('thumbs_up')
+			expect(npsScore).toBe(9)
+
+			// Convert back to rating
+			const responses: AssessmentResponse[] = [
+				{
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: npsScore as number },
+					timestamp: '2025-01-01T00:00:00Z',
+				},
+			]
+			const rating = calculateRating(responses)
+			expect(rating).toBe('thumbs_up')
+		})
+
+		it('null → null should be consistent', () => {
+			// Start with null
+			const npsScore = ratingToNpsScore(null)
+			expect(npsScore).toBeNull()
+		})
+	})
+
+	describe('Integration with Quick Rating Flow', () => {
+		it('should support quick rating use case', () => {
+			// User gives thumbs up
+			const rating: SessionRating = 'thumbs_up'
+
+			// Convert to NPS for database storage
+			const npsScore = ratingToNpsScore(rating)
+			expect(npsScore).toBe(9)
+
+			// Later, calculate rating from stored NPS
+			const responses: AssessmentResponse[] = [
+				{
+					questionId: 'nps_score',
+					answer: { type: 'likert', value: npsScore as number },
+					timestamp: '2025-01-01T00:00:00Z',
+				},
+			]
+			const calculatedRating = calculateRating(responses)
+			expect(calculatedRating).toBe('thumbs_up')
+		})
+
+		it('should handle all rating types in quick rating flow', () => {
+			const ratings: SessionRating[] = ['thumbs_down', 'meh', 'thumbs_up']
+
+			for (const rating of ratings) {
+				// Convert to NPS
+				const npsScore = ratingToNpsScore(rating)
+				expect(npsScore).not.toBeNull()
+
+				// Convert back
+				const responses: AssessmentResponse[] = [
+					{
+						questionId: 'nps_score',
+						answer: { type: 'likert', value: npsScore as number },
+						timestamp: '2025-01-01T00:00:00Z',
+					},
+				]
+				const calculatedRating = calculateRating(responses)
+				expect(calculatedRating).toBe(rating)
+			}
+		})
+	})
+
+	describe('Type Safety', () => {
+		it('should accept all SessionRating types', () => {
+			const ratings: (SessionRating | null)[] = ['thumbs_up', 'meh', 'thumbs_down', null]
+
+			for (const rating of ratings) {
+				const score = ratingToNpsScore(rating)
+				expect(score === null || typeof score === 'number').toBe(true)
+			}
+		})
+
+		it('should return number or null only', () => {
+			const thumbsUpScore = ratingToNpsScore('thumbs_up')
+			const mehScore = ratingToNpsScore('meh')
+			const thumbsDownScore = ratingToNpsScore('thumbs_down')
+			const nullScore = ratingToNpsScore(null)
+
+			expect(typeof thumbsUpScore).toBe('number')
+			expect(typeof mehScore).toBe('number')
+			expect(typeof thumbsDownScore).toBe('number')
+			expect(nullScore).toBeNull()
 		})
 	})
 })

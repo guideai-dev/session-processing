@@ -23,11 +23,13 @@ export interface QuestionCardProps {
 }
 
 export interface LikertScaleProps {
-  scale: 5 | 7
+  scale: 5 | 7 | 11
   value?: number
   onChange: (value: number) => void
   labels?: [string, string]
   disabled?: boolean
+  startValue?: number // For NPS (0-10), defaults to 1 for standard Likert
+  reverseScored?: boolean // True if low scores are positive (e.g., "Never" = good)
 }
 
 export interface TextResponseProps {

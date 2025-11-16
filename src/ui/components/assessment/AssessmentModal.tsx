@@ -165,7 +165,7 @@ export function AssessmentModal({
   if (showCompletion) {
     return (
       <div className="modal modal-open">
-        <div className="modal-box w-full h-full max-w-full md:max-w-md md:h-auto max-h-full md:max-h-[90vh] rounded-none md:rounded-2xl text-center m-0! md:m-auto! top-0! md:top-auto!">
+        <div className="modal-box max-w-md text-center">
           <div className="flex flex-col items-center gap-4 py-8">
             <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center">
               <CheckIcon className="w-10 h-10 text-success" />
@@ -174,7 +174,7 @@ export function AssessmentModal({
             <p className="text-base-content/70">Your feedback has been submitted successfully.</p>
           </div>
         </div>
-        <div className="modal-backdrop bg-black/50" />
+        <div className="modal-backdrop bg-black/50 backdrop-blur-sm" />
       </div>
     )
   }
@@ -183,7 +183,7 @@ export function AssessmentModal({
   if (!selectedVersion) {
     return (
       <div className="modal modal-open">
-        <div className="modal-box w-full h-full max-w-full md:max-w-3xl md:h-auto max-h-full md:max-h-[90vh] rounded-none md:rounded-2xl m-0! md:m-auto! top-0! md:top-auto!">
+        <div className="modal-box max-w-3xl">
           {/* Header */}
           <div className="flex items-center justify-between mb-4 md:mb-6">
             <h2 className="text-lg md:text-xl font-bold">Session Assessment</h2>
@@ -197,14 +197,14 @@ export function AssessmentModal({
         </div>
 
         {/* Backdrop */}
-        <div className="modal-backdrop bg-black/70" onClick={onClose} />
+        <div className="modal-backdrop bg-black/70 backdrop-blur-sm" onClick={onClose} />
       </div>
     )
   }
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box w-full h-full max-w-full md:max-w-4xl md:h-auto max-h-full md:max-h-[90vh] rounded-none md:rounded-2xl overflow-y-auto p-4 md:p-6 m-0! md:m-auto! top-0! md:top-auto!">
+      <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-lg md:text-xl font-bold">Session Assessment</h2>
@@ -232,18 +232,20 @@ export function AssessmentModal({
         )}
 
         {/* Navigation */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t border-base-300">
+        <div className="flex flex-col-reverse md:flex-row items-stretch md:items-center justify-between gap-3 mt-6 md:mt-8 pt-4 md:pt-6 border-t border-base-300">
+          {/* Previous button - Left side on desktop, bottom on mobile */}
           <button
             type="button"
             onClick={handlePrevious}
             disabled={currentIndex === 0}
-            className="btn btn-ghost gap-2 order-2 md:order-1"
+            className="btn btn-ghost gap-2"
           >
             <ChevronLeftIcon className="w-5 h-5" />
             Previous
           </button>
 
-          <div className="hidden md:block text-center text-xs text-base-content/50 space-y-1 order-1 md:order-2">
+          {/* Keyboard hints - Center on desktop, hidden on mobile */}
+          <div className="hidden md:block text-center text-xs text-base-content/50 space-y-1">
             <div>
               <kbd className="kbd kbd-xs">←</kbd> Previous • <kbd className="kbd kbd-xs">→</kbd>{' '}
               Next
@@ -254,7 +256,7 @@ export function AssessmentModal({
                 </span>
               )}
             </div>
-            {currentQuestion?.type.startsWith('likert') && (
+            {(currentQuestion?.type === 'likert-5' || currentQuestion?.type === 'likert-7') && (
               <div className="text-base-content/40">Use number keys to select • Auto-advances</div>
             )}
             {currentQuestion?.type === 'choice' && (
@@ -262,12 +264,13 @@ export function AssessmentModal({
             )}
           </div>
 
+          {/* Next/Submit button - Right side on desktop, top on mobile */}
           {isLastQuestion ? (
             <button
               type="button"
               onClick={handleSubmit}
               disabled={!canGoNext || isSubmitting}
-              className="btn btn-primary gap-2 order-1 md:order-3"
+              className="btn btn-primary gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -286,7 +289,7 @@ export function AssessmentModal({
               type="button"
               onClick={handleNext}
               disabled={!canGoNext}
-              className="btn btn-primary gap-2 order-1 md:order-3"
+              className="btn btn-primary gap-2"
             >
               Next
               <ChevronRightIcon className="w-5 h-5" />
@@ -296,7 +299,7 @@ export function AssessmentModal({
       </div>
 
       {/* Backdrop */}
-      <div className="modal-backdrop bg-black/70" onClick={onClose} />
+      <div className="modal-backdrop bg-black/70 backdrop-blur-sm" onClick={onClose} />
     </div>
   )
 }

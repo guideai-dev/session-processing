@@ -5,7 +5,7 @@
  * instead of fetching them via hooks. The parent component should handle data fetching.
  */
 
-import type { AssessmentAnswer } from '@guideai-dev/types'
+import type { Assessment, AssessmentAnswer, AssessmentResponse } from '@guideai-dev/types'
 import type { SessionRating } from '../../../utils/rating.js'
 import { RatingBadge } from '../RatingBadge.js'
 import { MetricSection } from './MetricSection.js'
@@ -18,21 +18,12 @@ interface AssessmentQuestion {
   importance?: 'high' | 'medium' | 'low'
 }
 
-interface AssessmentResponse {
-  questionId: string
-  answer: AssessmentAnswer
-}
-
-interface Assessment {
-  status: 'not_started' | 'rating_only' | 'in_progress' | 'completed'
-  completedAt?: string
-  responses: AssessmentResponse[]
-  rating?: string | null
-}
+// Add status field for backward compatibility with UI
+type AssessmentWithStatus = Assessment & { status?: 'not_started' | 'rating_only' | 'in_progress' | 'completed' }
 
 interface AssessmentSectionProps {
   sessionId: string
-  assessment?: Assessment | null
+  assessment?: AssessmentWithStatus | null
   questions?: AssessmentQuestion[]
   isLoading?: boolean
   onRate?: (rating: SessionRating) => void
@@ -101,21 +92,39 @@ export function AssessmentSection({
     reflection: '💭 Reflection',
   }
 
-  const formatAnswer = (answer: AssessmentAnswer) => {
+  const formatAnswer = (answer: AssessmentAnswer, question: AssessmentQuestion) => {
     if (answer.type === 'skipped') {
       return <span className="text-base-content/40 italic">Skipped</span>
     }
 
     if (answer.type === 'likert') {
+      // Determine scale based on question type
+      let scaleSize = 7
+      let startValue = 1
+
+      if (question.id === 'nps_score') {
+        // NPS is 0-10
+        scaleSize = 11
+        startValue = 0
+      } else if (
+        question.id === 'deployment_confidence' ||
+        question.id === 'mental_alignment' ||
+        question.id === 'pair_programming_comparison'
+      ) {
+        // These are likert-5
+        scaleSize = 5
+      }
+      // Default is likert-7 (most questions)
+
       return (
         <div className="flex items-center gap-2">
           <div className="rating rating-sm">
-            {Array.from({ length: 7 }, (_, i) => (
+            {Array.from({ length: scaleSize }, (_, i) => (
               <input
-                key={`likert-${i + 1}`}
+                key={`likert-${startValue + i}`}
                 type="radio"
                 className="mask mask-circle bg-primary"
-                checked={answer.value === i + 1}
+                checked={answer.value === startValue + i}
                 disabled
               />
             ))}
@@ -211,7 +220,7 @@ export function AssessmentSection({
                             )}
                           </div>
                         </div>
-                        {formatAnswer(response.answer)}
+                        {formatAnswer(response.answer, question)}
                       </div>
                     </div>
                   </div>

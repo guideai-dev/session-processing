@@ -49,7 +49,7 @@ export interface SessionDetailHeaderProps {
   // Status states
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed'
   isProcessing?: boolean
-  assessmentStatus?: 'not_started' | 'in_progress' | 'completed'
+  assessmentStatus?: 'not_started' | 'rating_only' | 'in_progress' | 'completed'
 
   // Processing progress (optional - for detailed step tracking)
   processingProgress?: {

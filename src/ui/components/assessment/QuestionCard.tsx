@@ -23,7 +23,7 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
 
       const key = e.key.toLowerCase()
 
-      // Number keys for Likert scales
+      // Number keys for Likert scales (but not NPS - too many options for keyboard)
       if (question.type === 'likert-5' || question.type === 'likert-7') {
         const maxScale = question.type === 'likert-5' ? 5 : 7
         const num = Number.parseInt(key)
@@ -33,6 +33,8 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
           handleLikertChange(num)
         }
       }
+
+      // NPS (0-10) has 11 options - no clean keyboard mapping, so disabled
 
       // Number keys or letter keys for multiple choice
       if (question.type === 'choice' && question.choices) {
@@ -107,6 +109,7 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
             value={value?.type === 'likert' ? value.value : undefined}
             onChange={handleLikertChange}
             labels={question.labels}
+            reverseScored={question.reverseScored}
           />
         )
       case 'likert-7':
@@ -116,6 +119,18 @@ export function QuestionCard({ question, value, onChange, onNext, autoFocus }: Q
             value={value?.type === 'likert' ? value.value : undefined}
             onChange={handleLikertChange}
             labels={question.labels}
+            reverseScored={question.reverseScored}
+          />
+        )
+      case 'nps':
+        return (
+          <LikertScale
+            scale={11}
+            startValue={0}
+            value={value?.type === 'likert' ? value.value : undefined}
+            onChange={handleLikertChange}
+            labels={question.labels}
+            reverseScored={question.reverseScored}
           />
         )
       case 'text':

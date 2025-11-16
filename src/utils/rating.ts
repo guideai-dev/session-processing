@@ -32,10 +32,10 @@ export interface AssessmentQuestionConfig {
 /**
  * Calculate session rating from assessment responses
  *
- * Logic: Uses the "How helpful was the AI" question (usefulness-1)
- * - 1-3 = thumbs_down
- * - 4 = meh
- * - 5-7 = thumbs_up
+ * Logic: Uses the NPS question (nps_score)
+ * - 0-6 = thumbs_down (Detractors)
+ * - 7-8 = meh (Passives)
+ * - 9-10 = thumbs_up (Promoters)
  *
  * @param responses - Array of assessment responses
  * @param questions - Array of question configurations (optional, for validation)
@@ -45,14 +45,14 @@ export function calculateRating(
   responses: AssessmentResponse[],
   _questions?: AssessmentQuestionConfig[]
 ): SessionRating | null {
-  // Find the helpfulness question response (usefulness-1)
-  const helpfulnessResponse = responses.find(r => r.questionId === 'usefulness-1')
+  // Find the NPS question response (nps_score)
+  const npsResponse = responses.find(r => r.questionId === 'nps_score')
 
-  if (!helpfulnessResponse) {
+  if (!npsResponse) {
     return null
   }
 
-  const answer = helpfulnessResponse.answer
+  const answer = npsResponse.answer
 
   // Only process likert-type answers
   if (answer.type !== 'likert' || typeof answer.value !== 'number') {
@@ -61,18 +61,42 @@ export function calculateRating(
 
   const score = answer.value
 
-  // Map score to rating
-  if (score >= 1 && score <= 3) {
-    return 'thumbs_down'
+  // Map NPS score to rating
+  if (score >= 0 && score <= 6) {
+    return 'thumbs_down' // Detractors
   }
-  if (score === 4) {
-    return 'meh'
+  if (score >= 7 && score <= 8) {
+    return 'meh' // Passives
   }
-  if (score >= 5 && score <= 7) {
-    return 'thumbs_up'
+  if (score >= 9 && score <= 10) {
+    return 'thumbs_up' // Promoters
   }
 
   return null
+}
+
+/**
+ * Convert rating to NPS score
+ *
+ * Reverse mapping of calculateRating()
+ * - thumbs_down → 5 (Detractors: 0-6)
+ * - meh → 7 (Passives: 7-8)
+ * - thumbs_up → 9 (Promoters: 9-10)
+ *
+ * @param rating - Session rating
+ * @returns NPS score (0-10) or null if no rating
+ */
+export function ratingToNpsScore(rating: SessionRating | null): number | null {
+  switch (rating) {
+    case 'thumbs_down':
+      return 5 // Mid-point of detractors (0-6)
+    case 'meh':
+      return 7 // Lower end of passives (7-8)
+    case 'thumbs_up':
+      return 9 // Lower end of promoters (9-10)
+    default:
+      return null
+  }
 }
 
 /**

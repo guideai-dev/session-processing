@@ -102,16 +102,16 @@ export function VersionSelector({ onSelect }: VersionSelectorProps) {
               `}
             >
               <div className="card-body p-4 md:p-5">
-                <div className="flex md:flex-col items-center md:items-center gap-3 md:gap-0">
-                  <Icon className="w-6 h-6 md:mx-auto md:mb-2 shrink-0" />
-                  <div className="flex-1 md:flex-none text-left md:text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <Icon className="w-6 h-6" />
+                  <div className="text-center w-full">
                     <h4 className="font-bold text-sm md:text-base">{option.title}</h4>
                     <p className={`text-xs ${isSelected ? 'opacity-90' : 'text-base-content/60'}`}>
                       {option.subtitle}
                     </p>
                   </div>
                   <div
-                    className={`text-xs md:mt-2 md:pt-2 md:border-t md:w-full ${isSelected ? 'md:border-primary-content/20' : 'md:border-base-300'} shrink-0`}
+                    className={`text-xs pt-2 border-t w-full text-center ${isSelected ? 'border-primary-content/20' : 'border-base-300'}`}
                   >
                     {option.estimatedTime} • {option.questionCount} questions
                   </div>
