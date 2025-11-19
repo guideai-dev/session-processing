@@ -63,7 +63,7 @@ All via the same unified parser:
 ### Build from Source
 
 ```bash
-git clone https://github.com/guidemode-dev/session-processing.git
+git clone https://github.com/guidemode/session-processing.git
 cd session-processing
 pnpm install
 pnpm build
@@ -94,8 +94,8 @@ pnpm build
 
 ## Related Packages
 
-- [@guidemode/desktop](https://github.com/guidemode-dev/desktop) - Converts provider formats to canonical
-- [@guidemode/types](https://github.com/guidemode-dev/types) - Shared type definitions
+- [@guidemode/desktop](https://github.com/guidemode/desktop) - Converts provider formats to canonical
+- [@guidemode/types](https://github.com/guidemode/types) - Shared type definitions
 
 ## License
 
@@ -103,6 +103,6 @@ MIT License - see [LICENSE](LICENSE)
 
 ## Support
 
-- 💬 [**Discussions**](https://github.com/orgs/guidemode-dev/discussions) - Ask questions, share ideas
-- 🐛 [**Issues**](https://github.com/guidemode-dev/desktop/issues) - Report bugs, request features
+- 💬 [**Discussions**](https://github.com/orgs/guidemode/discussions) - Ask questions, share ideas
+- 🐛 [**Issues**](https://github.com/guidemode/desktop/issues) - Report bugs, request features
 - 📧 **Email**: support@guidemode.dev
