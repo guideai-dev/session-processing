@@ -5,7 +5,7 @@
  * Measures response latency and task completion time.
  */
 
-import type { PerformanceMetrics } from '@guideai-dev/types'
+import type { PerformanceMetrics } from '@guidemode/types'
 import type { ParsedSession } from '../../../parsers/base/types.js'
 import { BaseMetricProcessor } from '../../base/metric-processor.js'
 

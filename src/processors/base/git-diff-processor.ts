@@ -1,4 +1,4 @@
-import type { GitDiff, GitDiffMetrics } from '@guideai-dev/types'
+import type { GitDiff, GitDiffMetrics } from '@guidemode/types'
 import { BaseMetricProcessor } from './metric-processor.js'
 import type { ParsedSession } from './types.js'
 

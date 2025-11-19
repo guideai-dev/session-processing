@@ -5,8 +5,8 @@
  * Measures task success rate, iteration count, and process quality.
  */
 
-import type { QualityMetrics, ToolResultContent, ToolUseContent } from '@guideai-dev/types'
-import { isStructuredMessageContent } from '@guideai-dev/types'
+import type { QualityMetrics, ToolResultContent, ToolUseContent } from '@guidemode/types'
+import { isStructuredMessageContent } from '@guidemode/types'
 import type { ParsedMessage, ParsedSession } from '../../../parsers/base/types.js'
 import { BaseMetricProcessor } from '../../base/metric-processor.js'
 

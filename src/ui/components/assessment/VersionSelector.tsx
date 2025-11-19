@@ -1,4 +1,4 @@
-import type { AssessmentVersion } from '@guideai-dev/types'
+import type { AssessmentVersion } from '@guidemode/types'
 import { ChartBarIcon, ClockIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 

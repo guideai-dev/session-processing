@@ -1,5 +1,5 @@
-import type { MetricType, SessionMetricsData } from '@guideai-dev/types'
-import { isStructuredMessageContent } from '@guideai-dev/types'
+import type { MetricType, SessionMetricsData } from '@guidemode/types'
+import { isStructuredMessageContent } from '@guidemode/types'
 import type { ParsedSession, ProcessorResult } from './types.js'
 
 export abstract class BaseMetricProcessor {

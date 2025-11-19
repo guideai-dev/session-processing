@@ -3,7 +3,7 @@
  * Wrapper for Anthropic's Claude API
  */
 
-import type { ContentBlock } from '@guideai-dev/types'
+import type { ContentBlock } from '@guidemode/types'
 
 /**
  * Tool definition for Claude API

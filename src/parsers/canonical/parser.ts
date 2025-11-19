@@ -12,8 +12,8 @@ import type {
   TextContent,
   ToolResultContent,
   ToolUseContent,
-} from '@guideai-dev/types'
-import { isTextContent, isToolResultContent, isToolUseContent } from '@guideai-dev/types'
+} from '@guidemode/types'
+import { isTextContent, isToolResultContent, isToolUseContent } from '@guidemode/types'
 import { BaseParser } from '../base/BaseParser.js'
 import type { ParsedMessage, RawLogMessage, UnifiedMessageType } from '../base/types.js'
 import type { CanonicalContentBlock, CanonicalMessage } from './types.js'

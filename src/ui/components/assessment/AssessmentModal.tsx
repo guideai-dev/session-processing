@@ -1,4 +1,4 @@
-import type { AssessmentAnswer, AssessmentResponse, AssessmentVersion } from '@guideai-dev/types'
+import type { AssessmentAnswer, AssessmentResponse, AssessmentVersion } from '@guidemode/types'
 import {
   CheckIcon,
   ChevronLeftIcon,
@@ -19,7 +19,16 @@ export function AssessmentModal({
   initialResponses = {},
   onSubmit,
   onDraft,
+  title = 'Session Assessment',
+  showVersionSelector,
+  completionMessage = 'Your feedback has been submitted successfully.',
+  previewMode = false,
 }: AssessmentModalProps) {
+  // Auto-detect if version selector should be shown
+  // Show if explicitly enabled, or if any question has a 'version' property
+  const hasVersions = questions.some(q => q.version && q.version.length > 0)
+  const shouldShowVersionSelector = showVersionSelector ?? hasVersions
+
   const [selectedVersion, setSelectedVersion] = useState<AssessmentVersion | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [responses, setResponses] = useState<Record<string, AssessmentAnswer>>(initialResponses)
@@ -34,18 +43,19 @@ export function AssessmentModal({
     }
   }, [isOpen, startTime])
 
-  // Filter questions based on selected version
-  const filteredQuestions = selectedVersion
-    ? questions.filter(q => q.version.includes(selectedVersion))
-    : questions
+  // Filter questions based on selected version (if version selector is shown)
+  const filteredQuestions =
+    shouldShowVersionSelector && selectedVersion
+      ? questions.filter(q => q.version?.includes(selectedVersion))
+      : questions
 
   const currentQuestion = filteredQuestions[currentIndex]
   const isLastQuestion = currentIndex === filteredQuestions.length - 1
-  const canGoNext = responses[currentQuestion?.id] !== undefined
+  const canGoNext = previewMode || responses[currentQuestion?.id] !== undefined
 
-  // Auto-save draft every 30 seconds
+  // Auto-save draft every 30 seconds (disabled in preview mode)
   useEffect(() => {
-    if (!isOpen || !onDraft) return
+    if (!isOpen || !onDraft || previewMode) return
 
     const interval = setInterval(() => {
       const responseArray = Object.entries(responses).map(([questionId, answer]) => ({
@@ -60,7 +70,7 @@ export function AssessmentModal({
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [isOpen, responses, onDraft])
+  }, [isOpen, responses, onDraft, previewMode])
 
   // Keyboard navigation
   useEffect(() => {
@@ -171,7 +181,7 @@ export function AssessmentModal({
               <CheckIcon className="w-10 h-10 text-success" />
             </div>
             <h3 className="text-2xl font-bold">Thank You!</h3>
-            <p className="text-base-content/70">Your feedback has been submitted successfully.</p>
+            <p className="text-base-content/70">{completionMessage}</p>
           </div>
         </div>
         <div className="modal-backdrop bg-black/50 backdrop-blur-sm" />
@@ -179,14 +189,14 @@ export function AssessmentModal({
     )
   }
 
-  // Version selection screen
-  if (!selectedVersion) {
+  // Version selection screen (only if version selector should be shown)
+  if (shouldShowVersionSelector && !selectedVersion) {
     return (
       <div className="modal modal-open">
         <div className="modal-box max-w-3xl">
           {/* Header */}
           <div className="flex items-center justify-between mb-4 md:mb-6">
-            <h2 className="text-lg md:text-xl font-bold">Session Assessment</h2>
+            <h2 className="text-lg md:text-xl font-bold">{title}</h2>
             <button type="button" onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -207,7 +217,7 @@ export function AssessmentModal({
       <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 md:mb-6">
-          <h2 className="text-lg md:text-xl font-bold">Session Assessment</h2>
+          <h2 className="text-lg md:text-xl font-bold">{title}</h2>
           <button type="button" onClick={onClose} className="btn btn-sm btn-circle btn-ghost">
             <XMarkIcon className="w-5 h-5" />
           </button>
@@ -264,15 +274,20 @@ export function AssessmentModal({
             )}
           </div>
 
-          {/* Next/Submit button - Right side on desktop, top on mobile */}
+          {/* Next/Submit/Close button - Right side on desktop, top on mobile */}
           {isLastQuestion ? (
             <button
               type="button"
-              onClick={handleSubmit}
-              disabled={!canGoNext || isSubmitting}
+              onClick={previewMode ? onClose : handleSubmit}
+              disabled={!previewMode && (!canGoNext || isSubmitting)}
               className="btn btn-primary gap-2"
             >
-              {isSubmitting ? (
+              {previewMode ? (
+                <>
+                  Close
+                  <XMarkIcon className="w-5 h-5" />
+                </>
+              ) : isSubmitting ? (
                 <>
                   <span className="loading loading-spinner loading-sm" />
                   Submitting...

@@ -123,10 +123,10 @@ pnpm test
 To check this package from the workspace root:
 
 ```bash
-pnpm --filter @guideai-dev/session-processing typecheck
-pnpm --filter @guideai-dev/session-processing lint
-pnpm --filter @guideai-dev/session-processing build
-pnpm --filter @guideai-dev/session-processing test
+pnpm --filter @guidemode/session-processing typecheck
+pnpm --filter @guidemode/session-processing lint
+pnpm --filter @guidemode/session-processing build
+pnpm --filter @guidemode/session-processing test
 ```
 
 **Remember**: After building this package, rebuild dependent packages (server, desktop) that import it.
@@ -456,7 +456,7 @@ const phaseColors = {
 ### Usage Example
 
 ```typescript
-import { SessionPhaseAnalysisTask } from '@guideai-dev/session-processing/ai-models'
+import { SessionPhaseAnalysisTask } from '@guidemode/session-processing/ai-models'
 
 // The task is automatically registered and executed as part of the processing pipeline
 // Results are stored in the database column ai_model_phase_analysis

@@ -5,7 +5,7 @@
  * instead of fetching via hooks. The parent component should handle data fetching.
  */
 
-import type { AIModelMetadata } from '@guideai-dev/types'
+import type { AIModelMetadata } from '@guidemode/types'
 import { AIAssessmentSection } from './sections/AIAssessmentSection.js'
 import { ContextMetricsSection } from './sections/ContextMetricsSection.js'
 import { EngagementMetricsSection } from './sections/EngagementMetricsSection.js'

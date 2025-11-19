@@ -1,4 +1,4 @@
-import type { ProcessorContext, ProcessorResult } from '@guideai-dev/types'
+import type { ProcessorContext, ProcessorResult } from '@guidemode/types'
 import { CanonicalParser } from '../../../parsers/index.js'
 import {
   type BaseMetricProcessor,

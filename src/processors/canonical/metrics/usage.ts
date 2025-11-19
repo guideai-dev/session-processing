@@ -5,8 +5,8 @@
  * Measures Read/Write ratio and input clarity.
  */
 
-import type { ToolResultContent, ToolUseContent, UsageMetrics } from '@guideai-dev/types'
-import { isStructuredMessageContent } from '@guideai-dev/types'
+import type { ToolResultContent, ToolUseContent, UsageMetrics } from '@guidemode/types'
+import { isStructuredMessageContent } from '@guidemode/types'
 import type { ParsedMessage, ParsedSession } from '../../../parsers/base/types.js'
 import { BaseMetricProcessor } from '../../base/metric-processor.js'
 

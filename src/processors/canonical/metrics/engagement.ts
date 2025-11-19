@@ -5,7 +5,7 @@
  * Measures interruption rate and session length.
  */
 
-import type { EngagementMetrics } from '@guideai-dev/types'
+import type { EngagementMetrics } from '@guidemode/types'
 import type { ParsedMessage, ParsedSession } from '../../../parsers/base/types.js'
 import { BaseMetricProcessor } from '../../base/metric-processor.js'
 

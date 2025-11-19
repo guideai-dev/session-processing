@@ -6,7 +6,7 @@
  * Returns null for providers without token data.
  */
 
-import type { ContextManagementMetrics } from '@guideai-dev/types'
+import type { ContextManagementMetrics } from '@guidemode/types'
 import type { ParsedSession } from '../../../parsers/base/types.js'
 import { BaseMetricProcessor } from '../../base/metric-processor.js'
 

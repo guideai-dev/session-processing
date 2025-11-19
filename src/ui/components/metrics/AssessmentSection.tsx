@@ -5,7 +5,7 @@
  * instead of fetching them via hooks. The parent component should handle data fetching.
  */
 
-import type { Assessment, AssessmentAnswer, AssessmentResponse } from '@guideai-dev/types'
+import type { Assessment, AssessmentAnswer, AssessmentResponse } from '@guidemode/types'
 import type { SessionRating } from '../../../utils/rating.js'
 import { RatingBadge } from '../RatingBadge.js'
 import { MetricSection } from './MetricSection.js'
@@ -19,7 +19,9 @@ interface AssessmentQuestion {
 }
 
 // Add status field for backward compatibility with UI
-type AssessmentWithStatus = Assessment & { status?: 'not_started' | 'rating_only' | 'in_progress' | 'completed' }
+type AssessmentWithStatus = Assessment & {
+  status?: 'not_started' | 'rating_only' | 'in_progress' | 'completed'
+}
 
 interface AssessmentSectionProps {
   sessionId: string

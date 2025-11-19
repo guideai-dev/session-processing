@@ -1,5 +1,5 @@
-import type { ContentBlock, TextContent, ThinkingContent, ToolUseContent } from '@guideai-dev/types'
-import { isStructuredMessageContent, isThinkingContent } from '@guideai-dev/types'
+import type { ContentBlock, TextContent, ThinkingContent, ToolUseContent } from '@guidemode/types'
+import { isStructuredMessageContent, isThinkingContent } from '@guidemode/types'
 import { getUserDisplayName } from '../../../../utils/user.js'
 import { BaseModelTask } from '../../../base/model-task.js'
 import type { ModelTaskConfig, ModelTaskContext } from '../../../base/types.js'

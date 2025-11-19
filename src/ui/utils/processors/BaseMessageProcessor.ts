@@ -5,7 +5,7 @@
  * provider-specific processors for custom behavior.
  */
 
-import { isStructuredMessageContent } from '@guideai-dev/types'
+import { isStructuredMessageContent } from '@guidemode/types'
 import {
   CheckCircleIcon,
   CommandLineIcon,

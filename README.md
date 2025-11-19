@@ -1,6 +1,6 @@
-# @guideai-dev/session-processing
+# @guidemode/session-processing
 
-> **The analytics engine that powers GuideAI.**
+> **The analytics engine that powers GuideMode.**
 
 Parses AI coding sessions from any provider and generates actionable insights. One parser for all AI tools.
 
@@ -13,7 +13,7 @@ Parses AI coding sessions from any provider and generates actionable insights. O
 ## Installation
 
 ```bash
-npm install @guideai-dev/session-processing
+npm install @guidemode/session-processing
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ npm install @guideai-dev/session-processing
 ### Parse Any Provider
 
 ```typescript
-import { ParserRegistry } from '@guideai-dev/session-processing/parsers'
+import { ParserRegistry } from '@guidemode/session-processing/parsers'
 
 const registry = new ParserRegistry()
 const parser = registry.getParser('claude-code') // or gemini, copilot, codex, opencode
@@ -33,7 +33,7 @@ const parsed = parser.parse(sessionContent)
 ### Calculate Metrics
 
 ```typescript
-import { CanonicalSessionProcessor } from '@guideai-dev/session-processing/processors'
+import { CanonicalSessionProcessor } from '@guidemode/session-processing/processors'
 
 const processor = new CanonicalSessionProcessor()
 const metrics = await processor.processMetrics(sessionContent, context)
@@ -63,7 +63,7 @@ All via the same unified parser:
 ### Build from Source
 
 ```bash
-git clone https://github.com/guideai-dev/session-processing.git
+git clone https://github.com/guidemode-dev/session-processing.git
 cd session-processing
 pnpm install
 pnpm build
@@ -94,8 +94,8 @@ pnpm build
 
 ## Related Packages
 
-- [@guideai-dev/desktop](https://github.com/guideai-dev/desktop) - Converts provider formats to canonical
-- [@guideai-dev/types](https://github.com/guideai-dev/types) - Shared type definitions
+- [@guidemode/desktop](https://github.com/guidemode-dev/desktop) - Converts provider formats to canonical
+- [@guidemode/types](https://github.com/guidemode-dev/types) - Shared type definitions
 
 ## License
 
@@ -103,6 +103,6 @@ MIT License - see [LICENSE](LICENSE)
 
 ## Support
 
-- 💬 [**Discussions**](https://github.com/orgs/guideai-dev/discussions) - Ask questions, share ideas
-- 🐛 [**Issues**](https://github.com/guideai-dev/desktop/issues) - Report bugs, request features
-- 📧 **Email**: support@guideai.dev
+- 💬 [**Discussions**](https://github.com/orgs/guidemode-dev/discussions) - Ask questions, share ideas
+- 🐛 [**Issues**](https://github.com/guidemode-dev/desktop/issues) - Report bugs, request features
+- 📧 **Email**: support@guidemode.dev

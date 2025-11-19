@@ -11,7 +11,7 @@ import type {
   TextContent,
   ToolResultContent,
   ToolUseContent,
-} from '@guideai-dev/types'
+} from '@guidemode/types'
 
 /**
  * Raw message from JSONL log - provider-agnostic representation

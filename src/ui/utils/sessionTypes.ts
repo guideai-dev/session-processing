@@ -8,6 +8,6 @@ export type {
   ToolUseContent,
   ToolResultContent,
   TextContent,
-} from '@guideai-dev/types'
+} from '@guidemode/types'
 
 // SessionParser is now exported from parsers/index.js (unified parser system)

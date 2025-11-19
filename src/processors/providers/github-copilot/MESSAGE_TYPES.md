@@ -1,6 +1,6 @@
 # GitHub Copilot Message Types
 
-This document catalogs the distinct message types found in GitHub Copilot snapshot files (`.jsonl` format) located at `~/.guideai/providers/copilot/snapshots/*.jsonl`.
+This document catalogs the distinct message types found in GitHub Copilot snapshot files (`.jsonl` format) located at `~/.guidemode/providers/copilot/snapshots/*.jsonl`.
 
 ## Overview
 
@@ -137,10 +137,10 @@ interface ToolCallRequested {
   "callId": "toolu_01WPwvGa3nWCjzhTSW6eYJL4",
   "name": "str_replace_editor",
   "toolTitle": "str_replace_editor",
-  "intentionSummary": "view the file at /Users/cliftonc/work/guideai.",
+  "intentionSummary": "view the file at /Users/cliftonc/work/guidemode.",
   "arguments": {
     "command": "view",
-    "path": "/Users/cliftonc/work/guideai"
+    "path": "/Users/cliftonc/work/guidemode"
   }
 }
 ```
@@ -194,16 +194,16 @@ interface ToolCallCompleted {
   "callId": "toolu_01Q8gUSdNdin1aQGDNzYGsSt",
   "name": "str_replace_editor",
   "toolTitle": "str_replace_editor",
-  "intentionSummary": "edit the file at /Users/cliftonc/work/guideai/apps/desktop/src-tauri/src/providers/copilot_parser.rs.",
+  "intentionSummary": "edit the file at /Users/cliftonc/work/guidemode/apps/desktop/src-tauri/src/providers/copilot_parser.rs.",
   "arguments": {
     "command": "str_replace",
-    "path": "/Users/cliftonc/work/guideai/apps/desktop/src-tauri/src/providers/copilot_parser.rs",
+    "path": "/Users/cliftonc/work/guidemode/apps/desktop/src-tauri/src/providers/copilot_parser.rs",
     "old_str": "/// GitHub Copilot session format...",
     "new_str": "/// GitHub Copilot config.json format..."
   },
   "result": {
     "type": "success",
-    "log": "\ndiff --git a/Users/cliftonc/work/guideai/apps/desktop/src-tauri/src/providers/copilot_parser.rs...\n"
+    "log": "\ndiff --git a/Users/cliftonc/work/guidemode/apps/desktop/src-tauri/src/providers/copilot_parser.rs...\n"
   }
 }
 ```
@@ -340,6 +340,6 @@ Tool calls can be linked by their `callId`:
 
 ## Data Source
 
-Sample file analyzed: `~/.guideai/providers/copilot/snapshots/ba81014c-8061-402b-bbab-0d24b3794a07.jsonl`
+Sample file analyzed: `~/.guidemode/providers/copilot/snapshots/ba81014c-8061-402b-bbab-0d24b3794a07.jsonl`
 
 Last updated: 2025-10-04

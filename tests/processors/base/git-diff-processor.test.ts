@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { GitDiffMetricProcessor } from '../../../src/processors/base/git-diff-processor.js'
 import type { ParsedSession } from '../../../src/processors/base/types.js'
-import type { GitDiff } from '@guideai-dev/types'
+import type { GitDiff } from '@guidemode/types'
 
 describe('GitDiffMetricProcessor', () => {
 	const processor = new GitDiffMetricProcessor()

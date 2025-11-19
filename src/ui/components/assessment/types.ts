@@ -2,20 +2,41 @@ import type {
   AssessmentAnswer,
   AssessmentQuestionConfig,
   AssessmentResponse,
-} from '@guideai-dev/types'
+} from '@guidemode/types'
+
+// Base question interface that both AssessmentQuestionConfig and SurveyQuestion can satisfy
+export interface BaseQuestionConfig {
+  id: string
+  text: string
+  type: 'likert-5' | 'likert-7' | 'nps' | 'text' | 'choice'
+  required: boolean
+  labels?: [string, string]
+  choices?: string[]
+  placeholder?: string
+  helpText?: string
+  reverseScored?: boolean
+  skipLabel?: string
+  version?: string[]
+  importance?: 'low' | 'medium' | 'high'
+}
 
 export interface AssessmentModalProps {
-  sessionId: string
+  sessionId?: string // Optional for non-session surveys
   isOpen: boolean
   onClose: () => void
-  questions: AssessmentQuestionConfig[]
+  questions: BaseQuestionConfig[] // Accept any compatible question config
   initialResponses?: Record<string, AssessmentAnswer>
   onSubmit: (responses: AssessmentResponse[], durationSeconds?: number) => Promise<void>
   onDraft?: (responses: AssessmentResponse[]) => Promise<void>
+  // Config options
+  title?: string // Default: "Session Assessment"
+  showVersionSelector?: boolean // Default: auto-detect based on questions having 'version' property
+  completionMessage?: string // Default: "Your feedback has been submitted successfully."
+  previewMode?: boolean // If true, allows browsing questions without saving responses
 }
 
 export interface QuestionCardProps {
-  question: AssessmentQuestionConfig
+  question: BaseQuestionConfig
   value?: AssessmentAnswer
   onChange: (answer: AssessmentAnswer) => void
   onNext?: () => void

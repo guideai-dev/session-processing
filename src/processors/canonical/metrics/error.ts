@@ -5,8 +5,8 @@
  * Tracks errors, failures, and recovery patterns.
  */
 
-import type { ErrorMetrics, ToolResultContent } from '@guideai-dev/types'
-import { isStructuredMessageContent } from '@guideai-dev/types'
+import type { ErrorMetrics, ToolResultContent } from '@guidemode/types'
+import { isStructuredMessageContent } from '@guidemode/types'
 import type { ParsedSession } from '../../../parsers/base/types.js'
 import { BaseMetricProcessor } from '../../base/metric-processor.js'
 

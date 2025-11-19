@@ -2,7 +2,7 @@
  * AIAssessmentSection - AI-generated quality analysis and session summary
  */
 
-import type { AIModelMetadata } from '@guideai-dev/types'
+import type { AIModelMetadata } from '@guidemode/types'
 import { CpuChipIcon } from '@heroicons/react/24/outline'
 import { MetricSection } from '../MetricSection.js'
 

@@ -10,7 +10,7 @@ import {
   type ValidationResult,
   validateCanonicalMessage,
   validateSession,
-} from '@guideai-dev/types'
+} from '@guidemode/types'
 
 export interface JSONLValidationOptions {
   /** Skip lines that fail to parse as JSON */
