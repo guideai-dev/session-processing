@@ -65,7 +65,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "@google/generative-ai": "^0.21.0",
-    "@guidemode/types": "workspace:*"
+    "@guidemode/types": "^0.1.40"
   },
   "peerDependencies": {
     "@heroicons/react": "^2.0.0",
